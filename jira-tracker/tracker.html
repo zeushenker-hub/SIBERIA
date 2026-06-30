@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIBERIA</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23BCC3C7'/><path d='M30 20 L20 10 L25 30 Q15 35 15 50 Q15 75 40 85 Q50 88 60 85 Q85 75 85 50 Q85 35 75 30 L80 10 L70 20 Q60 15 50 15 Q40 15 30 20Z' fill='white'/><circle cx='35' cy='45' r='5' fill='%23BCC3C7'/><circle cx='65' cy='45' r='5' fill='%23BCC3C7'/><path d='M45 50 Q50 55 55 50' stroke='%23BCC3C7' stroke-width='2.5' fill='none' stroke-linecap='round'/></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Roboto', -apple-system, sans-serif;
+      background: #FFFFFF; color: #333;
+      min-height: 100vh; padding: 20px; padding-top: 80px;
+      font-size: 14px;
+      font-weight: 400;
+    }
+    .app { max-width: 1400px; margin: 0 auto; }
+    .header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      background: #FFFFFF; border-radius: 0; padding: 12px 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.1); margin-bottom: 20px;
+    }
+    .header-inner { max-width: 1400px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; width: 100%; }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .header-logo { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+    .header-left h1 { font-size: 20px; font-weight: 700; color: #BCC3C7; font-family: 'Roboto', sans-serif; }
+    .header-actions { display: flex; gap: 10px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border: none; border-radius: 6px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: background .15s, opacity .15s;
+      font-family: inherit;
+    }
+    .btn-primary { background: #A9D3F2; color: #333; }
+    .btn-primary:hover { background: #9ABFDC; }
+    .btn-secondary { background: #CDD6D8; color: #333; }
+    .btn-secondary:hover { background: #D7D4D4; }
+    .btn-danger { background: #D69CA5; color: #333; }
+    .btn-danger:hover { background: #CECCCB; }
+    .btn-success { background: #A8F0CD; color: #333; }
+    .btn-success:hover { background: #9BD9DB; }
+    .btn-warning { background: #CECCCB; color: #333; }
+    .btn-warning:hover { background: #D7D4D4; }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+    .btn-icon { padding: 6px; background: transparent; color: #666; border-radius: 4px; }
+    .btn-icon:hover { background: #D7D4D4; }
+    .layout { display: grid; grid-template-columns: 360px 1fr; gap: 20px; }
+    .card {
+      background: #FFFFFF; border-radius: 8px; padding: 20px;
+      box-shadow: 0 1px 2px rgba(0,0,0,.08);
+    }
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .card-header h2 { font-size: 16px; font-weight: 700; font-family: 'Roboto', sans-serif; }
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.4);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000; opacity: 0; pointer-events: none;
+      transition: opacity .2s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: auto; }
+    .modal {
+      background: #FFFFFF; border-radius: 12px; padding: 24px;
+      min-width: 520px; max-width: 600px; max-height: 90vh; overflow-y: auto;
+    }
+    .modal h3 { font-size: 20px; font-weight: 700; font-family: 'Roboto', sans-serif; margin-bottom: 16px; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 600; color: #666; margin-bottom: 4px; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 8px 10px; border: 1px solid #CDD6D8; border-radius: 6px;
+      font-size: 13px; font-family: inherit; background: #FFFFFF;
+    }
+    .form-group textarea { resize: vertical; min-height: 60px; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: #A9D3F2; outline: none; box-shadow: 0 0 0 2px rgba(169,211,242,.25);
+    }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+    .sprint-list { display: flex; flex-direction: column; gap: 8px; }
+    .sprint-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 12px; border-radius: 6px; background: #FFFFFF;
+      cursor: pointer; transition: background .15s;
+      border-left: 3px solid #dfe1e6;
+    }
+    .sprint-item:hover { background: #D7D4D4; }
+    .sprint-item.active { background: rgba(166,233,237,.1); border-left-color: #94C8D4; }
+    .sprint-item.completed { opacity: .7; border-left-color: #BCC3C7; }
+    .sprint-item.selected { box-shadow: 0 0 0 2px #A9D3F2; }
+    .sprint-item.droppable { background: #A9D3F2; border-left-color: #9ABFDC; }
+    .sprint-info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+    .sprint-name { font-weight: 700; font-size: 16px; font-family: 'Roboto', sans-serif; }
+    .sprint-dates { font-size: 11px; color: #666; }
+    .sprint-status { font-size: 11px; font-weight: 600; text-transform: uppercase; }
+    .sprint-status.active { color: #94C8D4; }
+    .sprint-status.completed { color: #BCC3C7; }
+    .sprint-actions { display: flex; gap: 4px; flex-shrink: 0; }
+    .sprint-task-count { font-size: 11px; color: #666; margin-top: 2px; }
+    .backlog-header {
+      font-weight: 600; font-size: 13px; padding: 8px 12px;
+      background: #FFFFFF; border-radius: 6px; border-left: 3px solid #BCC3C7;
+      cursor: pointer; display: flex; align-items: center; gap: 8px;
+      transition: background .15s;
+    }
+    .backlog-header:hover { background: #D7D4D4; }
+    .backlog-header.selected { box-shadow: 0 0 0 2px #BCC3C7; }
+    .backlog-header.droppable { background: #A9D3F2; border-left-color: #9ABFDC; }
+    .backlog-count { font-size: 11px; color: #666; font-weight: 400; }
+    .my-tasks-header {
+      font-weight: 600; font-size: 13px; padding: 8px 12px;
+      background: #FFFFFF; border-radius: 6px; border-left: 3px solid #D69CA5;
+      cursor: pointer; display: flex; align-items: center; gap: 8px;
+      transition: background .15s; margin-bottom: 8px;
+    }
+    .my-tasks-header:hover { background: #F1BBBC; }
+    .my-tasks-header.selected { box-shadow: 0 0 0 2px #D69CA5; }
+    .urgent-header {
+      font-weight: 600; font-size: 13px; padding: 8px 12px;
+      background: #FFFFFF; border-radius: 6px; border-left: 3px solid #EEACB2;
+      cursor: pointer; display: flex; align-items: center; gap: 8px;
+      transition: background .15s; margin-bottom: 8px;
+    }
+    .urgent-header:hover { background: #FFF5F5; }
+    .urgent-header.selected { box-shadow: 0 0 0 2px #EEACB2; }
+    .filters {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+      padding: 12px; background: #FFFFFF; border-radius: 6px; margin-bottom: 12px;
+    }
+    .filters select, .filters input {
+      padding: 6px 8px; border: 1px solid #CDD6D8; border-radius: 4px;
+      font-size: 12px; font-family: inherit; background: #FFFFFF;
+    }
+    .filters .filter-label { font-size: 11px; font-weight: 600; color: #666; }
+    .tab-bar { display: flex; gap: 0; margin-bottom: 4px; border-bottom: 1px solid #CDD6D8; }
+    .tab-bar button { padding: 6px 16px; border: none; background: transparent; font-size: 13px; font-weight: 600; color: #666; cursor: pointer; border-bottom: 2px solid transparent; font-family: 'Roboto', sans-serif; }
+    .tab-bar button.active { color: #333; border-bottom-color: #A9D3F2; }
+    .tab-bar button:hover { color: #333; }
+    .task-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .task-table th {
+      text-align: left; padding: 8px 10px; font-size: 11px; font-weight: 600;
+      color: #666; text-transform: uppercase; cursor: pointer; user-select: none;
+      border-bottom: 2px solid #CDD6D8; white-space: nowrap;
+    }
+    .task-table th:hover { color: #333; }
+    .task-table th .sort-arrow { margin-left: 4px; font-size: 10px; }
+    .task-table td { padding: 8px 10px; border-bottom: 1px solid #FFFFFF; vertical-align: middle; }
+    .task-table tr:hover td { background: #A6E9ED; }
+    .task-table tr.urgent td { background: #FFF5F5; }
+    .task-table tr.urgent:hover td { background: #FFE4E4; }
+    .task-table tr { cursor: grab; }
+    .task-table tr:active { cursor: grabbing; }
+    .task-table tr.dragging { opacity: .4; }
+    .inline-status, .inline-date { font-size: 11px; font-family: inherit; padding: 2px 4px; border: 1px solid transparent; border-radius: 4px; background: transparent; cursor: pointer; max-width: 120px; }
+    .inline-status:hover, .inline-date:hover { border-color: #CDD6D8; background: #fff; }
+    .inline-status:focus, .inline-date:focus { border-color: #A9D3F2; outline: none; background: #fff; }
+    .inline-date { max-width: 130px; border: 1px solid #CDD6D8; border-radius: 4px; background: #fff; padding: 3px 6px; font-size: 12px; }
+    .inline-comment { font-size: 11px; font-family: inherit; padding: 2px 6px; border: 1px solid transparent; border-radius: 4px; background: transparent; cursor: text; width: 100%; min-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .inline-comment:hover { border-color: #CDD6D8; background: #fff; position: relative; }
+    .inline-comment:focus { border-color: #A9D3F2; outline: none; background: #fff; overflow: visible; white-space: normal; }
+    .inline-comment-wrapper { position: relative; display: inline-block; width: 100%; }
+    .inline-comment-wrapper:hover .comment-tooltip { display: block; }
+    .comment-tooltip {
+      display: none; position: fixed; z-index: 9999;
+      background: rgba(0,0,0,.85); color: #fff; font-size: 12px; padding: 6px 10px;
+      border-radius: 6px; max-width: 360px; white-space: pre-wrap; word-break: break-word;
+      pointer-events: none;
+    }
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 10px;
+      font-size: 11px; font-weight: 600;
+      white-space: nowrap;
+    }
+    .badge-new { background: #CDD6D8; color: #333; }
+    .badge-clarify { background: #CECCCB; color: #333; }
+    .badge-analytics { background: #9ABFDC; color: #333; }
+    .badge-inprogress { background: #A9D3F2; color: #333; }
+    .badge-qa { background: #E6BFED; color: #333; }
+    .badge-review { background: #F7C0E3; color: #333; }
+    .badge-done { background: #A8F0CD; color: #333; }
+    .badge-critical { background: rgba(0,0,0,.5); color: #fff; }
+    .badge-high { background: rgba(220,38,38,.5); color: #fff; }
+    .badge-medium { background: rgba(234,179,8,.5); color: #333; }
+    .badge-low { background: rgba(37,99,235,.5); color: #fff; }
+    .badge-verylow { background: rgba(22,163,74,.5); color: #fff; }
+    .badge-bug { background: #D69CA5; color: #333; }
+    .badge-feature { background: #A9D3F2; color: #333; }
+    .badge-update { background: #A6E9ED; color: #333; }
+    .badge-routine { background: #D7D4D4; color: #333; }
+    .task-title { font-weight: 500; }
+    .task-id { font-size: 11px; color: #666; margin-right: 6px; }
+    .detail-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.4);
+      display: flex; align-items: flex-start; justify-content: center;
+      z-index: 999; opacity: 0; pointer-events: none;
+      transition: opacity .2s; padding-top: 40px;
+    }
+    .detail-overlay.open { opacity: 1; pointer-events: auto; }
+    .detail-panel {
+      background: #FFFFFF; border-radius: 12px; padding: 24px;
+      min-width: 640px; max-width: 720px; max-height: 85vh; overflow-y: auto;
+    }
+    .detail-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+    .detail-id { font-size: 12px; color: #666; }
+    .detail-title { font-size: 20px; font-weight: 700; font-family: 'Roboto', sans-serif; margin: 4px 0 12px; }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+    .detail-field label { font-size: 11px; font-weight: 600; color: #666; display: block; margin-bottom: 2px; }
+    .detail-field .value { font-size: 13px; }
+    .detail-desc { margin-top: 12px; }
+    .detail-desc label { font-size: 11px; font-weight: 600; color: #666; display: block; margin-bottom: 4px; }
+    .detail-desc .value { font-size: 13px; white-space: pre-wrap; line-height: 1.5; }
+    .detail-actions { display: flex; gap: 8px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #CDD6D8; }
+    .empty-state { text-align: center; color: #BCC3C7; padding: 40px 20px; font-size: 14px; }
+    .toast {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      padding: 16px 32px; border-radius: 12px; background: rgba(0,0,0,.85); color: #fff;
+      font-size: 15px; font-weight: 600; z-index: 2000; text-align: center;
+      max-width: 420px; opacity: 0; pointer-events: none;
+      transition: opacity .25s;
+    }
+    .toast.show { opacity: 1; }
+    .active-sprint-indicator { font-size: 10px; color: #94C8D4; font-weight: 700; }
+    .separator { height: 1px; background: #CDD6D8; margin: 8px 0; }
+    .note-dragging { opacity: .4; }
+    .note-drag-over { border-color: #A9D3F2 !important; background: #f0f8ff !important; }
+    .cat-drag-over { background: #A9D3F2 !important; border-color: #9ABFDC !important; }
+    .note-item { background:#f8f8f8; border-radius:6px; padding:8px; display:flex; gap:6px; align-items:flex-start; cursor: grab; transition: box-shadow .15s, border .15s; border: 2px solid transparent; }
+    .note-item:active { cursor: grabbing; }
+    .note-item.dragging { opacity: .4; }
+    .note-item.drag-over { border-color: #A9D3F2; background: #f0f8ff; }
+  </style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="header">
+    <div class="header-inner">
+      <div class="header-left">
+        <img class="header-logo" src="turkish-angora_141876.png" alt="SIBERIA" />
+        <h1>SIBERIA</h1>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-primary" onclick="openTaskModal()">+ Новая задача</button>
+        <button class="btn btn-secondary" onclick="openSprintModal()">+ Новый спринт</button>
+        <button class="btn btn-icon" onclick="toggleSettings()" title="Настройки">⚙️</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div>
+      <div class="card">
+        <div class="card-header"><h2>Навигация</h2></div>
+        <div class="sprint-list" id="sprintList"></div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="card-header">
+          <h2>📝 Заметки</h2>
+          <div style="display:flex;gap:4px">
+            <button class="btn btn-sm btn-primary" onclick="addNote()">+ Заметка</button>
+            <button class="btn btn-sm btn-secondary" onclick="addNoteCategory()" title="Новая вкладка">+ 📂</button>
+          </div>
+        </div>
+        <div id="noteCategoriesBar" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;align-items:center"></div>
+        <div id="notesList" style="display:flex;flex-direction:column;gap:8px;min-height:40px"></div>
+      </div>
+      <div class="card" style="margin-top:16px;display:none" id="settingsCard">
+        <div class="card-header"><h2>⚙️ Настройки</h2></div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn btn-sm btn-primary" onclick="saveDataToFile()" style="width:100%">💾 Сохранить данные в файл</button>
+          <button class="btn btn-sm btn-primary" onclick="document.getElementById('fileInput').click()" style="width:100%">📂 Загрузить данные из файла</button>
+          <input type="file" id="fileInput" accept=".json" style="display:none" onchange="loadDataFromFile(event)" />
+          <button class="btn btn-sm btn-secondary" onclick="showBackupList()" style="width:100%">⏱ Восстановить из бэкапа</button>
+          <div id="backupList" style="display:none;margin-top:4px"></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="card-header">
+          <h2 id="tasksHeader">Срочные задачи</h2>
+          <button class="btn btn-sm btn-secondary" id="viewToggle" onclick="toggleView()">Все задачи</button>
+        </div>
+        <div class="tab-bar" id="tabBar" style="display:none">
+          <button class="active" id="tabActive" onclick="switchTab('active')">Активные</button>
+          <button id="tabDone" onclick="switchTab('done')">Закрытые</button>
+        </div>
+        <div class="filters">
+          <span class="filter-label">Статус</span>
+          <select id="filterStatus" onchange="renderTasks()"><option value="">Все</option></select>
+          <span class="filter-label">Приоритет</span>
+          <select id="filterPriority" onchange="renderTasks()"><option value="">Все</option></select>
+          <span class="filter-label">Тип</span>
+          <select id="filterType" onchange="renderTasks()"><option value="">Все</option></select>
+          <span class="filter-label">Поиск</span>
+          <input id="filterSearch" placeholder="ID или название..." oninput="renderTasks()" />
+          <button class="btn btn-sm btn-secondary" onclick="resetFilters()">Сброс</button>
+        </div>
+        <div id="massActions" style="display:none;padding:8px 12px;background:#FAFAFA;border-radius:6px;margin-bottom:8px;align-items:center;gap:8px">
+          <span style="font-size:12px;color:#666" id="selectedCount">Выбрано: 0</span>
+          <select id="massSprintSelect" style="font-size:12px;padding:4px 8px;border:1px solid #CDD6D8;border-radius:4px">
+            <option value="">Перенести в спринт...</option>
+          </select>
+          <button class="btn btn-sm btn-primary" onclick="moveSelectedTasks()">Перенести</button>
+          <button class="btn btn-sm btn-secondary" onclick="clearSelection()">Снять выделение</button>
+        </div>
+        <table class="task-table">
+          <thead>
+            <tr>
+              <th style="width:24px"><input type="checkbox" id="selectAllTasks" onchange="toggleAllCheckboxes(this)" /></th>
+              <th onclick="setSort('id')">ID <span class="sort-arrow" id="sortArrowId"></span></th>
+              <th onclick="setSort('title')">Название <span class="sort-arrow" id="sortArrowTitle"></span></th>
+              <th onclick="setSort('status')">Статус <span class="sort-arrow" id="sortArrowStatus"></span></th>
+              <th onclick="setSort('priority')">Приоритет <span class="sort-arrow" id="sortArrowPriority"></span></th>
+              <th onclick="setSort('type')">Тип <span class="sort-arrow" id="sortArrowType"></span></th>
+              <th onclick="setSort('deadline')">Срок <span class="sort-arrow" id="sortArrowDeadline"></span></th>
+              <th>Комментарий</th>
+            </tr>
+          </thead>
+          <tbody id="taskBody"></tbody>
+        </table>
+        <div id="taskEmpty" class="empty-state" style="display:none">Нет задач</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Task Modal -->
+<div class="modal-overlay" id="taskModal">
+  <div class="modal">
+    <h3 id="taskModalTitle">Новая задача</h3>
+    <input type="hidden" id="taskId" />
+    <div class="form-group">
+      <label>Название</label>
+      <input id="taskTitle" placeholder="Введите название задачи" />
+    </div>
+    <div class="form-group">
+      <label>Описание</label>
+      <textarea id="taskDescription" placeholder="Описание задачи"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Комментарий</label>
+      <textarea id="taskComment" placeholder="Заметка для себя (дейлики и т.д.)" style="min-height:40px"></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Статус</label>
+        <select id="taskStatus"></select>
+      </div>
+      <div class="form-group">
+        <label>Приоритет</label>
+        <select id="taskPriority"></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Тип задачи</label>
+        <select id="taskType"></select>
+      </div>
+      <div class="form-group">
+        <label>Срок сдачи</label>
+        <input id="taskDeadline" type="date" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Спринт</label>
+      <select id="taskSprint"><option value="">Без спринта</option></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('taskModal')">Отмена</button>
+      <button class="btn btn-primary" onclick="saveTask()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sprint Modal -->
+<div class="modal-overlay" id="sprintModal">
+  <div class="modal">
+    <h3 id="sprintModalTitle">Новый спринт</h3>
+    <input type="hidden" id="sprintId" />
+    <div class="form-group">
+      <label>Название спринта</label>
+      <input id="sprintName" placeholder="Название спринта" />
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Дата начала</label>
+        <input id="sprintStart" type="date" />
+      </div>
+      <div class="form-group">
+        <label>Дата окончания</label>
+        <input id="sprintEnd" type="date" />
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('sprintModal')">Отмена</button>
+      <button class="btn btn-primary" onclick="saveSprint()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Panel -->
+<div class="detail-overlay" id="detailPanel">
+  <div class="detail-panel">
+    <div class="detail-header">
+      <div>
+        <div class="detail-id" id="detailId"></div>
+        <div class="detail-title" id="detailTitle"></div>
+      </div>
+      <button class="btn btn-icon" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-field">
+        <label>Статус</label>
+        <div class="value"><span id="detailStatus"></span></div>
+      </div>
+      <div class="detail-field">
+        <label>Приоритет</label>
+        <div class="value"><span id="detailPriority"></span></div>
+      </div>
+      <div class="detail-field">
+        <label>Тип</label>
+        <div class="value"><span id="detailType"></span></div>
+      </div>
+      <div class="detail-field">
+        <label>Срок сдачи</label>
+        <div class="value" id="detailDeadline"></div>
+      </div>
+      <div class="detail-field">
+        <label>Спринт</label>
+        <div class="value" id="detailSprint"></div>
+      </div>
+      <div class="detail-field">
+        <label>Создана</label>
+        <div class="value" id="detailCreated"></div>
+      </div>
+    </div>
+    <div class="detail-desc">
+      <label>Описание</label>
+      <div class="value" id="detailDescription"></div>
+    </div>
+    <div class="detail-desc">
+      <label>Комментарий</label>
+      <div class="value" id="detailComment"></div>
+    </div>
+    <div class="detail-actions" id="detailActions">
+      <button class="btn btn-primary btn-sm" onclick="editFromDetail()">Редактировать</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteFromDetail()">Удалить</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STATUSES = ['Новая', 'На уточнении', 'Аналитика', 'В работе', 'QA', 'Ревью', 'Готово'];
+const STATUS_CLASSES = { 'Новая':'badge-new', 'На уточнении':'badge-clarify', 'Аналитика':'badge-analytics', 'В работе':'badge-inprogress', 'QA':'badge-qa', 'Ревью':'badge-review', 'Готово':'badge-done' };
+const PRIORITIES = ['Критичный', 'Высокий', 'Средний', 'Низкий', 'Очень низкий'];
+const PRIORITY_CLASSES = { 'Критичный':'badge-critical', 'Высокий':'badge-high', 'Средний':'badge-medium', 'Низкий':'badge-low', 'Очень низкий':'badge-verylow' };
+const TYPES = ['Баг', 'Фича', 'Обновление', 'Рутина'];
+const TYPE_CLASSES = { 'Баг':'badge-bug', 'Фича':'badge-feature', 'Обновление':'badge-update', 'Рутина':'badge-routine' };
+
+let sortField = 'deadline';
+let sortDir = 'asc';
+let detailTaskId = null;
+let activeSprintFilter = '';
+let activeMyTasksFilter = false;
+let urgentView = true;
+
+function loadData(key, def) {
+  try { return JSON.parse(localStorage.getItem(key)) ?? def; } catch { return def; }
+}
+function saveData(key, data) { localStorage.setItem(key, JSON.stringify(data)); autoBackup(); }
+
+function playBackupSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.setValueAtTime(660, ctx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4);
+  } catch(e) {}
+}
+
+function autoBackup() {
+  const now = Date.now();
+  const last = Number(localStorage.getItem('siberia_last_backup_asked') || 0);
+  if (now - last < 3600000) return; // раз в час спрашиваем
+  localStorage.setItem('siberia_last_backup_asked', String(now));
+  playBackupSound();
+  setTimeout(function() {
+    if (confirm('Сделать резервную копию данных?')) {
+    const backups = JSON.parse(localStorage.getItem('siberia_backups') || '[]');
+    const snapshot = {
+      tasks: loadData('tracker_tasks', []),
+      sprints: loadData('tracker_sprints', []),
+      myTasks: loadData('tracker_mytasks', []),
+      notes: loadData('tracker_notes', []),
+      time: new Date().toLocaleString('ru-RU')
+    };
+    backups.unshift(snapshot);
+    if (backups.length > 3) backups.length = 3;
+    localStorage.setItem('siberia_backups', JSON.stringify(backups));
+      toast('Резервная копия сохранена');
+    }
+  }, 100);
+}
+
+let tasks = loadData('tracker_tasks', []);
+let sprints = loadData('tracker_sprints', []);
+let myTasks = loadData('tracker_mytasks', []);
+
+let notes = loadNotes();
+let activeNoteCategory = 'Общие';
+
+function loadNotes() {
+  let raw = loadData('tracker_notes', null);
+  if (raw === null) return { 'Общие': [] };
+  if (Array.isArray(raw)) return { 'Общие': raw };
+  if (typeof raw === 'object' && raw !== null) {
+    if (!raw['Общие']) raw['Общие'] = [];
+    return raw;
+  }
+  return { 'Общие': [] };
+}
+function saveNotes() {
+  localStorage.setItem('tracker_notes', JSON.stringify(notes));
+  autoBackup();
+}
+
+(function migrateTaskIds() {
+  let needsSave = false;
+  tasks.forEach((t, i) => {
+    if (isNaN(Number(t.id))) { t.id = String(i + 1); needsSave = true; }
+  });
+  if (needsSave) saveData('tracker_tasks', tasks);
+})();
+
+function genId() { return tasks.length ? String(Math.max(...tasks.map(t => Number(t.id))) + 1) : '1'; }
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._timer); t._timer = setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+function populateSelect(id, items, selected) {
+  const sel = document.getElementById(id);
+  sel.innerHTML = '<option value="">Все</option>' +
+    items.map(v => `<option value="${v}"${v===selected?' selected':''}>${v}</option>`).join('');
+}
+
+function populateSprintSelect(selId, selected) {
+  const sel = document.getElementById(selId);
+  const available = sprints.filter(s => s.status !== 'completed');
+  sel.innerHTML = '<option value="">Без спринта</option>' +
+    available.map(s => `<option value="${s.id}"${s.id===selected?' selected':''}>${s.name}</option>`).join('');
+}
+
+function formatDate(d) {
+  if (!d) return '—';
+  const dt = new Date(d + 'T00:00:00');
+  return dt.toLocaleDateString('ru-RU');
+}
+
+function badge(text, cls) { return `<span class="badge ${cls}">${text}</span>`; }
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+let draggedTaskId = null;
+
+function handleDragStart(e) {
+  draggedTaskId = e.currentTarget.dataset.taskId;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  document.querySelectorAll('.sprint-item, .backlog-header, .my-tasks-header').forEach(el => el.classList.add('droppable'));
+}
+
+function handleDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('.sprint-item, .backlog-header, .my-tasks-header').forEach(el => el.classList.remove('droppable'));
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+}
+
+function handleDropOnSprint(e, sprintId) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('droppable');
+  document.querySelectorAll('.sprint-item, .backlog-header, .my-tasks-header').forEach(el => el.classList.remove('droppable'));
+  if (!draggedTaskId) return;
+  const sp = sprints.find(s => s.id === sprintId);
+  if (sp && sp.status === 'completed') { toast('Нельзя перемещать в завершённый спринт'); draggedTaskId = null; return; }
+  const task = tasks.find(t => t.id === draggedTaskId);
+  if (task) { task.sprintId = sprintId; saveData('tracker_tasks', tasks); renderSprints(); renderTasks(); toast('Задача перемещена'); }
+  draggedTaskId = null;
+}
+
+function handleDropOnBacklog(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('droppable');
+  document.querySelectorAll('.sprint-item, .backlog-header, .my-tasks-header').forEach(el => el.classList.remove('droppable'));
+  if (!draggedTaskId) return;
+  const task = tasks.find(t => t.id === draggedTaskId);
+  if (task) { task.sprintId = ''; saveData('tracker_tasks', tasks); renderSprints(); renderTasks(); toast('Задача перемещена в бэклог'); }
+  draggedTaskId = null;
+}
+
+function handleDropOnMyTasks(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('droppable');
+  document.querySelectorAll('.sprint-item, .backlog-header, .my-tasks-header').forEach(el => el.classList.remove('droppable'));
+  if (!draggedTaskId) return;
+  if (!myTasks.includes(draggedTaskId)) { myTasks.push(draggedTaskId); saveData('tracker_mytasks', myTasks); renderSprints(); renderTasks(); toast('Добавлено в Мои таски'); }
+  draggedTaskId = null;
+}
+
+function filterBySprint(sprintId) {
+  urgentView = false; document.getElementById('viewToggle').textContent = 'Срочные'; document.getElementById('tasksHeader').textContent = 'Задачи';
+  activeSprintFilter = sprintId;
+  activeMyTasksFilter = false;
+  document.querySelectorAll('.sprint-item, .backlog-header, .my-tasks-header, .urgent-header').forEach(el => el.classList.remove('selected'));
+  if (sprintId === '_backlog') {
+    document.querySelector('.backlog-header')?.classList.add('selected');
+    document.getElementById('tasksHeader').textContent = 'Бэклог';
+  } else if (sprintId) {
+    const el = document.querySelector(`[data-sprint-id="${sprintId}"]`);
+    if (el) el.classList.add('selected');
+    const sp = sprints.find(s => s.id === sprintId);
+    document.getElementById('tasksHeader').textContent = sp ? `Задачи: ${sp.name}` : 'Задачи';
+  } else {
+    document.getElementById('tasksHeader').textContent = 'Все задачи';
+  }
+  renderTasks();
+}
+
+function filterMyTasks() {
+  urgentView = false; document.getElementById('viewToggle').textContent = 'Срочные'; document.getElementById('tasksHeader').textContent = 'Задачи';
+  activeMyTasksFilter = !activeMyTasksFilter;
+  activeSprintFilter = '';
+  document.querySelectorAll('.sprint-item, .backlog-header, .my-tasks-header, .urgent-header').forEach(el => el.classList.remove('selected'));
+  if (activeMyTasksFilter) {
+    document.querySelector('.my-tasks-header')?.classList.add('selected');
+    const hh = document.getElementById('tasksHeader');
+    hh.dataset.original = 'Мои таски';
+    hh.textContent = 'Мои таски';
+  } else {
+    document.getElementById('tasksHeader').textContent = 'Все задачи';
+  }
+  renderTasks();
+}
+
+function showUrgentView() {
+  activeSprintFilter = '';
+  activeMyTasksFilter = false;
+  urgentView = true;
+  document.querySelectorAll('.sprint-item, .backlog-header, .my-tasks-header, .urgent-header').forEach(el => el.classList.remove('selected'));
+  document.querySelector('.urgent-header')?.classList.add('selected');
+  document.getElementById('tasksHeader').textContent = 'Срочные задачи';
+  document.getElementById('viewToggle').textContent = 'Все задачи';
+  document.getElementById('filterStatus').value = '';
+  document.getElementById('filterPriority').value = '';
+  document.getElementById('filterType').value = '';
+  document.getElementById('filterSearch').value = '';
+  renderTasks();
+}
+
+function addToMyTasks(taskId) {
+  if (!myTasks.includes(taskId)) { myTasks.push(taskId); saveData('tracker_mytasks', myTasks); toast('Добавлено в Мои таски'); renderSprints(); renderTasks(); }
+}
+function removeFromMyTasks(taskId) {
+  myTasks = myTasks.filter(id => id !== taskId);
+  saveData('tracker_mytasks', myTasks); toast('Убрано из Моих тасок'); renderSprints(); renderTasks();
+}
+
+function openTaskModal(task) {
+  document.getElementById('taskModalTitle').textContent = task ? 'Редактировать задачу' : 'Новая задача';
+  document.getElementById('taskId').value = task ? task.id : '';
+  document.getElementById('taskTitle').value = task ? task.title : '';
+  document.getElementById('taskDescription').value = task ? (task.description||'') : '';
+  document.getElementById('taskComment').value = task ? (task.comment||'') : '';
+  populateSelect('taskStatus', STATUSES, task ? task.status : 'Новая');
+  populateSelect('taskPriority', PRIORITIES, task ? task.priority : 'Средний');
+  populateSelect('taskType', TYPES, task ? task.type : 'Фича');
+  document.getElementById('taskDeadline').value = task ? (task.deadline||'') : '';
+  populateSprintSelect('taskSprint', task ? task.sprintId : '');
+  openModal('taskModal');
+}
+
+function saveTask() {
+  const id = document.getElementById('taskId').value;
+  const title = document.getElementById('taskTitle').value.trim();
+  if (!title) { toast('Введите название задачи'); return; }
+  const data = {
+    title,
+    comment: document.getElementById('taskComment').value.trim(),
+    description: document.getElementById('taskDescription').value.trim(),
+    status: document.getElementById('taskStatus').value,
+    priority: document.getElementById('taskPriority').value,
+    type: document.getElementById('taskType').value,
+    deadline: document.getElementById('taskDeadline').value || '',
+    sprintId: document.getElementById('taskSprint').value || '',
+  };
+  if (!id && !data.sprintId) {
+    if (activeMyTasksFilter) { myTasks.push('(new)'); }
+    if (activeSprintFilter && activeSprintFilter !== '_backlog') data.sprintId = activeSprintFilter;
+  }
+  if (id) {
+    const idx = tasks.findIndex(t => t.id === id);
+    if (idx !== -1) Object.assign(tasks[idx], data);
+  } else {
+    data.id = genId();
+    data.createdAt = new Date().toISOString();
+    tasks.unshift(data);
+    if (activeMyTasksFilter) { myTasks[myTasks.length - 1] = data.id; saveData('tracker_mytasks', myTasks); }
+  }
+  saveData('tracker_tasks', tasks);
+  closeModal('taskModal');
+  renderSprints();
+  renderTasks();
+  toast(id ? 'Задача обновлена' : 'Задача создана');
+}
+
+function deleteTask(id) {
+  if (!confirm('Удалить задачу?')) return;
+  tasks = tasks.filter(t => t.id !== id);
+  saveData('tracker_tasks', tasks);
+  closeDetail();
+  renderSprints();
+  renderTasks();
+  toast('Задача удалена');
+}
+
+function openDetail(taskId) {
+  detailTaskId = taskId;
+  const t = tasks.find(x => x.id === taskId);
+  if (!t) return;
+  document.getElementById('detailId').textContent = t.id;
+  document.getElementById('detailTitle').textContent = t.title;
+  document.getElementById('detailStatus').innerHTML = badge(t.status, STATUS_CLASSES[t.status]);
+  document.getElementById('detailPriority').innerHTML = badge(t.priority, PRIORITY_CLASSES[t.priority]);
+  document.getElementById('detailType').innerHTML = badge(t.type, TYPE_CLASSES[t.type]);
+  document.getElementById('detailDeadline').textContent = formatDate(t.deadline);
+  const sp = t.sprintId ? sprints.find(s => s.id === t.sprintId) : null;
+  document.getElementById('detailSprint').textContent = sp ? sp.name : 'Бэклог';
+  document.getElementById('detailCreated').textContent = new Date(t.createdAt).toLocaleString('ru-RU');
+  document.getElementById('detailDescription').textContent = t.description || 'Нет описания';
+  document.getElementById('detailComment').textContent = t.comment || 'Нет комментария';
+  document.getElementById('detailPanel').classList.add('open');
+
+  const actions = document.getElementById('detailActions');
+  const inMyTasks = myTasks.includes(taskId);
+  if (inMyTasks) {
+    actions.innerHTML = `<button class="btn btn-primary btn-sm" onclick="editFromDetail()">Редактировать</button><button class="btn btn-sm btn-success" onclick="event.stopPropagation(); removeFromMyTasks('${taskId}'); closeDetail();">★ Убрать из Моих тасок</button><button class="btn btn-danger btn-sm" onclick="deleteFromDetail()">Удалить</button>`;
+  } else {
+    actions.innerHTML = `<button class="btn btn-primary btn-sm" onclick="editFromDetail()">Редактировать</button><button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); addToMyTasks('${taskId}'); closeDetail();">☆ В Мои таски</button><button class="btn btn-danger btn-sm" onclick="deleteFromDetail()">Удалить</button>`;
+  }
+}
+function closeDetail() { document.getElementById('detailPanel').classList.remove('open'); detailTaskId = null; }
+function editFromDetail() { const id = detailTaskId; closeDetail(); const t = tasks.find(x => x.id === id); if (t) openTaskModal(t); }
+function deleteFromDetail() { deleteTask(detailTaskId); }
+
+function resetFilters() {
+  document.getElementById('filterStatus').value = '';
+  document.getElementById('filterPriority').value = '';
+  document.getElementById('filterType').value = '';
+  document.getElementById('filterSearch').value = '';
+  if (!activeSprintFilter && !activeMyTasksFilter) {
+    document.getElementById('tasksHeader').textContent = 'Все задачи';
+  }
+  renderTasks();
+}
+
+function setSort(field) {
+  if (sortField === field) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  else { sortField = field; sortDir = 'asc'; }
+  renderTasks();
+}
+
+const PRIO_ORDER = { 'Критичный':0, 'Высокий':1, 'Средний':2, 'Низкий':3, 'Очень низкий':4 };
+const STATUS_ORDER = { 'Новая':0, 'На уточнении':1, 'Аналитика':2, 'В работе':3, 'QA':4, 'Ревью':5, 'Готово':6 };
+
+function sortCompare(a, b) {
+  let va, vb;
+  switch (sortField) {
+    case 'id': va = Number(a.id); vb = Number(b.id); break;
+    case 'title': va = a.title.toLowerCase(); vb = b.title.toLowerCase(); break;
+    case 'status': va = STATUS_ORDER[a.status] ?? 99; vb = STATUS_ORDER[b.status] ?? 99; break;
+    case 'priority': va = PRIO_ORDER[a.priority] ?? 99; vb = PRIO_ORDER[b.priority] ?? 99; break;
+    case 'type': va = a.type; vb = b.type; break;
+    case 'deadline': va = a.deadline || '9999-99-99'; vb = b.deadline || '9999-99-99'; break;
+    default: return 0;
+  }
+  if (va < vb) return sortDir === 'asc' ? -1 : 1;
+  if (va > vb) return sortDir === 'asc' ? 1 : -1;
+  return 0;
+}
+
+function renderTasks() {
+  const tb = document.getElementById('tabBar');
+  if (tb) {
+    if (activeMyTasksFilter || activeSprintFilter) {
+      tb.style.display = 'flex';
+    } else {
+      tb.style.display = 'none';
+      activeDoneFilter = false;
+      document.getElementById('tabActive')?.classList.add('active');
+      document.getElementById('tabDone')?.classList.remove('active');
+    }
+  }
+  tasks = loadData('tracker_tasks', []);
+  const fStatus = document.getElementById('filterStatus').value;
+  const fPriority = document.getElementById('filterPriority').value;
+  const fType = document.getElementById('filterType').value;
+  const fSearch = document.getElementById('filterSearch').value.toLowerCase().trim();
+
+  const today = new Date(); const y = today.getFullYear(); const m = String(today.getMonth()+1).padStart(2,'0'); const d = String(today.getDate()).padStart(2,'0');
+  const todayStr = y+'-'+m+'-'+d;
+  const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate()+1);
+  const tY = tomorrow.getFullYear(); const tM = String(tomorrow.getMonth()+1).padStart(2,'0'); const tD = String(tomorrow.getDate()).padStart(2,'0');
+  const tomorrowStr = tY+'-'+tM+'-'+tD;
+
+  let filtered = tasks.filter(t => {
+    if (activeMyTasksFilter && !myTasks.includes(t.id)) return false;
+    if ((activeMyTasksFilter || activeSprintFilter) && !activeDoneFilter && t.status === 'Готово') return false;
+    if (activeDoneFilter && t.status !== 'Готово') return false;
+    if (activeSprintFilter === '_backlog' && t.sprintId) return false;
+    if (activeSprintFilter && activeSprintFilter !== '_backlog' && t.sprintId !== activeSprintFilter) return false;
+    if (fStatus && t.status !== fStatus) return false;
+    if (fPriority && t.priority !== fPriority) return false;
+    if (fType && t.type !== fType) return false;
+    if (fSearch && !t.id.toLowerCase().includes(fSearch) && !t.title.toLowerCase().includes(fSearch)) return false;
+    if (urgentView && !activeSprintFilter && !activeMyTasksFilter && !fSearch) {
+      if (t.status === 'Готово') return false;
+      if (!t.deadline) return false;
+      if (t.deadline !== todayStr && t.deadline !== tomorrowStr) return false;
+    }
+    return true;
+  });
+
+  filtered.sort(sortCompare);
+
+  const tbody = document.getElementById('taskBody');
+  const empty = document.getElementById('taskEmpty');
+  if (filtered.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = '';
+  } else {
+    empty.style.display = 'none';
+    tbody.innerHTML = filtered.map(t => {
+      const urg = !activeSprintFilter && !activeMyTasksFilter && !fSearch && t.status !== 'Готово' && t.deadline && (t.deadline === todayStr || t.deadline === tomorrowStr);
+      return `<tr class="${urg?'urgent':''}" draggable="true" data-task-id="${t.id}"
+      ondragstart="handleDragStart(event)" ondragend="handleDragEnd(event)"
+      onclick="openDetail('${t.id}')">
+      <td><input type="checkbox" class="task-checkbox" data-task-id="${t.id}" onclick="event.stopPropagation()" /></td>
+      <td><span class="task-id">${t.id}</span></td>
+      <td><span class="task-title">${escHtml(t.title)}</span></td>
+      <td><select class="inline-status" data-task-id="${t.id}" onclick="event.stopPropagation()" onchange="inlineChangeStatus(this, '${t.id}')">${STATUSES.map(s => `<option value="${s}"${s===t.status?' selected':''}>${s}</option>`).join('')}</select></td>
+      <td>${badge(t.priority, PRIORITY_CLASSES[t.priority])}</td>
+      <td>${badge(t.type, TYPE_CLASSES[t.type])}</td>
+      <td><input class="inline-date" type="date" value="${t.deadline||''}" onclick="event.stopPropagation()" onchange="inlineChangeDeadline(this, '${t.id}')" /></td>
+      <td><div class="inline-comment-wrapper"><input class="inline-comment" type="text" value="${escHtml(t.comment||'')}" placeholder="..." onclick="event.stopPropagation()" onchange="inlineChangeComment(this, '${t.id}')" onmouseenter="showCommentTooltip(this)" onmouseleave="hideCommentTooltip()" /><div class="comment-tooltip"></div></div></td>
+    </tr>`;
+    }).join('');
+  }
+
+  ['Id','Title','Status','Priority','Type','Deadline'].forEach(f => {
+    const el = document.getElementById(`sortArrow${f}`);
+    if (sortField === f.toLowerCase()) el.textContent = sortDir === 'asc' ? '▲' : '▼';
+    else el.textContent = '';
+  });
+}
+
+function toggleView() {
+  urgentView = !urgentView;
+  const btn = document.getElementById('viewToggle');
+  const header = document.getElementById('tasksHeader');
+  if (urgentView) {
+    btn.textContent = 'Все задачи';
+    header.textContent = 'Срочные задачи';
+  } else {
+    btn.textContent = 'Срочные';
+    header.textContent = 'Все задачи';
+  }
+  document.getElementById('filterStatus').value = '';
+  document.getElementById('filterPriority').value = '';
+  document.getElementById('filterType').value = '';
+  document.getElementById('filterSearch').value = '';
+  activeSprintFilter = '';
+  activeMyTasksFilter = false;
+  document.querySelectorAll('.sprint-item, .backlog-header, .my-tasks-header, .urgent-header').forEach(el => el.classList.remove('selected'));
+  renderTasks();
+}
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function inlineChangeStatus(sel, id) {
+  const task = tasks.find(t => t.id === id);
+  if (task) { task.status = sel.value; saveData('tracker_tasks', tasks); renderTasks(); }
+}
+function inlineChangeDeadline(inp, id) {
+  const task = tasks.find(t => t.id === id);
+  if (task) { task.deadline = inp.value; saveData('tracker_tasks', tasks); }
+}
+function inlineChangeComment(inp, id) {
+  const task = tasks.find(t => t.id === id);
+  if (task) { task.comment = inp.value; saveData('tracker_tasks', tasks); }
+}
+
+function showCommentTooltip(el) {
+  const tip = el.parentElement.querySelector('.comment-tooltip');
+  if (!tip || !el.value) return;
+  tip.textContent = el.value;
+  const rect = el.getBoundingClientRect();
+  tip.style.left = Math.min(rect.left, window.innerWidth - 380) + 'px';
+  tip.style.top = (rect.bottom + 6) + 'px';
+  tip.style.display = 'block';
+}
+function hideCommentTooltip() {
+  document.querySelectorAll('.comment-tooltip').forEach(t => t.style.display = 'none');
+}
+
+function renderNotes() {
+  notes = loadNotes();
+  renderNoteCategories();
+  const container = document.getElementById('notesList');
+  const catNotes = notes[activeNoteCategory] || [];
+  if (catNotes.length === 0) {
+    container.innerHTML = '<div class="empty-state" style="padding:16px;font-size:12px">Нет заметок</div>';
+    return;
+  }
+  container.innerHTML = catNotes.map((n, i) =>
+    `<div class="note-item" draggable="true"
+      data-note-index="${i}" data-note-category="${escHtml(activeNoteCategory)}"
+      ondragstart="noteDragStart(event, ${i})" ondragend="noteDragEnd(event)"
+      ondragover="noteDragOver(event)" ondragleave="noteDragLeave(event)" ondrop="noteDrop(event, ${i})">
+      <textarea style="flex:1;font-size:12px;font-family:inherit;border:1px solid transparent;border-radius:4px;padding:4px 6px;background:transparent;resize:none;overflow:hidden;min-height:32px;line-height:1.4" onfocus="this.style.borderColor='#A9D3F2';this.style.background='#fff'; autoResize(this)" onblur="saveNote(this,${i}); autoResize(this)" oninput="autoResize(this)">${escHtml(n)}</textarea>
+      <button class="btn btn-sm btn-danger note-del-btn" style="flex-shrink:0;padding:2px 6px;font-size:10px;visibility:hidden" onclick="deleteNote(${i})">✕</button>
+    </div>`
+  ).join('');
+  document.querySelectorAll('#notesList textarea').forEach(function(t) { autoResize(t); });
+  document.querySelectorAll('#notesList .note-item').forEach(function(item) {
+    var btn = item.querySelector('.note-del-btn');
+    item.addEventListener('mouseenter', function() { if (btn) btn.style.visibility = 'visible'; });
+    item.addEventListener('mouseleave', function() { if (btn) btn.style.visibility = 'hidden'; });
+  });
+}
+
+let dragNoteData = null;
+
+function noteDragStart(e, index) {
+  dragNoteData = { fromCat: activeNoteCategory, index: index };
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  document.querySelectorAll('#noteCategoriesBar button[data-note-cat]').forEach(function(btn) {
+    if (btn.getAttribute('data-note-cat') !== activeNoteCategory) {
+      btn.classList.add('cat-drag-over');
+    }
+  });
+}
+
+function noteDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('#noteCategoriesBar button[data-note-cat]').forEach(function(btn) {
+    btn.classList.remove('cat-drag-over');
+  });
+  document.querySelectorAll('.note-item').forEach(function(el) { el.classList.remove('drag-over'); });
+}
+
+function noteDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.classList.add('drag-over');
+}
+
+function noteDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+
+function noteDrop(e, toIndex) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (!dragNoteData) return;
+  const fromCat = dragNoteData.fromCat;
+  const fromIndex = dragNoteData.index;
+  const toCat = activeNoteCategory;
+  notes = loadNotes();
+  if (fromCat === toCat) {
+    const arr = notes[toCat] || [];
+    if (fromIndex === toIndex) { dragNoteData = null; return; }
+    const [moved] = arr.splice(fromIndex, 1);
+    arr.splice(toIndex, 0, moved);
+  } else {
+    const fromArr = notes[fromCat] || [];
+    const toArr = notes[toCat] || [];
+    const [moved] = fromArr.splice(fromIndex, 1);
+    toArr.splice(toIndex, 0, moved);
+  }
+  dragNoteData = null;
+  saveNotes();
+  renderNotes();
+  toast('Заметка перемещена');
+}
+
+function renderNoteCategories() {
+  const bar = document.getElementById('noteCategoriesBar');
+  const cats = Object.keys(notes);
+  bar.innerHTML = cats.map(c => `<button data-note-cat="${escHtml(c)}"
+    style="padding:4px 10px;border:1px solid ${c === activeNoteCategory ? '#A9D3F2' : '#CDD6D8'};border-radius:12px;background:${c === activeNoteCategory ? '#A9D3F2' : '#fff'};color:#333;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;transition:background .15s, border .15s">${escHtml(c)}</button>`).join('');
+  if (cats.length > 1) {
+    bar.innerHTML += `<button style="padding:2px 6px;border:none;background:transparent;color:#BCC3C7;font-size:12px;cursor:pointer" onclick="deleteNoteCategory()" title="Удалить вкладку">✕</button>`;
+  }
+  bar.querySelectorAll('[data-note-cat]').forEach(function(btn) {
+    btn.onclick = function() { switchNoteCategory(btn.getAttribute('data-note-cat')); };
+    btn.ondragover = function(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; this.style.background = '#A9D3F2'; };
+    btn.ondragleave = function() { this.style.background = btn.getAttribute('data-note-cat') === activeNoteCategory ? '#A9D3F2' : '#fff'; };
+    btn.ondrop = function(e) { noteDropOnCategory(e, btn.getAttribute('data-note-cat')); };
+  });
+}
+
+function noteDropOnCategory(e, cat) {
+  e.preventDefault();
+  e.currentTarget.style.background = cat === activeNoteCategory ? '#A9D3F2' : '#fff';
+  if (!dragNoteData) return;
+  const fromCat = dragNoteData.fromCat;
+  const fromIndex = dragNoteData.index;
+  if (fromCat === cat) { dragNoteData = null; return; }
+  notes = loadNotes();
+  const fromArr = notes[fromCat] || [];
+  const toArr = notes[cat] || [];
+  const [moved] = fromArr.splice(fromIndex, 1);
+  toArr.push(moved);
+  dragNoteData = null;
+  activeNoteCategory = cat;
+  saveNotes();
+  renderNotes();
+  toast('Заметка перемещена');
+}
+
+function switchNoteCategory(cat) {
+  activeNoteCategory = cat;
+  renderNotes();
+}
+
+function addNoteCategory() {
+  const name = prompt('Название новой вкладки:');
+  if (!name || !name.trim()) return;
+  const cat = name.trim();
+  notes = loadNotes();
+  if (notes[cat]) { toast('Вкладка уже существует'); return; }
+  notes[cat] = [];
+  activeNoteCategory = cat;
+  saveNotes();
+  renderNotes();
+  toast('Вкладка «' + cat + '» создана');
+}
+
+function deleteNoteCategory() {
+  const cats = Object.keys(notes);
+  if (cats.length <= 1) { toast('Нельзя удалить последнюю вкладку'); return; }
+  if (!confirm('Удалить вкладку «' + activeNoteCategory + '» со всеми заметками?')) return;
+  notes = loadNotes();
+  delete notes[activeNoteCategory];
+  const remaining = Object.keys(notes);
+  activeNoteCategory = remaining[0];
+  saveNotes();
+  renderNotes();
+  toast('Вкладка удалена');
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
+function addNote() {
+  notes = loadNotes();
+  if (!notes[activeNoteCategory]) notes[activeNoteCategory] = [];
+  notes[activeNoteCategory].push('');
+  saveNotes();
+  renderNotes();
+  const container = document.getElementById('notesList');
+  var allTa = container.querySelectorAll('textarea');
+  var last = allTa[allTa.length - 1];
+  if (last) { last.focus(); last.style.borderColor = '#A9D3F2'; last.style.background = '#fff'; autoResize(last); }
+}
+
+function saveNote(el, i) {
+  notes = loadNotes();
+  if (!notes[activeNoteCategory]) notes[activeNoteCategory] = [];
+  notes[activeNoteCategory][i] = el.value;
+  saveNotes();
+  el.style.borderColor = 'transparent';
+  el.style.background = 'transparent';
+}
+
+function deleteNote(i) {
+  notes = loadNotes();
+  if (notes[activeNoteCategory]) {
+    notes[activeNoteCategory].splice(i, 1);
+  }
+  saveNotes();
+  renderNotes();
+}
+
+function openSprintModal(sprint) {
+  document.getElementById('sprintModalTitle').textContent = sprint ? 'Редактировать спринт' : 'Новый спринт';
+  document.getElementById('sprintId').value = sprint ? sprint.id : '';
+  document.getElementById('sprintName').value = sprint ? sprint.name : '';
+  document.getElementById('sprintStart').value = sprint ? sprint.startDate : '';
+  document.getElementById('sprintEnd').value = sprint ? sprint.endDate : '';
+  openModal('sprintModal');
+}
+
+function saveSprint() {
+  const id = document.getElementById('sprintId').value;
+  const name = document.getElementById('sprintName').value.trim();
+  const startDate = document.getElementById('sprintStart').value;
+  const endDate = document.getElementById('sprintEnd').value;
+  if (!name) { toast('Введите название спринта'); return; }
+  if (!startDate || !endDate) { toast('Укажите даты начала и окончания'); return; }
+  if (startDate > endDate) { toast('Дата начала не может быть позже даты окончания'); return; }
+
+  if (id) {
+    const idx = sprints.findIndex(s => s.id === id);
+    if (idx !== -1) Object.assign(sprints[idx], { name, startDate, endDate });
+  } else {
+    const newSprint = { id: genId(), name, startDate, endDate, status: 'pending' };
+    sprints.push(newSprint);
+  }
+  saveData('tracker_sprints', sprints);
+  closeModal('sprintModal');
+  renderSprints();
+  populateSprintSelect('taskSprint', '');
+  toast(id ? 'Спринт обновлён' : 'Спринт создан');
+}
+
+function deleteSprint(id) {
+  if (!confirm('Удалить спринт? Задачи останутся в бэклоге.')) return;
+  tasks.forEach(t => { if (t.sprintId === id) t.sprintId = ''; });
+  sprints = sprints.filter(s => s.id !== id);
+  saveData('tracker_sprints', sprints);
+  saveData('tracker_tasks', tasks);
+  if (activeSprintFilter === id) { activeSprintFilter = ''; document.getElementById('tasksHeader').textContent = 'Все задачи'; }
+  renderSprints();
+  populateSprintSelect('taskSprint', '');
+  renderTasks();
+  toast('Спринт удалён');
+}
+
+function startSprint(id) {
+  const s = sprints.find(x => x.id === id);
+  if (s) { s.status = 'active'; saveData('tracker_sprints', sprints); renderSprints(); toast(`Спринт «${s.name}» начат`); }
+}
+
+function completeSprint(id) {
+  const s = sprints.find(x => x.id === id);
+  if (!s) return;
+  const sprintTasks = tasks.filter(t => t.sprintId === id);
+  const notDone = sprintTasks.filter(t => t.status !== 'Готово');
+  if (notDone.length > 0) { toast(`Не все задачи в статусе «Готово» (${notDone.length} шт.)`); return; }
+  s.status = 'completed';
+  saveData('tracker_sprints', sprints);
+  renderSprints();
+  renderTasks();
+  toast(`Спринт «${s.name}» завершён и отправлен в архив`);
+}
+
+function renderSprints() {
+  sprints = loadData('tracker_sprints', []);
+  const tb = document.getElementById('tabBar');
+  if (tb) {
+    if (activeMyTasksFilter || activeSprintFilter) {
+      tb.style.display = 'flex';
+    } else {
+      tb.style.display = 'none';
+      activeDoneFilter = false;
+      document.getElementById('tabActive')?.classList.add('active');
+      document.getElementById('tabDone')?.classList.remove('active');
+    }
+  }
+  tasks = loadData('tracker_tasks', []);
+  myTasks = loadData('tracker_mytasks', []);
+  const container = document.getElementById('sprintList');
+
+  const backlogCount = tasks.filter(t => !t.sprintId && t.status !== 'Готово').length;
+  const myTasksCount = myTasks.filter(id => { const t = tasks.find(x => x.id === id); return t && t.status !== 'Готово'; }).length;
+
+  const today = new Date(); const y=today.getFullYear();const m=String(today.getMonth()+1).padStart(2,'0');const d=String(today.getDate()).padStart(2,'0');
+  const todayStr=y+'-'+m+'-'+d;
+  const tomorrow=new Date(today);tomorrow.setDate(tomorrow.getDate()+1);
+  const tY=tomorrow.getFullYear();const tM=String(tomorrow.getMonth()+1).padStart(2,'0');const tD=String(tomorrow.getDate()).padStart(2,'0');
+  const tomorrowStr=tY+'-'+tM+'-'+tD;
+  const urgentCount = tasks.filter(t => t.status !== 'Готово' && t.deadline && (t.deadline === todayStr || t.deadline === tomorrowStr)).length;
+
+  const urgentHtml = `<div class="urgent-header${urgentView ? ' selected' : ''}"
+    onclick="showUrgentView()">
+    🔥 Срочные <span class="backlog-count">${urgentCount}</span>
+  </div>`;
+
+  const backlogHtml = `<div class="backlog-header${activeSprintFilter === '_backlog' ? ' selected' : ''}"
+    data-backlog="true"
+    onclick="filterBySprint('_backlog')"
+    ondragover="handleDragOver(event)"
+    ondrop="handleDropOnBacklog(event)">
+    📋 Бэклог <span class="backlog-count">${backlogCount} задач</span>
+  </div>`;
+
+  const myTasksHtml = `<div class="my-tasks-header${activeMyTasksFilter ? ' selected' : ''}"
+    onclick="filterMyTasks()"
+    ondragover="handleDragOver(event)"
+    ondrop="handleDropOnMyTasks(event)">
+    👤 Мои таски <span class="backlog-count">${myTasksCount}</span>
+  </div>`;
+
+  const activeSprints = sprints.filter(s => s.status !== 'completed');
+  const archivedSprints = sprints.filter(s => s.status === 'completed');
+
+  let activeHtml = '';
+  if (activeSprints.length > 0) {
+    activeHtml = activeSprints.map(s => {
+      const statusCls = s.status === 'active' ? 'active' : 'pending';
+      const statusLabel = s.status === 'active' ? 'Активен' : 'Ожидает';
+      const taskCount = tasks.filter(t => t.sprintId === s.id).length;
+      const selected = activeSprintFilter === s.id ? ' selected' : '';
+      return `<div class="sprint-item ${statusCls}${selected}"
+        draggable="false"
+        data-sprint-id="${s.id}"
+        ondragover="handleDragOver(event)"
+        ondrop="handleDropOnSprint(event, '${s.id}')">
+        <div class="sprint-info" onclick="filterBySprint('${s.id}')">
+          <div class="sprint-name">${escHtml(s.name)} ${s.status === 'active' ? '<span class="active-sprint-indicator">●</span>' : ''}</div>
+          <div class="sprint-dates">${formatDate(s.startDate)} — ${formatDate(s.endDate)}</div>
+          <div class="sprint-task-count">${taskCount} задач</div>
+          <div class="sprint-status ${statusCls}">${statusLabel}</div>
+        </div>
+        <div class="sprint-actions">
+          ${s.status === 'pending' ? `<button class="btn btn-sm btn-success" onclick="event.stopPropagation(); startSprint('${s.id}')">▶ Начать</button>` : ''}
+          ${s.status === 'active' ? `<button class="btn btn-sm btn-warning" onclick="event.stopPropagation(); completeSprint('${s.id}')">✓ Завершить</button>` : ''}
+          <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation(); openSprintModal(sprints.find(x=>x.id==='${s.id}'))">✎</button>
+          <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); deleteSprint('${s.id}')">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  let archivedHtml = '';
+  if (archivedSprints.length > 0) {
+    archivedHtml = `<div style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;font-weight:600;color:#BCC3C7;cursor:pointer" onclick="toggleArchive()" id="archiveToggle">📦 Архив <span id="archiveArrow">▶</span></div>
+    <div id="archiveList" style="display:none;flex-direction:column;gap:6px">` +
+    archivedSprints.map(s => {
+      const taskCount = tasks.filter(t => t.sprintId === s.id).length;
+      const selected = activeSprintFilter === s.id ? ' selected' : '';
+      return `<div class="sprint-item completed${selected}"
+        draggable="false"
+        data-sprint-id="${s.id}"
+        onclick="filterBySprint('${s.id}')">
+        <div class="sprint-info">
+          <div class="sprint-name">${escHtml(s.name)}</div>
+          <div class="sprint-dates">${formatDate(s.startDate)} — ${formatDate(s.endDate)}</div>
+          <div class="sprint-task-count">${taskCount} задач</div>
+          <div class="sprint-status completed">Завершён</div>
+        </div>
+        <div class="sprint-actions">
+          <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation(); openSprintModal(sprints.find(x=>x.id==='${s.id}'))">✎</button>
+          <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); deleteSprint('${s.id}')">✕</button>
+        </div>
+      </div>`;
+    }).join('') + '</div>';
+  }
+
+  container.innerHTML = urgentHtml + myTasksHtml + backlogHtml + activeHtml +
+    (activeSprints.length === 0 && archivedSprints.length === 0 ? '<div class="empty-state" style="padding:20px">Нет спринтов</div>' : '') + archivedHtml;
+  updateMassSprintSelect();
+}
+
+function toggleArchive() {
+  const list = document.getElementById('archiveList');
+  const arrow = document.getElementById('archiveArrow');
+  if (!list) return;
+  const shown = list.style.display !== 'none';
+  list.style.display = shown ? 'none' : 'flex';
+  if (arrow) arrow.textContent = shown ? '▶' : '▼';
+}
+
+function saveDataToFile() {
+  const data = {
+    tasks: loadData('tracker_tasks', []),
+    sprints: loadData('tracker_sprints', []),
+    myTasks: loadData('tracker_mytasks', []),
+    notes: loadData('tracker_notes', []),
+    savedAt: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'siberia-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('Данные сохранены в файл');
+}
+
+function loadDataFromFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (data.tasks) { localStorage.setItem('tracker_tasks', JSON.stringify(data.tasks)); }
+      if (data.sprints) { localStorage.setItem('tracker_sprints', JSON.stringify(data.sprints)); }
+      if (data.myTasks) { localStorage.setItem('tracker_mytasks', JSON.stringify(data.myTasks)); }
+      if (data.notes) { localStorage.setItem('tracker_notes', JSON.stringify(data.notes)); }
+      toast('Данные загружены из файла');
+      location.reload();
+    } catch(err) {
+      toast('Ошибка при загрузке файла');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function toggleSettings() {
+  const card = document.getElementById('settingsCard');
+  if (card) card.style.display = card.style.display === 'none' ? 'block' : 'none';
+  if (card && card.style.display !== 'none') renderBackupList();
+}
+
+function renderBackupList() {
+  const el = document.getElementById('backupList');
+  if (!el) return;
+  const backups = JSON.parse(localStorage.getItem('siberia_backups') || '[]');
+  if (backups.length === 0) { el.innerHTML = '<div style="font-size:11px;color:#BCC3C7;padding:4px 0">Нет бэкапов</div>'; return; }
+  el.innerHTML = backups.slice(0, 10).map((b, i) =>
+    `<div style="display:flex;align-items:center;gap:4px;padding:4px 0;font-size:11px;border-bottom:1px solid #eee">
+      <span style="flex:1">${b.time}</span>
+      <button class="btn btn-sm btn-secondary" style="padding:2px 6px;font-size:10px" onclick="restoreBackup(${i})">Восст.</button>
+    </div>`
+  ).join('');
+}
+
+function showBackupList() {
+  const el = document.getElementById('backupList');
+  if (el) { el.style.display = el.style.display === 'none' ? 'block' : 'none'; renderBackupList(); }
+}
+
+function restoreBackup(idx) {
+  if (!confirm('Восстановить данные из бэкапа от ' + JSON.parse(localStorage.getItem('siberia_backups'))[idx].time + '?')) return;
+  const backups = JSON.parse(localStorage.getItem('siberia_backups') || '[]');
+  const snap = backups[idx];
+  if (!snap) return;
+  localStorage.setItem('tracker_tasks', JSON.stringify(snap.tasks));
+  localStorage.setItem('tracker_sprints', JSON.stringify(snap.sprints));
+  localStorage.setItem('tracker_mytasks', JSON.stringify(snap.myTasks));
+  localStorage.setItem('tracker_notes', JSON.stringify(snap.notes));
+  toast('Бэкап восстановлен');
+  location.reload();
+}
+
+function toggleAllCheckboxes(el) {
+  document.querySelectorAll('.task-checkbox').forEach(c => c.checked = el.checked);
+  updateMassActions();
+}
+
+function updateMassActions() {
+  const checked = document.querySelectorAll('.task-checkbox:checked');
+  const bar = document.getElementById('massActions');
+  const count = document.getElementById('selectedCount');
+  if (checked.length > 0) {
+    bar.style.display = 'flex';
+    count.textContent = 'Выбрано: ' + checked.length;
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+function clearSelection() {
+  document.querySelectorAll('.task-checkbox').forEach(c => c.checked = false);
+  if (document.getElementById('selectAllTasks')) document.getElementById('selectAllTasks').checked = false;
+  updateMassActions();
+}
+
+function moveSelectedTasks() {
+  const sprintId = document.getElementById('massSprintSelect').value;
+  if (!sprintId) { toast('Выберите спринт'); return; }
+  const selected = [];
+  document.querySelectorAll('.task-checkbox:checked').forEach(c => selected.push(c.dataset.taskId));
+  if (selected.length === 0) { toast('Нет выбранных задач'); return; }
+  const tb = document.getElementById('tabBar');
+  if (tb) {
+    if (activeMyTasksFilter || activeSprintFilter) {
+      tb.style.display = 'flex';
+    } else {
+      tb.style.display = 'none';
+      activeDoneFilter = false;
+      document.getElementById('tabActive')?.classList.add('active');
+      document.getElementById('tabDone')?.classList.remove('active');
+    }
+  }
+  tasks = loadData('tracker_tasks', []);
+  let moved = 0;
+  selected.forEach(id => {
+    const t = tasks.find(x => x.id === id);
+    if (t) { t.sprintId = sprintId; moved++; }
+  });
+  saveData('tracker_tasks', tasks);
+  clearSelection();
+  renderSprints();
+  renderTasks();
+  toast('Перенесено задач: ' + moved);
+}
+
+function updateMassSprintSelect() {
+  const sel = document.getElementById('massSprintSelect');
+  const available = (sprints || []).filter(s => s.status !== 'completed');
+  sel.innerHTML = '<option value="">Перенести в спринт...</option>' + available.map(s => '<option value="' + s.id + '">' + escHtml(s.name) + '</option>').join('') + '<option value="">Бэклог</option>';
+}
+
+function switchTab(tab) {
+  if (tab === 'done') {
+    activeDoneFilter = true;
+    document.getElementById('tabActive').classList.remove('active');
+    document.getElementById('tabDone').classList.add('active');
+    const h = document.getElementById('tasksHeader');
+    h.textContent = (h.dataset.original || '') + ' / Закрытые';
+  } else {
+    activeDoneFilter = false;
+    document.getElementById('tabDone').classList.remove('active');
+    document.getElementById('tabActive').classList.add('active');
+    const h = document.getElementById('tasksHeader');
+    h.textContent = h.dataset.original || 'Задачи';
+  }
+  renderTasks();
+}
+
+function init() {
+  populateSelect('filterStatus', STATUSES, '');
+  populateSelect('filterPriority', PRIORITIES, '');
+  populateSelect('filterType', TYPES, '');
+  populateSprintSelect('taskSprint', '');
+  renderSprints();
+  renderTasks();
+  renderNotes();
+}
+init();
+</script>
+</body>
+</html>

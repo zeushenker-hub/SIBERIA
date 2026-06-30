@@ -1,0 +1,13 @@
+{
+  "name": "SIBERIA",
+  "short_name": "SIBERIA",
+  "description": "Трекер задач",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#FFFFFF",
+  "icons": [
+    { "src": "turkish-angora_141876.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "turkish-angora_141876.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
