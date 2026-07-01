@@ -338,12 +338,16 @@
   <div style="text-align:center;max-width:360px;padding:40px">
     <img src="turkish-angora_141876.png" style="width:80px;border-radius:50%;margin-bottom:16px" />
     <h1 style="font-size:24px;font-weight:700;margin-bottom:24px;color:#333">SIBERIA</h1>
-    <div id="loginForm">
+    <div style="position:absolute;left:-9999px" aria-hidden="true">
+      <input type="text" name="fakeuser" tabindex="-1" />
+      <input type="password" name="fakepass" tabindex="-1" />
+    </div>
+    <div id="loginForm" autocomplete="off">
       <div style="margin-bottom:12px">
-        <input id="loginEmail" type="email" placeholder="Email" style="width:100%;padding:10px 14px;border:1px solid #CDD6D8;border-radius:8px;font-size:14px;font-family:inherit" />
+        <input id="loginEmail" type="email" placeholder="Email" style="width:100%;padding:10px 14px;border:1px solid #CDD6D8;border-radius:8px;font-size:14px;font-family:inherit" autocomplete="off" />
       </div>
       <div style="margin-bottom:12px">
-        <input id="loginPassword" type="password" placeholder="Пароль" style="width:100%;padding:10px 14px;border:1px solid #CDD6D8;border-radius:8px;font-size:14px;font-family:inherit" />
+        <input id="loginPassword" type="password" placeholder="Пароль" style="width:100%;padding:10px 14px;border:1px solid #CDD6D8;border-radius:8px;font-size:14px;font-family:inherit" autocomplete="new-password" />
       </div>
       <button onclick="login()" style="width:100%;padding:10px;background:#A9D3F2;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px">Войти</button>
       <button onclick="register()" style="width:100%;padding:10px;background:transparent;border:1px solid #CDD6D8;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Регистрация</button>
