@@ -497,6 +497,18 @@ let urgentView = true;
 
 let currentUser = null;
 
+const firebaseConfig = {
+  apiKey: "AIzaSyBRYeMKAJxLQf5B6ZzkCggTlb1ZUf_o75o",
+  authDomain: "ihome-app777.firebaseapp.com",
+  projectId: "ihome-app777",
+  storageBucket: "ihome-app777.firebasestorage.app",
+  messagingSenderId: "259416185087",
+  appId: "1:259416185087:web:05c4afe2881aec53e494ca"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const FB_COLL = db.collection('siberia_tracker');
+
 function showLoginError(msg) {
   const el = document.getElementById('loginError');
   el.textContent = msg; el.style.display = 'block';
@@ -547,18 +559,6 @@ firebase.auth().onAuthStateChanged(function(user) {
     document.getElementById('loginSpinner').style.display = 'none';
   }
 });
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBRYeMKAJxLQf5B6ZzkCggTlb1ZUf_o75o",
-  authDomain: "ihome-app777.firebaseapp.com",
-  projectId: "ihome-app777",
-  storageBucket: "ihome-app777.firebasestorage.app",
-  messagingSenderId: "259416185087",
-  appId: "1:259416185087:web:05c4afe2881aec53e494ca"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const FB_COLL = db.collection('siberia_tracker');
 
 let fbLoaded = false;
 let saveTimeout = null;
