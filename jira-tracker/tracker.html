@@ -8,6 +8,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -252,7 +255,7 @@
     </div>
   </div>
 
-  <div class="layout">
+  <div class="layout" id="appContent">
     <div>
       <div class="card">
         <div class="card-header"><h2>Навигация</h2></div>
@@ -327,6 +330,26 @@
         <div id="taskEmpty" class="empty-state" style="display:none">Нет задач</div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- Login Screen -->
+<div id="loginScreen" style="position:fixed;inset:0;background:#fff;display:flex;align-items:center;justify-content:center;z-index:9999">
+  <div style="text-align:center;max-width:360px;padding:40px">
+    <img src="turkish-angora_141876.png" style="width:80px;border-radius:50%;margin-bottom:16px" />
+    <h1 style="font-size:24px;font-weight:700;margin-bottom:24px;color:#333">SIBERIA</h1>
+    <div id="loginForm">
+      <div style="margin-bottom:12px">
+        <input id="loginEmail" type="email" placeholder="Email" style="width:100%;padding:10px 14px;border:1px solid #CDD6D8;border-radius:8px;font-size:14px;font-family:inherit" />
+      </div>
+      <div style="margin-bottom:12px">
+        <input id="loginPassword" type="password" placeholder="Пароль" style="width:100%;padding:10px 14px;border:1px solid #CDD6D8;border-radius:8px;font-size:14px;font-family:inherit" />
+      </div>
+      <button onclick="login()" style="width:100%;padding:10px;background:#A9D3F2;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px">Войти</button>
+      <button onclick="register()" style="width:100%;padding:10px;background:transparent;border:1px solid #CDD6D8;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Регистрация</button>
+      <div id="loginError" style="color:#D69CA5;font-size:13px;margin-top:12px;display:none"></div>
+    </div>
+    <div id="loginSpinner" style="display:none;margin-top:16px;color:#666">Загрузка...</div>
   </div>
 </div>
 
@@ -472,10 +495,123 @@ let activeSprintFilter = '';
 let activeMyTasksFilter = false;
 let urgentView = true;
 
+let currentUser = null;
+
+function showLoginError(msg) {
+  const el = document.getElementById('loginError');
+  el.textContent = msg; el.style.display = 'block';
+}
+function hideLoginError() {
+  document.getElementById('loginError').style.display = 'none';
+}
+
+async function login() {
+  hideLoginError();
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPassword').value;
+  if (!email || !pass) { showLoginError('Введите email и пароль'); return; }
+  document.getElementById('loginSpinner').style.display = 'block';
+  try {
+    await firebase.auth().signInWithEmailAndPassword(email, pass);
+  } catch(e) {
+    document.getElementById('loginSpinner').style.display = 'none';
+    showLoginError('Ошибка входа: ' + e.message);
+  }
+}
+
+async function register() {
+  hideLoginError();
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPassword').value;
+  if (!email || !pass) { showLoginError('Введите email и пароль'); return; }
+  if (pass.length < 6) { showLoginError('Пароль должен быть минимум 6 символов'); return; }
+  document.getElementById('loginSpinner').style.display = 'block';
+  try {
+    await firebase.auth().createUserWithEmailAndPassword(email, pass);
+  } catch(e) {
+    document.getElementById('loginSpinner').style.display = 'none';
+    showLoginError('Ошибка регистрации: ' + e.message);
+  }
+}
+
+firebase.auth().onAuthStateChanged(function(user) {
+  const loginScreen = document.getElementById('loginScreen');
+  if (user) {
+    currentUser = user;
+    loginScreen.style.display = 'none';
+    if (!fbLoaded) init();
+    else { document.getElementById('app').style.display = ''; }
+  } else {
+    currentUser = null;
+    loginScreen.style.display = 'flex';
+    document.getElementById('loginSpinner').style.display = 'none';
+  }
+});
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBRYeMKAJxLQf5B6ZzkCggTlb1ZUf_o75o",
+  authDomain: "ihome-app777.firebaseapp.com",
+  projectId: "ihome-app777",
+  storageBucket: "ihome-app777.firebasestorage.app",
+  messagingSenderId: "259416185087",
+  appId: "1:259416185087:web:05c4afe2881aec53e494ca"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const FB_COLL = db.collection('siberia_tracker');
+
+let fbLoaded = false;
+let saveTimeout = null;
+
 function loadData(key, def) {
   try { return JSON.parse(localStorage.getItem(key)) ?? def; } catch { return def; }
 }
-function saveData(key, data) { localStorage.setItem(key, JSON.stringify(data)); autoBackup(); }
+function saveData(key, data) {
+  localStorage.setItem(key, JSON.stringify(data));
+  autoBackup();
+  syncToFirebase();
+}
+
+async function loadFromFirebase() {
+  try {
+    const snap = await FB_COLL.doc('tasks').get();
+    if (snap.exists && snap.data().items) {
+      localStorage.setItem('tracker_tasks', JSON.stringify(snap.data().items));
+    }
+    const snap2 = await FB_COLL.doc('sprints').get();
+    if (snap2.exists && snap2.data().items) {
+      localStorage.setItem('tracker_sprints', JSON.stringify(snap2.data().items));
+    }
+    const snap3 = await FB_COLL.doc('mytasks').get();
+    if (snap3.exists && snap3.data().items) {
+      localStorage.setItem('tracker_mytasks', JSON.stringify(snap3.data().items));
+    }
+    const snap4 = await FB_COLL.doc('notes').get();
+    if (snap4.exists && snap4.data().items) {
+      localStorage.setItem('tracker_notes', JSON.stringify(snap4.data().items));
+    }
+    fbLoaded = true;
+    return true;
+  } catch(e) {
+    console.warn('Firebase load failed, using localStorage:', e);
+    fbLoaded = true;
+    return false;
+  }
+}
+
+function syncToFirebase() {
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(async () => {
+    try {
+      await FB_COLL.doc('tasks').set({ items: loadData('tracker_tasks', []) });
+      await FB_COLL.doc('sprints').set({ items: loadData('tracker_sprints', []) });
+      await FB_COLL.doc('mytasks').set({ items: loadData('tracker_mytasks', []) });
+      await FB_COLL.doc('notes').set({ items: loadData('tracker_notes', {}) });
+    } catch(e) {
+      console.warn('Firebase sync failed:', e);
+    }
+  }, 500);
+}
 
 function playBackupSound() {
   try {
@@ -1327,6 +1463,7 @@ function loadDataFromFile(e) {
       if (data.sprints) { localStorage.setItem('tracker_sprints', JSON.stringify(data.sprints)); }
       if (data.myTasks) { localStorage.setItem('tracker_mytasks', JSON.stringify(data.myTasks)); }
       if (data.notes) { localStorage.setItem('tracker_notes', JSON.stringify(data.notes)); }
+      syncToFirebase();
       toast('Данные загружены из файла');
       location.reload();
     } catch(err) {
@@ -1450,7 +1587,9 @@ function switchTab(tab) {
   renderTasks();
 }
 
-function init() {
+async function init() {
+  if (!currentUser) return;
+  await loadFromFirebase();
   populateSelect('filterStatus', STATUSES, '');
   populateSelect('filterPriority', PRIORITIES, '');
   populateSelect('filterType', TYPES, '');
@@ -1458,6 +1597,7 @@ function init() {
   renderSprints();
   renderTasks();
   renderNotes();
+  toast('Данные загружены из облака');
 }
 init();
 </script>
