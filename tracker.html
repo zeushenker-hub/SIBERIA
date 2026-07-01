@@ -8,21 +8,26 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Roboto', -apple-system, sans-serif;
       background: #FFFFFF; color: #333;
-      min-height: 100vh; padding: 20px;
+      min-height: 100vh; padding: 20px; padding-top: 80px;
       font-size: 14px;
       font-weight: 400;
     }
     .app { max-width: 1400px; margin: 0 auto; }
     .header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
       display: flex; align-items: center; justify-content: space-between;
-      background: #FFFFFF; border-radius: 8px; padding: 16px 24px;
-      box-shadow: 0 1px 2px rgba(0,0,0,.08); margin-bottom: 20px;
+      background: #FFFFFF; border-radius: 0; padding: 12px 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.1); margin-bottom: 20px;
     }
+    .header-inner { max-width: 1400px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; width: 100%; }
     .header-left { display: flex; align-items: center; gap: 12px; }
     .header-logo { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
     .header-left h1 { font-size: 20px; font-weight: 700; color: #BCC3C7; font-family: 'Roboto', sans-serif; }
@@ -136,6 +141,10 @@
       font-size: 12px; font-family: inherit; background: #FFFFFF;
     }
     .filters .filter-label { font-size: 11px; font-weight: 600; color: #666; }
+    .tab-bar { display: flex; gap: 0; margin-bottom: 4px; border-bottom: 1px solid #CDD6D8; }
+    .tab-bar button { padding: 6px 16px; border: none; background: transparent; font-size: 13px; font-weight: 600; color: #666; cursor: pointer; border-bottom: 2px solid transparent; font-family: 'Roboto', sans-serif; }
+    .tab-bar button.active { color: #333; border-bottom-color: #A9D3F2; }
+    .tab-bar button:hover { color: #333; }
     .task-table { width: 100%; border-collapse: collapse; font-size: 13px; }
     .task-table th {
       text-align: left; padding: 8px 10px; font-size: 11px; font-weight: 600;
@@ -221,32 +230,47 @@
     .toast.show { opacity: 1; }
     .active-sprint-indicator { font-size: 10px; color: #94C8D4; font-weight: 700; }
     .separator { height: 1px; background: #CDD6D8; margin: 8px 0; }
+    .note-dragging { opacity: .4; }
+    .note-drag-over { border-color: #A9D3F2 !important; background: #f0f8ff !important; }
+    .cat-drag-over { background: #A9D3F2 !important; border-color: #9ABFDC !important; }
+    .note-item { background:#f8f8f8; border-radius:6px; padding:8px; display:flex; gap:6px; align-items:flex-start; cursor: grab; transition: box-shadow .15s, border .15s; border: 2px solid transparent; }
+    .note-item:active { cursor: grabbing; }
+    .note-item.dragging { opacity: .4; }
+    .note-item.drag-over { border-color: #A9D3F2; background: #f0f8ff; }
   </style>
 </head>
 <body>
 <div class="app" id="app">
   <div class="header">
-    <div class="header-left">
-      <img class="header-logo" src="turkish-angora_141876.png" alt="SIBERIA" />
-      <h1>SIBERIA</h1>
-    </div>
-    <div class="header-actions">
-      <button class="btn btn-primary" onclick="openTaskModal()">+ Новая задача</button>
-      <button class="btn btn-secondary" onclick="openSprintModal()">+ Новый спринт</button>
-      <button class="btn btn-icon" onclick="toggleSettings()" title="Настройки">⚙️</button>
+    <div class="header-inner">
+      <div class="header-left">
+        <img class="header-logo" src="turkish-angora_141876.png" alt="SIBERIA" />
+        <h1>SIBERIA</h1>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-primary" onclick="openTaskModal()">+ Новая задача</button>
+        <button class="btn btn-secondary" onclick="openSprintModal()">+ Новый спринт</button>
+        <button class="btn btn-icon" onclick="toggleSettings()" title="Настройки">⚙️</button>
+      </div>
     </div>
   </div>
 
-  <div class="layout">
+  <div class="layout" id="appContent">
     <div>
       <div class="card">
         <div class="card-header"><h2>Навигация</h2></div>
         <div class="sprint-list" id="sprintList"></div>
       </div>
       <div class="card" style="margin-top:16px">
-        <div class="card-header"><h2>📝 Заметки</h2></div>
-        <div id="notesList" style="display:flex;flex-direction:column;gap:8px"></div>
-        <button class="btn btn-sm btn-primary" onclick="addNote()" style="margin-top:8px;width:100%">+ Заметка</button>
+        <div class="card-header">
+          <h2>📝 Заметки</h2>
+          <div style="display:flex;gap:4px">
+            <button class="btn btn-sm btn-primary" onclick="addNote()">+ Заметка</button>
+            <button class="btn btn-sm btn-secondary" onclick="addNoteCategory()" title="Новая вкладка">+ 📂</button>
+          </div>
+        </div>
+        <div id="noteCategoriesBar" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;align-items:center"></div>
+        <div id="notesList" style="display:flex;flex-direction:column;gap:8px;min-height:40px"></div>
       </div>
       <div class="card" style="margin-top:16px;display:none" id="settingsCard">
         <div class="card-header"><h2>⚙️ Настройки</h2></div>
@@ -265,6 +289,10 @@
           <h2 id="tasksHeader">Срочные задачи</h2>
           <button class="btn btn-sm btn-secondary" id="viewToggle" onclick="toggleView()">Все задачи</button>
         </div>
+        <div class="tab-bar" id="tabBar" style="display:none">
+          <button class="active" id="tabActive" onclick="switchTab('active')">Активные</button>
+          <button id="tabDone" onclick="switchTab('done')">Закрытые</button>
+        </div>
         <div class="filters">
           <span class="filter-label">Статус</span>
           <select id="filterStatus" onchange="renderTasks()"><option value="">Все</option></select>
@@ -276,9 +304,18 @@
           <input id="filterSearch" placeholder="ID или название..." oninput="renderTasks()" />
           <button class="btn btn-sm btn-secondary" onclick="resetFilters()">Сброс</button>
         </div>
+        <div id="massActions" style="display:none;padding:8px 12px;background:#FAFAFA;border-radius:6px;margin-bottom:8px;align-items:center;gap:8px">
+          <span style="font-size:12px;color:#666" id="selectedCount">Выбрано: 0</span>
+          <select id="massSprintSelect" style="font-size:12px;padding:4px 8px;border:1px solid #CDD6D8;border-radius:4px">
+            <option value="">Перенести в спринт...</option>
+          </select>
+          <button class="btn btn-sm btn-primary" onclick="moveSelectedTasks()">Перенести</button>
+          <button class="btn btn-sm btn-secondary" onclick="clearSelection()">Снять выделение</button>
+        </div>
         <table class="task-table">
           <thead>
             <tr>
+              <th style="width:24px"><input type="checkbox" id="selectAllTasks" onchange="toggleAllCheckboxes(this)" /></th>
               <th onclick="setSort('id')">ID <span class="sort-arrow" id="sortArrowId"></span></th>
               <th onclick="setSort('title')">Название <span class="sort-arrow" id="sortArrowTitle"></span></th>
               <th onclick="setSort('status')">Статус <span class="sort-arrow" id="sortArrowStatus"></span></th>
@@ -293,6 +330,26 @@
         <div id="taskEmpty" class="empty-state" style="display:none">Нет задач</div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- Login Screen -->
+<div id="loginScreen" style="position:fixed;inset:0;background:#fff;display:flex;align-items:center;justify-content:center;z-index:9999">
+  <div style="text-align:center;max-width:360px;padding:40px">
+    <img src="turkish-angora_141876.png" style="width:80px;border-radius:50%;margin-bottom:16px" />
+    <h1 style="font-size:24px;font-weight:700;margin-bottom:24px;color:#333">SIBERIA</h1>
+    <div id="loginForm">
+      <div style="margin-bottom:12px">
+        <input id="loginEmail" type="email" placeholder="Email" style="width:100%;padding:10px 14px;border:1px solid #CDD6D8;border-radius:8px;font-size:14px;font-family:inherit" />
+      </div>
+      <div style="margin-bottom:12px">
+        <input id="loginPassword" type="password" placeholder="Пароль" style="width:100%;padding:10px 14px;border:1px solid #CDD6D8;border-radius:8px;font-size:14px;font-family:inherit" />
+      </div>
+      <button onclick="login()" style="width:100%;padding:10px;background:#A9D3F2;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px">Войти</button>
+      <button onclick="register()" style="width:100%;padding:10px;background:transparent;border:1px solid #CDD6D8;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Регистрация</button>
+      <div id="loginError" style="color:#D69CA5;font-size:13px;margin-top:12px;display:none"></div>
+    </div>
+    <div id="loginSpinner" style="display:none;margin-top:16px;color:#666">Загрузка...</div>
   </div>
 </div>
 
@@ -438,10 +495,123 @@ let activeSprintFilter = '';
 let activeMyTasksFilter = false;
 let urgentView = true;
 
+let currentUser = null;
+
+function showLoginError(msg) {
+  const el = document.getElementById('loginError');
+  el.textContent = msg; el.style.display = 'block';
+}
+function hideLoginError() {
+  document.getElementById('loginError').style.display = 'none';
+}
+
+async function login() {
+  hideLoginError();
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPassword').value;
+  if (!email || !pass) { showLoginError('Введите email и пароль'); return; }
+  document.getElementById('loginSpinner').style.display = 'block';
+  try {
+    await firebase.auth().signInWithEmailAndPassword(email, pass);
+  } catch(e) {
+    document.getElementById('loginSpinner').style.display = 'none';
+    showLoginError('Ошибка входа: ' + e.message);
+  }
+}
+
+async function register() {
+  hideLoginError();
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPassword').value;
+  if (!email || !pass) { showLoginError('Введите email и пароль'); return; }
+  if (pass.length < 6) { showLoginError('Пароль должен быть минимум 6 символов'); return; }
+  document.getElementById('loginSpinner').style.display = 'block';
+  try {
+    await firebase.auth().createUserWithEmailAndPassword(email, pass);
+  } catch(e) {
+    document.getElementById('loginSpinner').style.display = 'none';
+    showLoginError('Ошибка регистрации: ' + e.message);
+  }
+}
+
+firebase.auth().onAuthStateChanged(function(user) {
+  const loginScreen = document.getElementById('loginScreen');
+  if (user) {
+    currentUser = user;
+    loginScreen.style.display = 'none';
+    if (!fbLoaded) init();
+    else { document.getElementById('app').style.display = ''; }
+  } else {
+    currentUser = null;
+    loginScreen.style.display = 'flex';
+    document.getElementById('loginSpinner').style.display = 'none';
+  }
+});
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBRYeMKAJxLQf5B6ZzkCggTlb1ZUf_o75o",
+  authDomain: "ihome-app777.firebaseapp.com",
+  projectId: "ihome-app777",
+  storageBucket: "ihome-app777.firebasestorage.app",
+  messagingSenderId: "259416185087",
+  appId: "1:259416185087:web:05c4afe2881aec53e494ca"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const FB_COLL = db.collection('siberia_tracker');
+
+let fbLoaded = false;
+let saveTimeout = null;
+
 function loadData(key, def) {
   try { return JSON.parse(localStorage.getItem(key)) ?? def; } catch { return def; }
 }
-function saveData(key, data) { localStorage.setItem(key, JSON.stringify(data)); autoBackup(); }
+function saveData(key, data) {
+  localStorage.setItem(key, JSON.stringify(data));
+  autoBackup();
+  syncToFirebase();
+}
+
+async function loadFromFirebase() {
+  try {
+    const snap = await FB_COLL.doc('tasks').get();
+    if (snap.exists && snap.data().items) {
+      localStorage.setItem('tracker_tasks', JSON.stringify(snap.data().items));
+    }
+    const snap2 = await FB_COLL.doc('sprints').get();
+    if (snap2.exists && snap2.data().items) {
+      localStorage.setItem('tracker_sprints', JSON.stringify(snap2.data().items));
+    }
+    const snap3 = await FB_COLL.doc('mytasks').get();
+    if (snap3.exists && snap3.data().items) {
+      localStorage.setItem('tracker_mytasks', JSON.stringify(snap3.data().items));
+    }
+    const snap4 = await FB_COLL.doc('notes').get();
+    if (snap4.exists && snap4.data().items) {
+      localStorage.setItem('tracker_notes', JSON.stringify(snap4.data().items));
+    }
+    fbLoaded = true;
+    return true;
+  } catch(e) {
+    console.warn('Firebase load failed, using localStorage:', e);
+    fbLoaded = true;
+    return false;
+  }
+}
+
+function syncToFirebase() {
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(async () => {
+    try {
+      await FB_COLL.doc('tasks').set({ items: loadData('tracker_tasks', []) });
+      await FB_COLL.doc('sprints').set({ items: loadData('tracker_sprints', []) });
+      await FB_COLL.doc('mytasks').set({ items: loadData('tracker_mytasks', []) });
+      await FB_COLL.doc('notes').set({ items: loadData('tracker_notes', {}) });
+    } catch(e) {
+      console.warn('Firebase sync failed:', e);
+    }
+  }, 500);
+}
 
 function playBackupSound() {
   try {
@@ -484,7 +654,24 @@ function autoBackup() {
 let tasks = loadData('tracker_tasks', []);
 let sprints = loadData('tracker_sprints', []);
 let myTasks = loadData('tracker_mytasks', []);
-let notes = loadData('tracker_notes', []);
+
+let notes = loadNotes();
+let activeNoteCategory = 'Общие';
+
+function loadNotes() {
+  let raw = loadData('tracker_notes', null);
+  if (raw === null) return { 'Общие': [] };
+  if (Array.isArray(raw)) return { 'Общие': raw };
+  if (typeof raw === 'object' && raw !== null) {
+    if (!raw['Общие']) raw['Общие'] = [];
+    return raw;
+  }
+  return { 'Общие': [] };
+}
+function saveNotes() {
+  localStorage.setItem('tracker_notes', JSON.stringify(notes));
+  autoBackup();
+}
 
 (function migrateTaskIds() {
   let needsSave = false;
@@ -602,7 +789,9 @@ function filterMyTasks() {
   document.querySelectorAll('.sprint-item, .backlog-header, .my-tasks-header, .urgent-header').forEach(el => el.classList.remove('selected'));
   if (activeMyTasksFilter) {
     document.querySelector('.my-tasks-header')?.classList.add('selected');
-    document.getElementById('tasksHeader').textContent = 'Мои таски';
+    const hh = document.getElementById('tasksHeader');
+    hh.dataset.original = 'Мои таски';
+    hh.textContent = 'Мои таски';
   } else {
     document.getElementById('tasksHeader').textContent = 'Все задачи';
   }
@@ -756,6 +945,17 @@ function sortCompare(a, b) {
 }
 
 function renderTasks() {
+  const tb = document.getElementById('tabBar');
+  if (tb) {
+    if (activeMyTasksFilter || activeSprintFilter) {
+      tb.style.display = 'flex';
+    } else {
+      tb.style.display = 'none';
+      activeDoneFilter = false;
+      document.getElementById('tabActive')?.classList.add('active');
+      document.getElementById('tabDone')?.classList.remove('active');
+    }
+  }
   tasks = loadData('tracker_tasks', []);
   const fStatus = document.getElementById('filterStatus').value;
   const fPriority = document.getElementById('filterPriority').value;
@@ -770,6 +970,8 @@ function renderTasks() {
 
   let filtered = tasks.filter(t => {
     if (activeMyTasksFilter && !myTasks.includes(t.id)) return false;
+    if ((activeMyTasksFilter || activeSprintFilter) && !activeDoneFilter && t.status === 'Готово') return false;
+    if (activeDoneFilter && t.status !== 'Готово') return false;
     if (activeSprintFilter === '_backlog' && t.sprintId) return false;
     if (activeSprintFilter && activeSprintFilter !== '_backlog' && t.sprintId !== activeSprintFilter) return false;
     if (fStatus && t.status !== fStatus) return false;
@@ -798,6 +1000,7 @@ function renderTasks() {
       return `<tr class="${urg?'urgent':''}" draggable="true" data-task-id="${t.id}"
       ondragstart="handleDragStart(event)" ondragend="handleDragEnd(event)"
       onclick="openDetail('${t.id}')">
+      <td><input type="checkbox" class="task-checkbox" data-task-id="${t.id}" onclick="event.stopPropagation()" /></td>
       <td><span class="task-id">${t.id}</span></td>
       <td><span class="task-title">${escHtml(t.title)}</span></td>
       <td><select class="inline-status" data-task-id="${t.id}" onclick="event.stopPropagation()" onchange="inlineChangeStatus(this, '${t.id}')">${STATUSES.map(s => `<option value="${s}"${s===t.status?' selected':''}>${s}</option>`).join('')}</select></td>
@@ -870,37 +1073,185 @@ function hideCommentTooltip() {
 }
 
 function renderNotes() {
-  notes = loadData('tracker_notes', []);
+  notes = loadNotes();
+  renderNoteCategories();
   const container = document.getElementById('notesList');
-  if (notes.length === 0) { container.innerHTML = '<div class="empty-state" style="padding:16px;font-size:12px">Нет заметок</div>'; return; }
-  container.innerHTML = notes.map((n, i) => `<div style="background:#f8f8f8;border-radius:6px;padding:8px;display:flex;gap:6px;align-items:flex-start">
-    <textarea style="flex:1;font-size:12px;font-family:inherit;border:1px solid transparent;border-radius:4px;padding:4px 6px;background:transparent;resize:none;min-height:32px;line-height:1.4" onfocus="this.style.borderColor='#A9D3F2';this.style.background='#fff'" onblur="saveNote(this,${i})">${escHtml(n)}</textarea>
-    <button class="btn btn-sm btn-danger" style="flex-shrink:0;padding:2px 6px;font-size:10px" onclick="deleteNote(${i})">✕</button>
-  </div>`).join('');
+  const catNotes = notes[activeNoteCategory] || [];
+  if (catNotes.length === 0) {
+    container.innerHTML = '<div class="empty-state" style="padding:16px;font-size:12px">Нет заметок</div>';
+    return;
+  }
+  container.innerHTML = catNotes.map((n, i) =>
+    `<div class="note-item" draggable="true"
+      data-note-index="${i}" data-note-category="${escHtml(activeNoteCategory)}"
+      ondragstart="noteDragStart(event, ${i})" ondragend="noteDragEnd(event)"
+      ondragover="noteDragOver(event)" ondragleave="noteDragLeave(event)" ondrop="noteDrop(event, ${i})">
+      <textarea style="flex:1;font-size:12px;font-family:inherit;border:1px solid transparent;border-radius:4px;padding:4px 6px;background:transparent;resize:none;overflow:hidden;min-height:32px;line-height:1.4" onfocus="this.style.borderColor='#A9D3F2';this.style.background='#fff'; autoResize(this)" onblur="saveNote(this,${i}); autoResize(this)" oninput="autoResize(this)">${escHtml(n)}</textarea>
+      <button class="btn btn-sm btn-danger note-del-btn" style="flex-shrink:0;padding:2px 6px;font-size:10px;visibility:hidden" onclick="deleteNote(${i})">✕</button>
+    </div>`
+  ).join('');
+  document.querySelectorAll('#notesList textarea').forEach(function(t) { autoResize(t); });
+  document.querySelectorAll('#notesList .note-item').forEach(function(item) {
+    var btn = item.querySelector('.note-del-btn');
+    item.addEventListener('mouseenter', function() { if (btn) btn.style.visibility = 'visible'; });
+    item.addEventListener('mouseleave', function() { if (btn) btn.style.visibility = 'hidden'; });
+  });
+}
+
+let dragNoteData = null;
+
+function noteDragStart(e, index) {
+  dragNoteData = { fromCat: activeNoteCategory, index: index };
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  document.querySelectorAll('#noteCategoriesBar button[data-note-cat]').forEach(function(btn) {
+    if (btn.getAttribute('data-note-cat') !== activeNoteCategory) {
+      btn.classList.add('cat-drag-over');
+    }
+  });
+}
+
+function noteDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('#noteCategoriesBar button[data-note-cat]').forEach(function(btn) {
+    btn.classList.remove('cat-drag-over');
+  });
+  document.querySelectorAll('.note-item').forEach(function(el) { el.classList.remove('drag-over'); });
+}
+
+function noteDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.classList.add('drag-over');
+}
+
+function noteDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+
+function noteDrop(e, toIndex) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (!dragNoteData) return;
+  const fromCat = dragNoteData.fromCat;
+  const fromIndex = dragNoteData.index;
+  const toCat = activeNoteCategory;
+  notes = loadNotes();
+  if (fromCat === toCat) {
+    const arr = notes[toCat] || [];
+    if (fromIndex === toIndex) { dragNoteData = null; return; }
+    const [moved] = arr.splice(fromIndex, 1);
+    arr.splice(toIndex, 0, moved);
+  } else {
+    const fromArr = notes[fromCat] || [];
+    const toArr = notes[toCat] || [];
+    const [moved] = fromArr.splice(fromIndex, 1);
+    toArr.splice(toIndex, 0, moved);
+  }
+  dragNoteData = null;
+  saveNotes();
+  renderNotes();
+  toast('Заметка перемещена');
+}
+
+function renderNoteCategories() {
+  const bar = document.getElementById('noteCategoriesBar');
+  const cats = Object.keys(notes);
+  bar.innerHTML = cats.map(c => `<button data-note-cat="${escHtml(c)}"
+    style="padding:4px 10px;border:1px solid ${c === activeNoteCategory ? '#A9D3F2' : '#CDD6D8'};border-radius:12px;background:${c === activeNoteCategory ? '#A9D3F2' : '#fff'};color:#333;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;transition:background .15s, border .15s">${escHtml(c)}</button>`).join('');
+  if (cats.length > 1) {
+    bar.innerHTML += `<button style="padding:2px 6px;border:none;background:transparent;color:#BCC3C7;font-size:12px;cursor:pointer" onclick="deleteNoteCategory()" title="Удалить вкладку">✕</button>`;
+  }
+  bar.querySelectorAll('[data-note-cat]').forEach(function(btn) {
+    btn.onclick = function() { switchNoteCategory(btn.getAttribute('data-note-cat')); };
+    btn.ondragover = function(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; this.style.background = '#A9D3F2'; };
+    btn.ondragleave = function() { this.style.background = btn.getAttribute('data-note-cat') === activeNoteCategory ? '#A9D3F2' : '#fff'; };
+    btn.ondrop = function(e) { noteDropOnCategory(e, btn.getAttribute('data-note-cat')); };
+  });
+}
+
+function noteDropOnCategory(e, cat) {
+  e.preventDefault();
+  e.currentTarget.style.background = cat === activeNoteCategory ? '#A9D3F2' : '#fff';
+  if (!dragNoteData) return;
+  const fromCat = dragNoteData.fromCat;
+  const fromIndex = dragNoteData.index;
+  if (fromCat === cat) { dragNoteData = null; return; }
+  notes = loadNotes();
+  const fromArr = notes[fromCat] || [];
+  const toArr = notes[cat] || [];
+  const [moved] = fromArr.splice(fromIndex, 1);
+  toArr.push(moved);
+  dragNoteData = null;
+  activeNoteCategory = cat;
+  saveNotes();
+  renderNotes();
+  toast('Заметка перемещена');
+}
+
+function switchNoteCategory(cat) {
+  activeNoteCategory = cat;
+  renderNotes();
+}
+
+function addNoteCategory() {
+  const name = prompt('Название новой вкладки:');
+  if (!name || !name.trim()) return;
+  const cat = name.trim();
+  notes = loadNotes();
+  if (notes[cat]) { toast('Вкладка уже существует'); return; }
+  notes[cat] = [];
+  activeNoteCategory = cat;
+  saveNotes();
+  renderNotes();
+  toast('Вкладка «' + cat + '» создана');
+}
+
+function deleteNoteCategory() {
+  const cats = Object.keys(notes);
+  if (cats.length <= 1) { toast('Нельзя удалить последнюю вкладку'); return; }
+  if (!confirm('Удалить вкладку «' + activeNoteCategory + '» со всеми заметками?')) return;
+  notes = loadNotes();
+  delete notes[activeNoteCategory];
+  const remaining = Object.keys(notes);
+  activeNoteCategory = remaining[0];
+  saveNotes();
+  renderNotes();
+  toast('Вкладка удалена');
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
 }
 
 function addNote() {
-  notes = loadData('tracker_notes', []);
-  notes.push('');
-  saveData('tracker_notes', notes);
+  notes = loadNotes();
+  if (!notes[activeNoteCategory]) notes[activeNoteCategory] = [];
+  notes[activeNoteCategory].push('');
+  saveNotes();
   renderNotes();
   const container = document.getElementById('notesList');
-  const lastTextarea = container.querySelector('textarea:last-of-type');
-  if (lastTextarea) { lastTextarea.focus(); lastTextarea.style.borderColor = '#A9D3F2'; lastTextarea.style.background = '#fff'; }
+  var allTa = container.querySelectorAll('textarea');
+  var last = allTa[allTa.length - 1];
+  if (last) { last.focus(); last.style.borderColor = '#A9D3F2'; last.style.background = '#fff'; autoResize(last); }
 }
 
 function saveNote(el, i) {
-  notes = loadData('tracker_notes', []);
-  notes[i] = el.value;
-  saveData('tracker_notes', notes);
+  notes = loadNotes();
+  if (!notes[activeNoteCategory]) notes[activeNoteCategory] = [];
+  notes[activeNoteCategory][i] = el.value;
+  saveNotes();
   el.style.borderColor = 'transparent';
   el.style.background = 'transparent';
 }
 
 function deleteNote(i) {
-  notes = loadData('tracker_notes', []);
-  notes.splice(i, 1);
-  saveData('tracker_notes', notes);
+  notes = loadNotes();
+  if (notes[activeNoteCategory]) {
+    notes[activeNoteCategory].splice(i, 1);
+  }
+  saveNotes();
   renderNotes();
 }
 
@@ -969,12 +1320,23 @@ function completeSprint(id) {
 
 function renderSprints() {
   sprints = loadData('tracker_sprints', []);
+  const tb = document.getElementById('tabBar');
+  if (tb) {
+    if (activeMyTasksFilter || activeSprintFilter) {
+      tb.style.display = 'flex';
+    } else {
+      tb.style.display = 'none';
+      activeDoneFilter = false;
+      document.getElementById('tabActive')?.classList.add('active');
+      document.getElementById('tabDone')?.classList.remove('active');
+    }
+  }
   tasks = loadData('tracker_tasks', []);
   myTasks = loadData('tracker_mytasks', []);
   const container = document.getElementById('sprintList');
 
-  const backlogCount = tasks.filter(t => !t.sprintId).length;
-  const myTasksCount = myTasks.length;
+  const backlogCount = tasks.filter(t => !t.sprintId && t.status !== 'Готово').length;
+  const myTasksCount = myTasks.filter(id => { const t = tasks.find(x => x.id === id); return t && t.status !== 'Готово'; }).length;
 
   const today = new Date(); const y=today.getFullYear();const m=String(today.getMonth()+1).padStart(2,'0');const d=String(today.getDate()).padStart(2,'0');
   const todayStr=y+'-'+m+'-'+d;
@@ -1061,6 +1423,7 @@ function renderSprints() {
 
   container.innerHTML = urgentHtml + myTasksHtml + backlogHtml + activeHtml +
     (activeSprints.length === 0 && archivedSprints.length === 0 ? '<div class="empty-state" style="padding:20px">Нет спринтов</div>' : '') + archivedHtml;
+  updateMassSprintSelect();
 }
 
 function toggleArchive() {
@@ -1100,6 +1463,7 @@ function loadDataFromFile(e) {
       if (data.sprints) { localStorage.setItem('tracker_sprints', JSON.stringify(data.sprints)); }
       if (data.myTasks) { localStorage.setItem('tracker_mytasks', JSON.stringify(data.myTasks)); }
       if (data.notes) { localStorage.setItem('tracker_notes', JSON.stringify(data.notes)); }
+      syncToFirebase();
       toast('Данные загружены из файла');
       location.reload();
     } catch(err) {
@@ -1147,7 +1511,85 @@ function restoreBackup(idx) {
   location.reload();
 }
 
-function init() {
+function toggleAllCheckboxes(el) {
+  document.querySelectorAll('.task-checkbox').forEach(c => c.checked = el.checked);
+  updateMassActions();
+}
+
+function updateMassActions() {
+  const checked = document.querySelectorAll('.task-checkbox:checked');
+  const bar = document.getElementById('massActions');
+  const count = document.getElementById('selectedCount');
+  if (checked.length > 0) {
+    bar.style.display = 'flex';
+    count.textContent = 'Выбрано: ' + checked.length;
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+function clearSelection() {
+  document.querySelectorAll('.task-checkbox').forEach(c => c.checked = false);
+  if (document.getElementById('selectAllTasks')) document.getElementById('selectAllTasks').checked = false;
+  updateMassActions();
+}
+
+function moveSelectedTasks() {
+  const sprintId = document.getElementById('massSprintSelect').value;
+  if (!sprintId) { toast('Выберите спринт'); return; }
+  const selected = [];
+  document.querySelectorAll('.task-checkbox:checked').forEach(c => selected.push(c.dataset.taskId));
+  if (selected.length === 0) { toast('Нет выбранных задач'); return; }
+  const tb = document.getElementById('tabBar');
+  if (tb) {
+    if (activeMyTasksFilter || activeSprintFilter) {
+      tb.style.display = 'flex';
+    } else {
+      tb.style.display = 'none';
+      activeDoneFilter = false;
+      document.getElementById('tabActive')?.classList.add('active');
+      document.getElementById('tabDone')?.classList.remove('active');
+    }
+  }
+  tasks = loadData('tracker_tasks', []);
+  let moved = 0;
+  selected.forEach(id => {
+    const t = tasks.find(x => x.id === id);
+    if (t) { t.sprintId = sprintId; moved++; }
+  });
+  saveData('tracker_tasks', tasks);
+  clearSelection();
+  renderSprints();
+  renderTasks();
+  toast('Перенесено задач: ' + moved);
+}
+
+function updateMassSprintSelect() {
+  const sel = document.getElementById('massSprintSelect');
+  const available = (sprints || []).filter(s => s.status !== 'completed');
+  sel.innerHTML = '<option value="">Перенести в спринт...</option>' + available.map(s => '<option value="' + s.id + '">' + escHtml(s.name) + '</option>').join('') + '<option value="">Бэклог</option>';
+}
+
+function switchTab(tab) {
+  if (tab === 'done') {
+    activeDoneFilter = true;
+    document.getElementById('tabActive').classList.remove('active');
+    document.getElementById('tabDone').classList.add('active');
+    const h = document.getElementById('tasksHeader');
+    h.textContent = (h.dataset.original || '') + ' / Закрытые';
+  } else {
+    activeDoneFilter = false;
+    document.getElementById('tabDone').classList.remove('active');
+    document.getElementById('tabActive').classList.add('active');
+    const h = document.getElementById('tasksHeader');
+    h.textContent = h.dataset.original || 'Задачи';
+  }
+  renderTasks();
+}
+
+async function init() {
+  if (!currentUser) return;
+  await loadFromFirebase();
   populateSelect('filterStatus', STATUSES, '');
   populateSelect('filterPriority', PRIORITIES, '');
   populateSelect('filterType', TYPES, '');
@@ -1155,6 +1597,7 @@ function init() {
   renderSprints();
   renderTasks();
   renderNotes();
+  toast('Данные загружены из облака');
 }
 init();
 </script>
