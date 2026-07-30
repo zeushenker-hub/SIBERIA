@@ -237,6 +237,24 @@
     .note-item:active { cursor: grabbing; }
     .note-item.dragging { opacity: .4; }
     .note-item.drag-over { border-color: #A9D3F2; background: #f0f8ff; }
+    .hc-field { margin-bottom: 8px; }
+    .hc-field label { display: block; font-size: 11px; font-weight: 600; color: #666; margin-bottom: 2px; }
+    .hc-field input[type="number"] { width: 100%; padding: 6px 8px; border: 1px solid #CDD6D8; border-radius: 4px; font-size: 12px; font-family: inherit; background: #fff; }
+    .hc-field input[type="number"]:focus { border-color: #A9D3F2; outline: none; box-shadow: 0 0 0 2px rgba(169,211,242,.25); }
+    .hc-row { display: flex; gap: 6px; align-items: center; }
+    .hc-row .hc-field { flex: 1; }
+    .hc-actions { display: flex; gap: 6px; margin-top: 10px; }
+    .hc-actions .btn { flex: 1; }
+    .hc-result { margin-top: 10px; padding: 10px; background: #f8f8f8; border-radius: 6px; font-size: 12px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+    .hc-result strong { font-family: 'Roboto', sans-serif; }
+    .hc-result .total { font-size: 15px; font-weight: 700; color: #333; margin-bottom: 6px; }
+    .hc-result .line { padding: 2px 0; }
+    .hc-result .line.total-line { border-top: 1px solid #CDD6D8; margin-top: 4px; padding-top: 4px; font-weight: 700; }
+    .hc-checkbox-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .hc-checkbox-row label { font-size: 12px; color: #666; cursor: pointer; }
+    .hc-checkbox-row input[type="checkbox"] { cursor: pointer; }
+    .hc-section { font-size: 12px; font-weight: 700; color: #333; padding: 6px 0 4px; border-bottom: 1px solid #CDD6D8; margin-bottom: 4px; }
+    .hc-total { font-size: 14px; font-weight: 700; color: #333; padding: 6px 0 2px; border-top: 2px solid #333; margin-top: 4px; }
   </style>
 </head>
 <body>
@@ -281,6 +299,13 @@
           <button class="btn btn-sm btn-secondary" onclick="showBackupList()" style="width:100%">⏱ Восстановить из бэкапа</button>
           <div id="backupList" style="display:none;margin-top:4px"></div>
         </div>
+      </div>
+      <div class="card" style="margin-top:16px" id="hourCalcCard">
+        <div class="card-header">
+          <h2>⏱ Калькулятор часов</h2>
+          <button class="btn btn-sm btn-secondary" onclick="toggleHourCalc()">Скрыть</button>
+        </div>
+        <div id="hourCalcBody"></div>
       </div>
     </div>
     <div>
@@ -485,6 +510,18 @@
 <div class="toast" id="toast"></div>
 
 <script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBRYeMKAJxLQf5B6ZzkCggTlb1ZUf_o75o",
+  authDomain: "ihome-app777.firebaseapp.com",
+  projectId: "ihome-app777",
+  storageBucket: "ihome-app777.firebasestorage.app",
+  messagingSenderId: "259416185087",
+  appId: "1:259416185087:web:05c4afe2881aec53e494ca"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const FB_COLL = db.collection('siberia_tracker');
+
 const STATUSES = ['Новая', 'На уточнении', 'Аналитика', 'В работе', 'QA', 'Ревью', 'Готово'];
 const STATUS_CLASSES = { 'Новая':'badge-new', 'На уточнении':'badge-clarify', 'Аналитика':'badge-analytics', 'В работе':'badge-inprogress', 'QA':'badge-qa', 'Ревью':'badge-review', 'Готово':'badge-done' };
 const PRIORITIES = ['Критичный', 'Высокий', 'Средний', 'Низкий', 'Очень низкий'];
@@ -1579,6 +1616,249 @@ function switchTab(tab) {
   renderTasks();
 }
 
+function loadHourCalcState() {
+  try { return JSON.parse(localStorage.getItem('tracker_hourcalc')) || {}; } catch { return {}; }
+}
+function saveHourCalcState(s) {
+  localStorage.setItem('tracker_hourcalc', JSON.stringify(s));
+}
+function toggleHourCalc() {
+  const body = document.getElementById('hourCalcBody');
+  const btn = document.querySelector('#hourCalcCard .card-header .btn');
+  if (!body) return;
+  const hidden = body.style.display === 'none';
+  body.style.display = hidden ? '' : 'none';
+  if (btn) btn.textContent = hidden ? 'Скрыть' : 'Показать';
+}
+function renderHourCalc() {
+  const container = document.getElementById('hourCalcBody');
+  if (!container) return;
+  const s = loadHourCalcState();
+  container.innerHTML =
+    '<div class="hc-row">' +
+      '<div class="hc-field"><label>FRONTEND (ч)</label><input type="number" id="hcFront" value="'+(s.frontend||'')+'" oninput="saveHourCalcField()" /></div>' +
+      '<div class="hc-field"><label>BACKEND (ч)</label><input type="number" id="hcBack" value="'+(s.backend||'')+'" oninput="saveHourCalcField()" /></div>' +
+    '</div>' +
+    '<div class="hc-field"><label>QA коэффициент</label>' +
+      '<div class="hc-checkbox-row">' +
+        '<label><input type="radio" name="hcQA" value="0.1"'+(s.qaFactor==='0.1'?' checked':'')+' onchange="onQAChange()" /> 0.1</label>' +
+        '<label><input type="radio" name="hcQA" value="0.2"'+(s.qaFactor==='0.2'?' checked':'')+' onchange="onQAChange()" /> 0.2</label>' +
+        '<label><input type="radio" name="hcQA" value="0.3"'+(s.qaFactor==='0.3'?' checked':'')+' onchange="onQAChange()" /> 0.3</label>' +
+        '<label><input type="radio" name="hcQA" value="0.4"'+(s.qaFactor===undefined||s.qaFactor==='0.4'?' checked':'')+' onchange="onQAChange()" /> 0.4</label>' +
+      '</div>' +
+    '</div>' +
+    '<div class="hc-field"><label>PM коэффициент</label>' +
+      '<div class="hc-checkbox-row">' +
+        '<label><input type="radio" name="hcPM" value="0.05"'+(s.pmFactor==='0.05'?' checked':'')+' onchange="onPMChange()" /> 0.05</label>' +
+        '<label><input type="radio" name="hcPM" value="0.1"'+(s.pmFactor==='0.1'?' checked':'')+' onchange="onPMChange()" /> 0.1</label>' +
+        '<label><input type="radio" name="hcPM" value="0.2"'+(s.pmFactor===undefined||s.pmFactor==='0.2'?' checked':'')+' onchange="onPMChange()" /> 0.2</label>' +
+        '<label><input type="radio" name="hcPM" value="0.3"'+(s.pmFactor==='0.3'?' checked':'')+' onchange="onPMChange()" /> 0.3</label>' +
+        '<label><input type="radio" name="hcPM" value="0.4"'+(s.pmFactor==='0.4'?' checked':'')+' onchange="onPMChange()" /> 0.4</label>' +
+      '</div>' +
+    '</div>' +
+    '<div style="border-top:1px solid #CDD6D8;margin:8px 0;padding-top:8px">' +
+      '<div style="font-size:11px;font-weight:600;color:#666;margin-bottom:6px">Стоимость часа (опционально)</div>' +
+      '<div class="hc-checkbox-row">' +
+        '<label><input type="radio" name="hcRateMode" value="single"'+(s.rateMode==='single'||!s.rateMode?' checked':'')+' onchange="toggleRateMode()" /> Единая ставка</label>' +
+        '<label><input type="radio" name="hcRateMode" value="separate"'+(s.rateMode==='separate'?' checked':'')+' onchange="toggleRateMode()" /> Разные ставки</label>' +
+        '<label><input type="radio" name="hcRateMode" value="none"'+(s.rateMode==='none'?' checked':'')+' onchange="toggleRateMode()" /> Без стоимости</label>' +
+      '</div>' +
+      '<div id="hcRateFields">' +
+        (s.rateMode==='separate'
+          ? '<div class="hc-field"><label>Разработка (₽/ч)</label><input type="number" id="hcRateDev" value="'+(s.rateDev||'')+'" oninput="saveHourCalcField()" /></div>' +
+            '<div class="hc-field"><label>Тестирование (₽/ч)</label><input type="number" id="hcRateQA" value="'+(s.rateQA||'')+'" oninput="saveHourCalcField()" /></div>' +
+            '<div class="hc-field"><label>Менеджмент (₽/ч)</label><input type="number" id="hcRatePM" value="'+(s.ratePM||'')+'" oninput="saveHourCalcField()" /></div>'
+          : (s.rateMode!=='none'
+              ? '<div class="hc-field"><label>Ставка (₽/ч)</label><input type="number" id="hcRateSingle" value="'+(s.rateSingle||'')+'" oninput="saveHourCalcField()" /></div>'
+              : '')
+        ) +
+      '</div>' +
+    '</div>' +
+    '<div class="hc-actions">' +
+      '<button class="btn btn-primary btn-sm" onclick="calculateHours()">Рассчитать</button>' +
+      '<button class="btn btn-sm btn-secondary" onclick="clearHourCalc()">Сброс</button>' +
+    '</div>' +
+    '<div class="hc-result" id="hcResult" style="display:none"></div>';
+}
+function onQAChange() {
+  saveHourCalcField();
+  calculateHours();
+}
+function onPMChange() {
+  saveHourCalcField();
+  calculateHours();
+}
+function toggleRateMode() {
+  saveHourCalcField();
+  renderHourCalc();
+  calculateHours();
+}
+function saveHourCalcField() {
+  const s = {};
+  s.frontend = document.getElementById('hcFront')?.value || '';
+  s.backend = document.getElementById('hcBack')?.value || '';
+  const qaEl = document.querySelector('input[name="hcQA"]:checked');
+  s.qaFactor = qaEl ? qaEl.value : '0.4';
+  const pmEl = document.querySelector('input[name="hcPM"]:checked');
+  s.pmFactor = pmEl ? pmEl.value : '0.2';
+  const modeEl = document.querySelector('input[name="hcRateMode"]:checked');
+  s.rateMode = modeEl ? modeEl.value : 'single';
+  if (s.rateMode === 'single') {
+    s.rateSingle = document.getElementById('hcRateSingle')?.value || '';
+    s.rateDev = ''; s.rateQA = ''; s.ratePM = '';
+  } else if (s.rateMode === 'separate') {
+    s.rateDev = document.getElementById('hcRateDev')?.value || '';
+    s.rateQA = document.getElementById('hcRateQA')?.value || '';
+    s.ratePM = document.getElementById('hcRatePM')?.value || '';
+    s.rateSingle = '';
+  } else {
+    s.rateSingle = ''; s.rateDev = ''; s.rateQA = ''; s.ratePM = '';
+  }
+  saveHourCalcState(s);
+}
+function clearHourCalc() {
+  localStorage.removeItem('tracker_hourcalc');
+  document.getElementById('hcResult').style.display = 'none';
+  renderHourCalc();
+}
+function calculateHours() {
+  saveHourCalcField();
+  const s = loadHourCalcState();
+  const front = parseFloat(s.frontend) || 0;
+  const back = parseFloat(s.backend) || 0;
+  if (!front && !back) { toast('Введите часы фронта и/или бека'); return; }
+  const qaFactor = parseFloat(s.qaFactor || '0.4');
+  const pmFactor = parseFloat(s.pmFactor || '0.2');
+  const rawDev = front + back;
+  const risk = rawDev * 0.2;
+  const devHours = Math.round(rawDev + risk);
+  const qaHours = Math.round(devHours * qaFactor);
+  const pmHours = Math.round((devHours + qaHours) * pmFactor);
+  const totalHours = devHours + qaHours + pmHours;
+  function fmt(n) { return Math.round(n); }
+  const mode = s.rateMode || 'single';
+  const hasRates = mode !== 'none';
+  const rSingle = parseFloat(s.rateSingle) || 0;
+  const rDev = mode==='separate' ? (parseFloat(s.rateDev)||0) : rSingle;
+  const rQA = mode==='separate' ? (parseFloat(s.rateQA)||0) : rSingle;
+  const rPM = mode==='separate' ? (parseFloat(s.ratePM)||0) : rSingle;
+  let totalCost = 0;
+  if (hasRates) {
+    if (mode === 'separate') totalCost = fmt(devHours * rDev + qaHours * rQA + pmHours * rPM);
+    else totalCost = fmt(totalHours * rSingle);
+  }
+  function costRow(label, h, rate) {
+    return '<div class="hc-row" style="justify-content:space-between;padding:2px 0"><span>' + label + '</span><span>' + fmt(h) + ' ч × ' + fmt(rate) + ' ₽ = <strong>' + fmt(h * rate) + ' ₽</strong></span></div>';
+  }
+  let h = '<div class="hc-section">📋 ВВОДНЫЕ ДАННЫЕ</div>' +
+    '<div class="hc-row" style="justify-content:space-between"><span>FRONTEND</span><span>' + fmt(front) + ' ч</span></div>' +
+    '<div class="hc-row" style="justify-content:space-between"><span>BACKEND</span><span>' + fmt(back) + ' ч</span></div>' +
+    '<div class="hc-row" style="justify-content:space-between"><span>QA коэффициент</span><span>' + qaFactor + '</span></div>' +
+    '<div class="hc-row" style="justify-content:space-between"><span>PM коэффициент</span><span>' + pmFactor + '</span></div>' +
+    (hasRates ? (mode==='separate'
+      ? '<div class="hc-row" style="justify-content:space-between"><span>Ставка разработки</span><span>' + fmt(rDev) + ' ₽/ч</span></div>' +
+        '<div class="hc-row" style="justify-content:space-between"><span>Ставка тестирования</span><span>' + fmt(rQA) + ' ₽/ч</span></div>' +
+        '<div class="hc-row" style="justify-content:space-between"><span>Ставка управления</span><span>' + fmt(rPM) + ' ₽/ч</span></div>'
+      :     '<div class="hc-row" style="justify-content:space-between"><span>Ставка</span><span>' + fmt(rSingle) + ' ₽/ч</span></div>')
+    : '<div class="hc-row" style="justify-content:space-between;color:#999"><span>Ставка</span><span>без стоимости</span></div>') +
+    '<div style="height:8px"></div>' +
+    '<div class="hc-section">🧮 РАСЧЁТ ЧАСОВ</div>' +
+    '<div class="hc-row" style="justify-content:space-between"><span>Разработка (чистые)</span><span>' + fmt(rawDev) + ' ч</span></div>' +
+    '<div class="hc-row" style="justify-content:space-between"><span>+ Резерв 20%</span><span>' + fmt(risk) + ' ч</span></div>' +
+    '<div class="hc-row" style="justify-content:space-between"><span>Тестирование</span><span>' + fmt(qaHours) + ' ч</span></div>' +
+    '<div class="hc-row" style="justify-content:space-between"><span>Управление</span><span>' + fmt(pmHours) + ' ч</span></div>' +
+    '<div class="hc-total">ИТОГО ЧАСОВ: ' + fmt(totalHours) + ' ч</div>' +
+    '<div style="height:8px"></div>' +
+    '<div class="hc-section">📄 НАЗНАЧЕНИЕ ЧАСОВ</div>' +
+    '<div class="hc-row" style="justify-content:space-between"><span>Разработка</span><span>' + fmt(devHours) + ' ч</span></div>' +
+    '<div class="hc-row" style="justify-content:space-between"><span>Тестирование</span><span>' + fmt(qaHours) + ' ч</span></div>' +
+    '<div class="hc-row" style="justify-content:space-between"><span>Управление проектом</span><span>' + fmt(pmHours) + ' ч</span></div>' +
+    '<div class="hc-total">Итого: ' + fmt(totalHours) + ' ч</div>';
+  if (hasRates) {
+    h += '<div class="hc-total" style="margin-top:8px">Стоимость: ' + fmt(totalCost) + ' ₽</div>' +
+      '<div style="font-size:11px;color:#999;margin-top:4px">' +
+      (mode==='separate'
+        ? 'Разработка: ' + fmt(devHours) + ' ч × ' + fmt(rDev) + ' ₽ = ' + fmt(devHours*rDev) + ' ₽<br>' +
+          'Тестирование: ' + fmt(qaHours) + ' ч × ' + fmt(rQA) + ' ₽ = ' + fmt(qaHours*rQA) + ' ₽<br>' +
+          'Управление: ' + fmt(pmHours) + ' ч × ' + fmt(rPM) + ' ₽ = ' + fmt(pmHours*rPM) + ' ₽'
+        : 'Ставка: ' + fmt(rSingle) + ' ₽/ч'
+      ) +
+      '</div>';
+  }
+  const el = document.getElementById('hcResult');
+  el.innerHTML = h;
+  el.style.display = 'block';
+  const oldBtn = document.getElementById('hcCopyBtn');
+  if (oldBtn) oldBtn.remove();
+  el.insertAdjacentHTML('afterend', '<div class="hc-actions" style="margin-top:12px" id="hcCopyBtn"><button class="btn btn-sm btn-primary" onclick="copyHourResult()">📋 Копировать смету</button></div>');
+}
+function copyHourResult() {
+  const s = loadHourCalcState();
+  const front = parseFloat(s.frontend) || 0;
+  const back = parseFloat(s.backend) || 0;
+  const qaFactor = parseFloat(s.qaFactor || '0.4');
+  const pmFactor = parseFloat(s.pmFactor || '0.2');
+  const rawDev = front + back;
+  const risk = rawDev * 0.2;
+  const devHours = Math.round(rawDev + risk);
+  const qaHours = Math.round(devHours * qaFactor);
+  const pmHours = Math.round((devHours + qaHours) * pmFactor);
+  const totalHours = devHours + qaHours + pmHours;
+  function fmt(n) { return Math.round(n); }
+  const mode = s.rateMode || 'single';
+  const hasRates = mode !== 'none';
+  const rSingle = parseFloat(s.rateSingle) || 0;
+  const rDev = mode==='separate' ? (parseFloat(s.rateDev)||0) : rSingle;
+  const rQA = mode==='separate' ? (parseFloat(s.rateQA)||0) : rSingle;
+  const rPM = mode==='separate' ? (parseFloat(s.ratePM)||0) : rSingle;
+  let totalCost = 0;
+  if (hasRates) {
+    if (mode === 'separate') totalCost = fmt(devHours * rDev + qaHours * rQA + pmHours * rPM);
+    else totalCost = fmt(totalHours * rSingle);
+  }
+  let t = '📋 ВВОДНЫЕ ДАННЫЕ\n';
+  t += '\nFrontend - ' + fmt(front) + ' ч\n';
+  t += 'Backend - ' + fmt(back) + ' ч\n';
+  t += 'QA коэффициент - ' + qaFactor + '\n';
+  t += 'PM коэффициент - ' + pmFactor + '\n';
+  if (hasRates) {
+    if (mode === 'separate') {
+      t += 'Ставка разработки - ' + fmt(rDev) + ' ₽/ч\n';
+      t += 'Ставка тестирования - ' + fmt(rQA) + ' ₽/ч\n';
+      t += 'Ставка управления - ' + fmt(rPM) + ' ₽/ч\n';
+    } else {
+      t += 'Ставка - ' + fmt(rSingle) + ' ₽/ч\n';
+    }
+  } else {
+    t += 'Ставка - без стоимости\n';
+  }
+  t += '____________________________________\n';
+  t += '🧮 РАСЧЁТ ЧАСОВ\n';
+  t += '\nРазработка (чистые) - ' + fmt(rawDev) + ' ч\n';
+  t += '+ Резерв 20% - ' + fmt(risk) + ' ч\n';
+  t += 'Тестирование - ' + fmt(qaHours) + ' ч\n';
+  t += 'Управление - ' + fmt(pmHours) + ' ч\n';
+  t += '\nИТОГО ЧАСОВ: ' + fmt(totalHours) + ' ч\n';
+  t += '____________________________________\n';
+  t += '📄 НАЗНАЧЕНИЕ ЧАСОВ\n\n';
+  if (hasRates && mode === 'separate') {
+    t += 'Разработка: ' + fmt(devHours) + ' ч × ' + fmt(rDev) + ' ₽ = ' + fmt(devHours * rDev) + ' ₽\n';
+    t += 'Тестирование: ' + fmt(qaHours) + ' ч × ' + fmt(rQA) + ' ₽ = ' + fmt(qaHours * rQA) + ' ₽\n';
+    t += 'Управление: ' + fmt(pmHours) + ' ч × ' + fmt(rPM) + ' ₽ = ' + fmt(pmHours * rPM) + ' ₽\n';
+  } else if (hasRates) {
+    t += 'Разработка: ' + fmt(devHours) + ' ч\n';
+    t += 'Тестирование: ' + fmt(qaHours) + ' ч\n';
+    t += 'Управление: ' + fmt(pmHours) + ' ч\n';
+  } else {
+    t += 'Разработка: ' + fmt(devHours) + ' ч\n';
+    t += 'Тестирование: ' + fmt(qaHours) + ' ч\n';
+    t += 'Управление: ' + fmt(pmHours) + ' ч\n';
+  }
+  t += '\nИтого: ' + fmt(totalHours) + ' ч\n';
+  if (hasRates) t += 'Стоимость: ' + fmt(totalCost) + ' ₽\n';
+  navigator.clipboard.writeText(t).then(function() { toast('Смета скопирована'); }).catch(function() { toast('Ошибка копирования'); });
+}
+
 async function init() {
   if (!currentUser) return;
   await loadFromFirebase();
@@ -1589,6 +1869,7 @@ async function init() {
   renderSprints();
   renderTasks();
   renderNotes();
+  renderHourCalc();
   toast('Данные загружены из облака');
 }
 init();
