@@ -157,6 +157,8 @@
     .task-table tr:hover td { background: #A6E9ED; }
     .task-table tr.urgent td { background: #FFF5F5; }
     .task-table tr.urgent:hover td { background: #FFE4E4; }
+    .task-table tr.release td { background: #FFE9EF; }
+    .task-table tr.release:hover td { background: #FFD3DF; }
     .task-table tr { cursor: grab; }
     .task-table tr:active { cursor: grabbing; }
     .task-table tr.dragging { opacity: .4; }
@@ -187,6 +189,7 @@
     .badge-qa { background: #E6BFED; color: #333; }
     .badge-review { background: #F7C0E3; color: #333; }
     .badge-done { background: #A8F0CD; color: #333; }
+    .badge-release { background: #F0A9A0; color: #333; }
     .badge-critical { background: rgba(0,0,0,.5); color: #fff; }
     .badge-high { background: rgba(220,38,38,.5); color: #fff; }
     .badge-medium { background: rgba(234,179,8,.5); color: #333; }
@@ -522,8 +525,8 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const FB_COLL = db.collection('siberia_tracker');
 
-const STATUSES = ['Новая', 'На уточнении', 'Аналитика', 'В работе', 'QA', 'Ревью', 'Готово'];
-const STATUS_CLASSES = { 'Новая':'badge-new', 'На уточнении':'badge-clarify', 'Аналитика':'badge-analytics', 'В работе':'badge-inprogress', 'QA':'badge-qa', 'Ревью':'badge-review', 'Готово':'badge-done' };
+const STATUSES = ['Новая', 'На уточнении', 'Аналитика', 'В работе', 'QA', 'Ревью', 'Требуется релиз', 'Готово'];
+const STATUS_CLASSES = { 'Новая':'badge-new', 'На уточнении':'badge-clarify', 'Аналитика':'badge-analytics', 'В работе':'badge-inprogress', 'QA':'badge-qa', 'Ревью':'badge-review', 'Требуется релиз':'badge-release', 'Готово':'badge-done' };
 const PRIORITIES = ['Критичный', 'Высокий', 'Средний', 'Низкий', 'Очень низкий'];
 const PRIORITY_CLASSES = { 'Критичный':'badge-critical', 'Высокий':'badge-high', 'Средний':'badge-medium', 'Низкий':'badge-low', 'Очень низкий':'badge-verylow' };
 const TYPES = ['Баг', 'Фича', 'Обновление', 'Рутина'];
@@ -955,9 +958,12 @@ function setSort(field) {
 }
 
 const PRIO_ORDER = { 'Критичный':0, 'Высокий':1, 'Средний':2, 'Низкий':3, 'Очень низкий':4 };
-const STATUS_ORDER = { 'Новая':0, 'На уточнении':1, 'Аналитика':2, 'В работе':3, 'QA':4, 'Ревью':5, 'Готово':6 };
+const STATUS_ORDER = { 'Требуется релиз':-1, 'Новая':0, 'На уточнении':1, 'Аналитика':2, 'В работе':3, 'QA':4, 'Ревью':5, 'Готово':6 };
 
 function sortCompare(a, b) {
+  const aRelease = a.status === 'Требуется релиз';
+  const bRelease = b.status === 'Требуется релиз';
+  if (aRelease !== bRelease) return aRelease ? -1 : 1;
   let va, vb;
   switch (sortField) {
     case 'id': va = Number(a.id); vb = Number(b.id); break;
@@ -1026,7 +1032,8 @@ function renderTasks() {
     empty.style.display = 'none';
     tbody.innerHTML = filtered.map(t => {
       const urg = !activeSprintFilter && !activeMyTasksFilter && !fSearch && t.status !== 'Готово' && t.deadline && (t.deadline === todayStr || t.deadline === tomorrowStr);
-      return `<tr class="${urg?'urgent':''}" draggable="true" data-task-id="${t.id}"
+      const rel = t.status === 'Требуется релиз';
+      return `<tr class="${[rel?'release':'',urg?'urgent':''].filter(Boolean).join(' ')}" draggable="true" data-task-id="${t.id}"
       ondragstart="handleDragStart(event)" ondragend="handleDragEnd(event)"
       onclick="openDetail('${t.id}')">
       <td><input type="checkbox" class="task-checkbox" data-task-id="${t.id}" onclick="event.stopPropagation()" /></td>
