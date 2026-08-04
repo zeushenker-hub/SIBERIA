@@ -610,33 +610,50 @@ function saveData(key, data) {
 function localVer() { return Number(localStorage.getItem('tracker_ver') || 0); }
 function bumpLocalVer() { localStorage.setItem('tracker_ver', String(localVer() + 1)); }
 
+function mergeById(local, cloud) {
+  const localArr = Array.isArray(local) ? local : [];
+  const cloudArr = Array.isArray(cloud) ? cloud : [];
+  const byId = new Map();
+  cloudArr.forEach(x => { if (x && x.id !== undefined && x.id !== null) byId.set(String(x.id), x); });
+  localArr.forEach(x => {
+    if (!x || x.id === undefined || x.id === null) { byId.set('__kv_' + (byId.size), x); return; }
+    const k = String(x.id);
+    if (byId.has(k)) Object.assign(byId.get(k), x);
+    else byId.set(k, x);
+  });
+  return Array.from(byId.values());
+}
+
 async function loadFromFirebase() {
   try {
-    const snap = await FB_COLL.doc('meta').get();
-    const cloudVer = snap.exists && snap.data() ? Number(snap.data().ver || 0) : 0;
-    const localHasData = Array.isArray(loadData('tracker_tasks', null));
-    const keepLocal = (localVer() > 0 && localVer() >= cloudVer) || (localVer() === 0 && localHasData);
-    if (keepLocal) {
-      syncNow();
-      fbLoaded = true;
-      return true;
-    }
     const snapTasks = await FB_COLL.doc('tasks').get();
-    if (!(snapTasks.exists && snapTasks.data().items)) { fbLoaded = true; return false; }
-    localStorage.setItem('tracker_tasks', JSON.stringify(snapTasks.data().items));
-    localStorage.setItem('tracker_ver', String(cloudVer));
+    const cloudTasks = snapTasks.exists && snapTasks.data().items ? snapTasks.data().items : [];
+    const mergedTasks = mergeById(loadData('tracker_tasks', []), cloudTasks);
+    localStorage.setItem('tracker_tasks', JSON.stringify(mergedTasks));
     const snap2 = await FB_COLL.doc('sprints').get();
-    if (snap2.exists && snap2.data().items) {
-      localStorage.setItem('tracker_sprints', JSON.stringify(snap2.data().items));
-    }
+    const cloudSprints = snap2.exists && snap2.data().items ? snap2.data().items : [];
+    const mergedSprints = mergeById(loadData('tracker_sprints', []), cloudSprints);
+    localStorage.setItem('tracker_sprints', JSON.stringify(mergedSprints));
     const snap3 = await FB_COLL.doc('mytasks').get();
-    if (snap3.exists && snap3.data().items) {
-      localStorage.setItem('tracker_mytasks', JSON.stringify(snap3.data().items));
-    }
+    const cloudMy = snap3.exists && snap3.data().items ? snap3.data().items : [];
+    const mergedMy = Array.from(new Set([].concat(loadData('tracker_mytasks', []), cloudMy)));
+    localStorage.setItem('tracker_mytasks', JSON.stringify(mergedMy));
     const snap4 = await FB_COLL.doc('notes').get();
     if (snap4.exists && snap4.data().items) {
-      localStorage.setItem('tracker_notes', JSON.stringify(snap4.data().items));
+      const cloudNotes = snap4.data().items;
+      const localNotes = loadNotes();
+      const mergedNotes = (typeof cloudNotes === 'object' && cloudNotes !== null && !Array.isArray(cloudNotes))
+        ? (() => {
+            const out = Object.assign({}, cloudNotes);
+            Object.keys(localNotes).forEach(cat => {
+              out[cat] = mergeById(localNotes[cat] || [], cloudNotes[cat] || []);
+            });
+            return out;
+          })()
+        : cloudNotes;
+      localStorage.setItem('tracker_notes', JSON.stringify(mergedNotes));
     }
+    syncNow();
     fbLoaded = true;
     return true;
   } catch(e) {
