@@ -600,16 +600,31 @@ function loadData(key, def) {
 }
 function saveData(key, data) {
   localStorage.setItem(key, JSON.stringify(data));
+  if (key === 'tracker_tasks' || key === 'tracker_sprints' || key === 'tracker_mytasks' || key === 'tracker_notes') {
+    bumpLocalVer();
+  }
   autoBackup();
   syncToFirebase();
 }
 
+function localVer() { return Number(localStorage.getItem('tracker_ver') || 0); }
+function bumpLocalVer() { localStorage.setItem('tracker_ver', String(localVer() + 1)); }
+
 async function loadFromFirebase() {
   try {
-    const snap = await FB_COLL.doc('tasks').get();
-    if (snap.exists && snap.data().items) {
-      localStorage.setItem('tracker_tasks', JSON.stringify(snap.data().items));
+    const snap = await FB_COLL.doc('meta').get();
+    const cloudVer = snap.exists && snap.data() ? Number(snap.data().ver || 0) : 0;
+    const localHasData = Array.isArray(loadData('tracker_tasks', null));
+    const keepLocal = (localVer() > 0 && localVer() >= cloudVer) || (localVer() === 0 && localHasData);
+    if (keepLocal) {
+      syncNow();
+      fbLoaded = true;
+      return true;
     }
+    const snapTasks = await FB_COLL.doc('tasks').get();
+    if (!(snapTasks.exists && snapTasks.data().items)) { fbLoaded = true; return false; }
+    localStorage.setItem('tracker_tasks', JSON.stringify(snapTasks.data().items));
+    localStorage.setItem('tracker_ver', String(cloudVer));
     const snap2 = await FB_COLL.doc('sprints').get();
     if (snap2.exists && snap2.data().items) {
       localStorage.setItem('tracker_sprints', JSON.stringify(snap2.data().items));
@@ -631,19 +646,35 @@ async function loadFromFirebase() {
   }
 }
 
+async function pushToFirebase() {
+  try {
+    const ver = localVer();
+    await FB_COLL.doc('meta').set({ ver: ver });
+    await FB_COLL.doc('tasks').set({ items: loadData('tracker_tasks', []) });
+    await FB_COLL.doc('sprints').set({ items: loadData('tracker_sprints', []) });
+    await FB_COLL.doc('mytasks').set({ items: loadData('tracker_mytasks', []) });
+    await FB_COLL.doc('notes').set({ items: loadData('tracker_notes', {}) });
+  } catch(e) {
+    console.warn('Firebase sync failed:', e);
+  }
+}
+
+let firebaseSyncPromise = null;
+
 function syncToFirebase() {
   clearTimeout(saveTimeout);
-  saveTimeout = setTimeout(async () => {
-    try {
-      await FB_COLL.doc('tasks').set({ items: loadData('tracker_tasks', []) });
-      await FB_COLL.doc('sprints').set({ items: loadData('tracker_sprints', []) });
-      await FB_COLL.doc('mytasks').set({ items: loadData('tracker_mytasks', []) });
-      await FB_COLL.doc('notes').set({ items: loadData('tracker_notes', {}) });
-    } catch(e) {
-      console.warn('Firebase sync failed:', e);
-    }
+  saveTimeout = setTimeout(() => {
+    firebaseSyncPromise = (firebaseSyncPromise || Promise.resolve()).then(pushToFirebase);
   }, 500);
 }
+
+function syncNow() {
+  clearTimeout(saveTimeout);
+  firebaseSyncPromise = (firebaseSyncPromise || Promise.resolve()).then(pushToFirebase);
+}
+
+window.addEventListener('pagehide', syncNow);
+window.addEventListener('beforeunload', syncNow);
 
 function playBackupSound() {
   try {
