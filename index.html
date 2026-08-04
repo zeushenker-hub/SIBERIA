@@ -1543,9 +1543,9 @@ function loadDataFromFile(e) {
   reader.onload = function(ev) {
     try {
       const data = JSON.parse(ev.target.result);
-      if (data.tasks) { localStorage.setItem('tracker_tasks', JSON.stringify(data.tasks)); }
-      if (data.sprints) { localStorage.setItem('tracker_sprints', JSON.stringify(data.sprints)); }
-      if (data.myTasks) { localStorage.setItem('tracker_mytasks', JSON.stringify(data.myTasks)); }
+      if (data.tasks) { localStorage.setItem('tracker_tasks', JSON.stringify(mergeById(loadData('tracker_tasks', []), data.tasks))); }
+      if (data.sprints) { localStorage.setItem('tracker_sprints', JSON.stringify(mergeById(loadData('tracker_sprints', []), data.sprints))); }
+      if (data.myTasks) { localStorage.setItem('tracker_mytasks', JSON.stringify(Array.from(new Set([].concat(loadData('tracker_mytasks', []), data.myTasks))))); }
       if (data.notes) { localStorage.setItem('tracker_notes', JSON.stringify(data.notes)); }
       syncToFirebase();
       toast('Данные загружены из файла');
