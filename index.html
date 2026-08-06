@@ -162,9 +162,9 @@
     .task-table tr { cursor: grab; }
     .task-table tr:active { cursor: grabbing; }
     .task-table tr.dragging { opacity: .4; }
-    .inline-status, .inline-date, .inline-class { font-size: 11px; font-family: inherit; padding: 2px 4px; border: 1px solid transparent; border-radius: 4px; background: transparent; cursor: pointer; max-width: 120px; }
-    .inline-status:hover, .inline-date:hover, .inline-class:hover { border-color: #CDD6D8; background: #fff; }
-    .inline-status:focus, .inline-date:focus, .inline-class:focus { border-color: #A9D3F2; outline: none; background: #fff; }
+    .inline-status, .inline-date { font-size: 11px; font-family: inherit; padding: 2px 4px; border: 1px solid transparent; border-radius: 4px; background: transparent; cursor: pointer; max-width: 120px; }
+    .inline-status:hover, .inline-date:hover { border-color: #CDD6D8; background: #fff; }
+    .inline-status:focus, .inline-date:focus { border-color: #A9D3F2; outline: none; background: #fff; }
     .inline-date { max-width: 130px; border: 1px solid #CDD6D8; border-radius: 4px; background: #fff; padding: 3px 6px; font-size: 12px; }
     .inline-comment { font-size: 11px; font-family: inherit; padding: 2px 6px; border: 1px solid transparent; border-radius: 4px; background: transparent; cursor: text; width: 100%; min-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .inline-comment:hover { border-color: #CDD6D8; background: #fff; position: relative; }
@@ -199,9 +199,27 @@
     .badge-feature { background: #A9D3F2; color: #333; }
     .badge-update { background: #A6E9ED; color: #333; }
     .badge-routine { background: #D7D4D4; color: #333; }
-    .badge-class-p1 { background: rgba(220,38,38,.55); color: #fff; }
-    .badge-class-p2 { background: rgba(37,99,235,.5); color: #fff; }
-    .badge-class-p3 { background: rgba(22,163,74,.5); color: #fff; }
+    .badge-class-p1 { background: #E5484D; color: #fff; }
+    .badge-class-p2 { background: #3B82F6; color: #fff; }
+    .badge-class-p3 { background: #10B981; color: #fff; }
+    .chip-class {
+      position: relative; display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;
+      white-space: nowrap; cursor: pointer;
+      transition: filter .12s ease, box-shadow .12s ease;
+    }
+    .chip-class-p1 { background: #E5484D; color: #fff; }
+    .chip-class-p2 { background: #3B82F6; color: #fff; }
+    .chip-class-p3 { background: #10B981; color: #fff; }
+    .chip-class:hover { filter: brightness(1.12); box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+    .chip-class .chip-caret { font-size: 8px; opacity: .75; line-height: 1; }
+    .chip-class select.chip-select {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      opacity: 0; cursor: pointer; border: none; background: transparent;
+    }
+    .chip-class.empty { background: #E8EAED; color: #88909A; font-weight: 500; }
+    .chip-class.empty:hover { color: #5b6470; }
+    .chip-class.empty .chip-caret { opacity: .6; }
     .task-title { font-weight: 500; }
     .task-id { font-size: 11px; color: #666; margin-right: 6px; }
     .detail-overlay {
@@ -1117,7 +1135,7 @@ function renderTasks() {
       <td><select class="inline-status" data-task-id="${t.id}" onclick="event.stopPropagation()" onchange="inlineChangeStatus(this, '${t.id}')">${STATUSES.map(s => `<option value="${s}"${s===t.status?' selected':''}>${s}</option>`).join('')}</select></td>
       <td>${badge(t.priority, PRIORITY_CLASSES[t.priority])}</td>
       <td>${badge(t.type, TYPE_CLASSES[t.type])}</td>
-      <td><select class="inline-class" data-task-id="${t.id}" onclick="event.stopPropagation()" onchange="inlineChangeClass(this, '${t.id}')"><option value="">—</option>${TASK_CLASSES.map(s => `<option value="${s}"${s===t.taskClass?' selected':''}>${s}</option>`).join('')}</select></td>
+      <td><span class="chip-class ${t.taskClass ? TASK_CLASS_CLASSES[t.taskClass].replace('badge-','chip-') : 'empty'}">${t.taskClass || 'Класс'}<span class="chip-caret">▾</span><select class="chip-select" data-task-id="${t.id}" onclick="event.stopPropagation()" onchange="inlineChangeClass(this, '${t.id}')"><option value="">—</option>${TASK_CLASSES.map(s => `<option value="${s}"${s===t.taskClass?' selected':''}>${s}</option>`).join('')}</select></span></td>
       <td><input class="inline-date" type="date" value="${t.deadline||''}" onclick="event.stopPropagation()" onchange="inlineChangeDeadline(this, '${t.id}')" /></td>
       <td><div class="inline-comment-wrapper"><input class="inline-comment" type="text" value="${escHtml(t.comment||'')}" placeholder="..." onclick="event.stopPropagation()" onchange="inlineChangeComment(this, '${t.id}')" onmouseenter="showCommentTooltip(this)" onmouseleave="hideCommentTooltip()" /><div class="comment-tooltip"></div></div></td>
     </tr>`;
