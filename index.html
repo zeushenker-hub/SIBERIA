@@ -1135,7 +1135,7 @@ function renderTasks() {
       <td><select class="inline-status" data-task-id="${t.id}" onclick="event.stopPropagation()" onchange="inlineChangeStatus(this, '${t.id}')">${STATUSES.map(s => `<option value="${s}"${s===t.status?' selected':''}>${s}</option>`).join('')}</select></td>
       <td>${badge(t.priority, PRIORITY_CLASSES[t.priority])}</td>
       <td>${badge(t.type, TYPE_CLASSES[t.type])}</td>
-      <td><span class="chip-class ${t.taskClass ? TASK_CLASS_CLASSES[t.taskClass].replace('badge-','chip-') : 'empty'}">${t.taskClass || 'Класс'}<span class="chip-caret">▾</span><select class="chip-select" data-task-id="${t.id}" onclick="event.stopPropagation()" onchange="inlineChangeClass(this, '${t.id}')"><option value="">—</option>${TASK_CLASSES.map(s => `<option value="${s}"${s===t.taskClass?' selected':''}>${s}</option>`).join('')}</select></span></td>
+      <td><span class="chip-class ${t.taskClass ? TASK_CLASS_CLASSES[t.taskClass].replace('badge-','chip-') : 'empty'}"><span class="chip-label">${t.taskClass || 'Класс'}</span><span class="chip-caret">▾</span><select class="chip-select" data-task-id="${t.id}" onclick="event.stopPropagation()" onchange="inlineChangeClass(this, '${t.id}')"><option value="">—</option>${TASK_CLASSES.map(s => `<option value="${s}"${s===t.taskClass?' selected':''}>${s}</option>`).join('')}</select></span></td>
       <td><input class="inline-date" type="date" value="${t.deadline||''}" onclick="event.stopPropagation()" onchange="inlineChangeDeadline(this, '${t.id}')" /></td>
       <td><div class="inline-comment-wrapper"><input class="inline-comment" type="text" value="${escHtml(t.comment||'')}" placeholder="..." onclick="event.stopPropagation()" onchange="inlineChangeComment(this, '${t.id}')" onmouseenter="showCommentTooltip(this)" onmouseleave="hideCommentTooltip()" /><div class="comment-tooltip"></div></div></td>
     </tr>`;
@@ -1187,7 +1187,14 @@ function inlineChangeDeadline(inp, id) {
 }
 function inlineChangeClass(sel, id) {
   const task = tasks.find(t => t.id === id);
-  if (task) { task.taskClass = sel.value; saveData('tracker_tasks', tasks); }
+  if (!task) return;
+  task.taskClass = sel.value;
+  saveData('tracker_tasks', tasks);
+  const chip = sel.closest('.chip-class');
+  if (chip) {
+    chip.className = 'chip-class' + (task.taskClass ? ' ' + TASK_CLASS_CLASSES[task.taskClass].replace('badge-', 'chip-') : ' empty');
+    chip.querySelector('.chip-label').textContent = task.taskClass || 'Класс';
+  }
 }
 function inlineChangeComment(inp, id) {
   const task = tasks.find(t => t.id === id);
