@@ -310,8 +310,11 @@
     .dash-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
     .dash-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
     .dash-header h2 { margin: 0; }
-    .dash-period { display: flex; align-items: center; gap: 8px; }
-    .dash-period select { font-size: 13px; padding: 5px 10px; border: 1px solid #CDD6D8; border-radius: 6px; background: #fff; }
+    .dash-period { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .dash-period select,
+    .dash-period input[type="date"] { font-size: 13px; padding: 5px 10px; border: 1px solid #CDD6D8; border-radius: 6px; background: #fff; }
+    .dash-presets { display: flex; align-items: center; gap: 6px; }
+    .dash-range-sep { color: #666; }
     .metric-card { background: #FAFAFA; border-radius: 8px; padding: 20px; border: 1px solid #CDD6D8; }
     .metric-card .metric-label { font-size: 12px; font-weight: 600; color: #666; margin-bottom: 8px; }
     .metric-card .metric-value { font-size: 26px; font-weight: 700; color: #333; }
@@ -385,11 +388,14 @@
           <h2>📊 Дашборд</h2>
           <div class="dash-period" id="dashPeriodControl">
             <span class="filter-label">Период</span>
-            <select id="dashPeriod" onchange="renderDashboard()">
-              <option value="14">2 недели</option>
-              <option value="30">Месяц</option>
-              <option value="365">Год</option>
-            </select>
+            <div class="dash-presets">
+              <button class="btn btn-sm btn-secondary" onclick="setDashPreset(14)">2 недели</button>
+              <button class="btn btn-sm btn-secondary" onclick="setDashPreset(30)">Месяц</button>
+              <button class="btn btn-sm btn-secondary" onclick="setDashPreset(365)">Год</button>
+            </div>
+            <input type="date" id="dashFrom" title="Начало периода" onchange="onDashRangeChange()" />
+            <span class="dash-range-sep">—</span>
+            <input type="date" id="dashTo" title="Конец периода" onchange="onDashRangeChange()" />
           </div>
         </div>
         <div class="dash-metrics" id="dashMetrics"></div>
@@ -2216,30 +2222,62 @@ function formatAvgMs(ms) {
   return days + ' д';
 }
 
-function dashboardTasks(cls, period) {
+function getDashboardRange() {
+  const fromEl = document.getElementById('dashFrom');
+  const toEl = document.getElementById('dashTo');
+  const from = fromEl ? fromEl.value : '';
+  const to = toEl ? toEl.value : '';
+  const r = { from: '', to: '' };
+  if (from) {
+    const f = new Date(from + 'T00:00:00');
+    if (!isNaN(f.getTime())) r.from = f;
+  }
+  if (to) {
+    const t = new Date(to + 'T00:00:00');
+    if (!isNaN(t.getTime())) r.to = t;
+  }
+  if (r.from && r.to && r.from > r.to) {
+    const tmp = r.from; r.from = r.to; r.to = tmp;
+  }
+  return r;
+}
+
+function setDashPreset(days) {
+  const to = new Date();
+  const toStr = to.toISOString().slice(0, 10);
+  const from = new Date();
+  from.setDate(from.getDate() - days);
+  const fromStr = from.toISOString().slice(0, 10);
+  const fromEl = document.getElementById('dashFrom');
+  const toEl = document.getElementById('dashTo');
+  if (fromEl) fromEl.value = fromStr;
+  if (toEl) toEl.value = toStr;
+  renderDashboard();
+}
+
+function onDashRangeChange() {
+  renderDashboard();
+}
+
+function formatPeriodLabel(range) {
+  const fmt = d => d.toLocaleDateString('ru-RU');
+  if (range.from && range.to) return 'с ' + fmt(range.from) + ' по ' + fmt(range.to);
+  if (range.from) return 'с ' + fmt(range.from) + ' до сегодня';
+  return 'за весь период';
+}
+
+function dashboardTasks(cls, range) {
   let list = loadData('tracker_tasks', []).filter(t => t.taskClass && t.taskClass.indexOf(cls) !== -1 && t.releaseDate);
-  if (period) {
-    const threshold = new Date();
-    threshold.setDate(threshold.getDate() - period);
+  if (range.from || range.to) {
     list = list.filter(t => {
       const r = new Date(t.releaseDate + 'T00:00:00');
-      return !isNaN(r.getTime()) && r >= threshold;
+      if (isNaN(r.getTime())) return false;
+      if (range.from && r < range.from) return false;
+      if (range.to && r > range.to) return false;
+      return true;
     });
   }
   return list;
-}
-
-function getDashboardPeriod() {
-  const el = document.getElementById('dashPeriod');
-  return el ? parseInt(el.value, 10) || 0 : 0;
-}
-
-function formatPeriodLabel(days) {
-  if (days === 365) return 'за год';
-  if (days === 30) return 'за месяц';
-  if (days === 14) return 'за 2 недели';
-  if (days === 7) return 'за неделю';
-  return 'за весь период';
 }
 
 function daysRangeMs(start, end) {
@@ -2272,23 +2310,23 @@ function avgMsFor(tasks, startGetter) {
   return count ? sum / count : null;
 }
 
-function calcMTTR_P1(period) {
-  return avgMsFor(dashboardTasks('P1', period), t => t.createdAt);
+function calcMTTR_P1(range) {
+  return avgMsFor(dashboardTasks('P1', range), t => t.createdAt);
 }
 
-function calcLeadTimeP2(period) {
-  return avgMsFor(dashboardTasks('P2', period), t => t.startWorkAt || t.createdAt);
+function calcLeadTimeP2(range) {
+  return avgMsFor(dashboardTasks('P2', range), t => t.startWorkAt || t.createdAt);
 }
 
 function renderDashboard() {
   const container = document.getElementById('dashMetrics');
   if (!container) return;
-  const period = getDashboardPeriod();
-  const periodLabel = formatPeriodLabel(period);
-  const p1 = dashboardTasks('P1', period);
-  const p2 = dashboardTasks('P2', period);
-  const mttr = calcMTTR_P1(period);
-  const lead = calcLeadTimeP2(period);
+  const range = getDashboardRange();
+  const periodLabel = formatPeriodLabel(range);
+  const p1 = dashboardTasks('P1', range);
+  const p2 = dashboardTasks('P2', range);
+  const mttr = calcMTTR_P1(range);
+  const lead = calcLeadTimeP2(range);
   container.innerHTML =
     `<div class="metric-card">
       <div class="metric-label">⏱ MTTR-P1</div>
