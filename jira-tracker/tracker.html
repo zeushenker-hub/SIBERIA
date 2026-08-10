@@ -250,7 +250,7 @@
       cursor: pointer; white-space: nowrap; transition: background .15s, border-color .15s;
     }
     .fl-item:hover { background: #f0f8ff; border-color: #A9D3F2; }
-    .fl-item b { font-size: 16px; color: #333; font-weight: 400; line-height: 1.1; }
+    .fl-item b { font-size: 16px; color: inherit; font-weight: 400; line-height: 1.1; }
   </style>
 </head>
 <body>
@@ -1454,15 +1454,15 @@ function renderFunnel() {
   const container = document.getElementById('funnel');
   if (!container) return;
   const steps = [
-    { status: 'Аналитика', label: 'На аналитике' },
-    { status: 'В работе', label: 'В работе' },
-    { status: 'Ревью', label: 'На ревью' },
-    { status: 'QA', label: 'На тестировании' },
-    { status: 'Требуется релиз', label: 'Ждут релиз' }
+    { status: 'Аналитика', label: 'На аналитике', color: '#3B82F6' },
+    { status: 'В работе', label: 'В работе', color: '#F59E0B' },
+    { status: 'Ревью', label: 'На ревью', color: '#F59E0B' },
+    { status: 'QA', label: 'На тестировании', color: '#F59E0B' },
+    { status: 'Требуется релиз', label: 'Ждут релиз', color: '#EF4444' }
   ];
   container.innerHTML = steps.map(s => {
     const n = tasks.filter(t => t.status === s.status).length;
-    return `<span class="fl-item" onclick="applyFunnelFilter('${s.status}')" title="Показать задачи: ${s.label}">
+    return `<span class="fl-item" onclick="applyFunnelFilter('${s.status}')" title="Показать задачи: ${s.label}" style="border-color:${s.color};color:${s.color}">
       <span>${s.label}</span><b>${n}</b>
     </span>`;
   }).join('');
