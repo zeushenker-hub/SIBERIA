@@ -308,6 +308,10 @@
     .nav-btn:hover { background: #A6E9ED; }
     .nav-btn.active { background: #A9D3F2; border-color: #9ABFDC; }
     .dash-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .dash-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .dash-header h2 { margin: 0; }
+    .dash-period { display: flex; align-items: center; gap: 8px; }
+    .dash-period select { font-size: 13px; padding: 5px 10px; border: 1px solid #CDD6D8; border-radius: 6px; background: #fff; }
     .metric-card { background: #FAFAFA; border-radius: 8px; padding: 20px; border: 1px solid #CDD6D8; }
     .metric-card .metric-label { font-size: 12px; font-weight: 600; color: #666; margin-bottom: 8px; }
     .metric-card .metric-value { font-size: 26px; font-weight: 700; color: #333; }
@@ -377,8 +381,16 @@
     </div>
     <div id="mainColumn">
       <div class="card" id="dashboardSection" style="display:none">
-        <div class="card-header">
+        <div class="card-header dash-header">
           <h2>📊 Дашборд</h2>
+          <div class="dash-period" id="dashPeriodControl">
+            <span class="filter-label">Период</span>
+            <select id="dashPeriod" onchange="renderDashboard()">
+              <option value="14">2 недели</option>
+              <option value="30">Месяц</option>
+              <option value="365">Год</option>
+            </select>
+          </div>
         </div>
         <div class="dash-metrics" id="dashMetrics"></div>
       </div>
@@ -2204,8 +2216,30 @@ function formatAvgMs(ms) {
   return days + ' д';
 }
 
-function dashboardTasks(cls) {
-  return (loadData('tracker_tasks', [])).filter(t => t.taskClass && t.taskClass.indexOf(cls) !== -1 && t.releaseDate);
+function dashboardTasks(cls, period) {
+  let list = loadData('tracker_tasks', []).filter(t => t.taskClass && t.taskClass.indexOf(cls) !== -1 && t.releaseDate);
+  if (period) {
+    const threshold = new Date();
+    threshold.setDate(threshold.getDate() - period);
+    list = list.filter(t => {
+      const r = new Date(t.releaseDate + 'T00:00:00');
+      return !isNaN(r.getTime()) && r >= threshold;
+    });
+  }
+  return list;
+}
+
+function getDashboardPeriod() {
+  const el = document.getElementById('dashPeriod');
+  return el ? parseInt(el.value, 10) || 0 : 0;
+}
+
+function formatPeriodLabel(days) {
+  if (days === 365) return 'за год';
+  if (days === 30) return 'за месяц';
+  if (days === 14) return 'за 2 недели';
+  if (days === 7) return 'за неделю';
+  return 'за весь период';
 }
 
 function daysRangeMs(start, end) {
@@ -2238,31 +2272,33 @@ function avgMsFor(tasks, startGetter) {
   return count ? sum / count : null;
 }
 
-function calcMTTR_P1() {
-  return avgMsFor(dashboardTasks('P1'), t => t.createdAt);
+function calcMTTR_P1(period) {
+  return avgMsFor(dashboardTasks('P1', period), t => t.createdAt);
 }
 
-function calcLeadTimeP2() {
-  return avgMsFor(dashboardTasks('P2'), t => t.startWorkAt || t.createdAt);
+function calcLeadTimeP2(period) {
+  return avgMsFor(dashboardTasks('P2', period), t => t.startWorkAt || t.createdAt);
 }
 
 function renderDashboard() {
   const container = document.getElementById('dashMetrics');
   if (!container) return;
-  const p1 = dashboardTasks('P1');
-  const p2 = dashboardTasks('P2');
-  const mttr = calcMTTR_P1();
-  const lead = calcLeadTimeP2();
+  const period = getDashboardPeriod();
+  const periodLabel = formatPeriodLabel(period);
+  const p1 = dashboardTasks('P1', period);
+  const p2 = dashboardTasks('P2', period);
+  const mttr = calcMTTR_P1(period);
+  const lead = calcLeadTimeP2(period);
   container.innerHTML =
     `<div class="metric-card">
       <div class="metric-label">⏱ MTTR-P1</div>
       <div class="metric-value">${formatAvgMs(mttr)}</div>
-      <div class="metric-sub">Среднее время задач класса P-1 от постановки до релиза (выпущено: ${p1.length})</div>
+      <div class="metric-sub">Среднее время задач класса P-1 от постановки до релиза ${periodLabel} (выпущено: ${p1.length})</div>
     </div>
     <div class="metric-card">
       <div class="metric-label">🚀 LEAD TIME-P2</div>
       <div class="metric-value">${formatAvgMs(lead)}</div>
-      <div class="metric-sub">Среднее время задач класса P-2 от взятия в работу до релиза (выпущено: ${p2.length})</div>
+      <div class="metric-sub">Среднее время задач класса P-2 от взятия в работу до релиза ${periodLabel} (выпущено: ${p2.length})</div>
     </div>`;
 }
 
