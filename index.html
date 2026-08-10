@@ -2227,7 +2227,7 @@ function calcMTTR_P1() {
 }
 
 function calcLeadTimeP2() {
-  return avgMsFor(dashboardTasks('P2'), t => t.startWorkAt);
+  return avgMsFor(dashboardTasks('P2'), t => t.startWorkAt || t.createdAt);
 }
 
 function renderDashboard() {
