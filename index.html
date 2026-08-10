@@ -1157,15 +1157,16 @@ function saveTask() {
   if (id) {
     const idx = tasks.findIndex(t => t.id === id);
     if (idx !== -1) {
+      const wasDone = tasks[idx].status === 'Готово';
       Object.assign(tasks[idx], data);
       if (data.status === 'В работе' && !tasks[idx].startWorkAt) tasks[idx].startWorkAt = new Date().toISOString();
-      if (data.releaseDate && !tasks[idx].releaseAt) tasks[idx].releaseAt = new Date().toISOString();
+      if (data.status === 'Готово' && !wasDone && !tasks[idx].releaseAt) tasks[idx].releaseAt = new Date().toISOString();
     }
   } else {
     data.id = genId();
     data.createdAt = new Date().toISOString();
     if (data.status === 'В работе') data.startWorkAt = new Date().toISOString();
-    if (data.releaseDate) data.releaseAt = new Date().toISOString();
+    if (data.status === 'Готово') data.releaseAt = new Date().toISOString();
     tasks.unshift(data);
     if (activeMyTasksFilter) { myTasks[myTasks.length - 1] = data.id; saveData('tracker_mytasks', myTasks); }
   }
@@ -2331,19 +2332,32 @@ function taskClosedAt(t) {
   return null;
 }
 
+function migrateReleaseAt() {
+  let needsSave = false;
+  tasks.forEach(t => {
+    if (t && t.status === 'Готово' && !t.releaseAt && t.releaseDate) {
+      t.releaseAt = t.releaseDate + 'T00:00:00';
+      needsSave = true;
+    }
+  });
+  if (needsSave) { saveData('tracker_tasks', tasks); toast('Обновлены даты закрытия задач'); }
+}
+
 function calcThroughput(range) {
   let closed = 0;
   let inPeriod = 0;
+  let noDate = 0;
   tasks.forEach(t => {
-    const d = taskClosedAt(t);
-    if (!d) return;
+    if (!t || t.status !== 'Готово') return;
     closed++;
+    const d = taskClosedAt(t);
+    if (!d) { noDate++; return; }
     if ((!range.from || d >= range.from) && (!range.to || d <= range.to)) inPeriod++;
   });
   const daysTotal = (range.from && range.to) ? Math.max(1, Math.round((range.to - range.from) / 86400000)) : 1;
   const perDay = inPeriod / daysTotal;
   const perWeek = perDay * 7;
-  return { closed, inPeriod, perDay, perWeek };
+  return { closed, inPeriod, noDate, perDay, perWeek };
 }
 
 function renderDashboard() {
@@ -2360,7 +2374,7 @@ function renderDashboard() {
     `<div class="metric-card">
       <div class="metric-label">📊 Throughput · Пропускная способность</div>
       <div class="metric-value">${thr.inPeriod}</div>
-      <div class="metric-sub">Задач закрыто (статус «Готово») ${periodLabel}<br>В среднем: ${thr.perDay.toFixed(1)} в день · ${thr.perWeek.toFixed(1)} в неделю<br>Всего закрыто: ${thr.closed}</div>
+      <div class="metric-sub">Задач закрыто (статус «Готово») ${periodLabel}<br>В среднем: ${thr.perDay.toFixed(1)} в день · ${thr.perWeek.toFixed(1)} в неделю<br>Всего закрыто: ${thr.closed}${thr.noDate ? ` (из них ${thr.noDate} без даты закрытия — не учтены в периодах)` : ''}</div>
     </div>
     <div class="metric-card">
       <div class="metric-label">⏱ MTTR-P1</div>
@@ -2390,6 +2404,8 @@ function showTasksView() {
 async function init() {
   if (!currentUser) return;
   await loadFromFirebase();
+  tasks = loadData('tracker_tasks', []);
+  migrateReleaseAt();
   populateSelect('filterStatus', STATUSES, '');
   populateSelect('filterPriority', PRIORITIES, '');
   populateSelect('filterType', TYPES, '');
