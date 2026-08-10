@@ -328,16 +328,19 @@
       border: 1px solid #eee; cursor: pointer; transition: background .15s;
     }
     .funnel-row:hover { background: #f0f8ff; }
-    .funnel-bar-wrap { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; }
+    .funnel-bar-wrap { flex: 1; min-width: 0; display: flex; align-items: center; }
     .funnel-label {
       font-size: 12px; font-weight: 600; color: #333; white-space: nowrap;
       width: 120px; flex-shrink: 0;
+    }
+    .funnel-count {
+      font-size: 12px; font-weight: 700; color: #333; white-space: nowrap;
+      width: 26px; text-align: right; flex-shrink: 0; margin-right: 4px;
     }
     .funnel-bar {
       height: 14px; border-radius: 4px; width: 100%;
       max-width: 180px; transition: width .3s ease; flex-shrink: 0;
     }
-    .funnel-count { font-size: 12px; font-weight: 700; color: #666; white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -1828,10 +1831,10 @@ function renderSprints() {
     const pct = Math.round((n / max) * 100);
     return `<div class="funnel-row" onclick="applyFunnelFilter('${s.status}')" title="Показать задачи: ${s.label}">
       <span class="funnel-label">${s.label}</span>
+      <span class="funnel-count">${n}</span>
       <div class="funnel-bar-wrap">
         <div class="funnel-bar" style="width:${pct}%;background:${colors[s.status]||'#CDD6D8'}"></div>
       </div>
-      <span class="funnel-count">${n}</span>
     </div>`;
   }).join('');
 }
