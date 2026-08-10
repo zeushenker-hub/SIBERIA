@@ -298,6 +298,20 @@
     .hc-checkbox-row input[type="checkbox"] { cursor: pointer; }
     .hc-section { font-size: 12px; font-weight: 700; color: #333; padding: 6px 0 4px; border-bottom: 1px solid #CDD6D8; margin-bottom: 4px; }
     .hc-total { font-size: 14px; font-weight: 700; color: #333; padding: 6px 0 2px; border-top: 2px solid #333; margin-top: 4px; }
+    .nav-btn {
+      display: flex; align-items: center; gap: 8px;
+      width: 100%; padding: 8px 12px; margin-bottom: 8px;
+      background: #FFFFFF; border: 1px solid #CDD6D8; border-radius: 6px;
+      font-size: 13px; font-weight: 600; color: #333; cursor: pointer;
+      transition: background .15s, border-color .15s; font-family: inherit; text-align: left;
+    }
+    .nav-btn:hover { background: #A6E9ED; }
+    .nav-btn.active { background: #A9D3F2; border-color: #9ABFDC; }
+    .dash-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .metric-card { background: #FAFAFA; border-radius: 8px; padding: 20px; border: 1px solid #CDD6D8; }
+    .metric-card .metric-label { font-size: 12px; font-weight: 600; color: #666; margin-bottom: 8px; }
+    .metric-card .metric-value { font-size: 26px; font-weight: 700; color: #333; }
+    .metric-card .metric-sub { font-size: 11px; color: #999; margin-top: 6px; line-height: 1.4; }
   </style>
 </head>
 <body>
@@ -322,6 +336,7 @@
       <div id="sidebarContent">
         <div class="card">
           <div class="card-header"><h2>Навигация</h2></div>
+          <button class="nav-btn" id="dashButton" onclick="showDashboard()">📊 Дашборд</button>
           <div class="sprint-list" id="sprintList"></div>
         </div>
         <div class="card" style="margin-top:16px">
@@ -360,8 +375,14 @@
         <button class="rail-btn" onclick="toggleSettings()" title="Настройки">⚙️</button>
       </div>
     </div>
-    <div>
-      <div class="card">
+    <div id="mainColumn">
+      <div class="card" id="dashboardSection" style="display:none">
+        <div class="card-header">
+          <h2>📊 Дашборд</h2>
+        </div>
+        <div class="dash-metrics" id="dashMetrics"></div>
+      </div>
+      <div class="card" id="tasksSection">
         <div class="card-header">
           <h2 id="tasksHeader">Срочные задачи</h2>
           <button class="btn btn-sm btn-secondary" id="viewToggle" onclick="toggleView()">Все задачи</button>
@@ -1018,6 +1039,7 @@ function handleDropOnMyTasks(e) {
 }
 
 function filterBySprint(sprintId) {
+  showTasksView();
   urgentView = false; document.getElementById('viewToggle').textContent = 'Срочные'; document.getElementById('tasksHeader').textContent = 'Задачи';
   activeSprintFilter = sprintId;
   activeMyTasksFilter = false;
@@ -1037,6 +1059,7 @@ function filterBySprint(sprintId) {
 }
 
 function filterMyTasks() {
+  showTasksView();
   urgentView = false; document.getElementById('viewToggle').textContent = 'Срочные'; document.getElementById('tasksHeader').textContent = 'Задачи';
   activeMyTasksFilter = !activeMyTasksFilter;
   activeSprintFilter = '';
@@ -1053,6 +1076,7 @@ function filterMyTasks() {
 }
 
 function showUrgentView() {
+  showTasksView();
   activeSprintFilter = '';
   activeMyTasksFilter = false;
   urgentView = true;
@@ -2168,6 +2192,75 @@ function copyHourResult() {
   t += '\nИтого: ' + fmt(totalHours) + ' ч\n';
   if (hasRates) t += 'Стоимость: ' + fmt(totalCost) + ' ₽\n';
   navigator.clipboard.writeText(t).then(function() { toast('Смета скопирована'); }).catch(function() { toast('Ошибка копирования'); });
+}
+
+function formatAvgMs(ms) {
+  if (ms === null || isNaN(ms)) return '—';
+  const totalHours = ms / 3600000;
+  const days = Math.floor(totalHours / 24);
+  const hours = Math.round(totalHours % 24);
+  if (totalHours < 24) return totalHours.toFixed(1) + ' ч';
+  if (hours > 0) return days + ' д ' + hours + ' ч';
+  return days + ' д';
+}
+
+function dashboardTasks(cls) {
+  return (loadData('tracker_tasks', [])).filter(t => t.taskClass && t.taskClass.indexOf(cls) !== -1 && t.releaseDate);
+}
+
+function avgMsFor(tasks, startGetter) {
+  let sum = 0, count = 0;
+  tasks.forEach(t => {
+    const start = startGetter(t);
+    if (!start) return;
+    const release = new Date(t.releaseDate + 'T00:00:00');
+    const s = new Date(start);
+    if (isNaN(release.getTime()) || isNaN(s.getTime())) return;
+    sum += release - s;
+    count++;
+  });
+  return count ? sum / count : null;
+}
+
+function calcMTTR_P1() {
+  return avgMsFor(dashboardTasks('P1'), t => t.createdAt);
+}
+
+function calcLeadTimeP2() {
+  return avgMsFor(dashboardTasks('P2'), t => t.startWorkAt);
+}
+
+function renderDashboard() {
+  const container = document.getElementById('dashMetrics');
+  if (!container) return;
+  const p1 = dashboardTasks('P1');
+  const p2 = dashboardTasks('P2');
+  const mttr = calcMTTR_P1();
+  const lead = calcLeadTimeP2();
+  container.innerHTML =
+    `<div class="metric-card">
+      <div class="metric-label">⏱ MTTR-P1</div>
+      <div class="metric-value">${formatAvgMs(mttr)}</div>
+      <div class="metric-sub">Среднее время задач класса P-1 от постановки до релиза (выпущено: ${p1.length})</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">🚀 LEAD TIME-P2</div>
+      <div class="metric-value">${formatAvgMs(lead)}</div>
+      <div class="metric-sub">Среднее время задач класса P-2 от взятия в работу до релиза (выпущено: ${p2.length})</div>
+    </div>`;
+}
+
+function showDashboard() {
+  document.getElementById('dashboardSection').style.display = '';
+  document.getElementById('tasksSection').style.display = 'none';
+  document.getElementById('dashButton').classList.add('active');
+  renderDashboard();
+}
+
+function showTasksView() {
+  document.getElementById('dashboardSection').style.display = 'none';
+  document.getElementById('tasksSection').style.display = '';
+  document.getElementById('dashButton').classList.remove('active');
 }
 
 async function init() {
