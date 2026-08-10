@@ -52,7 +52,26 @@
     .btn-sm { padding: 4px 10px; font-size: 12px; }
     .btn-icon { padding: 6px; background: transparent; color: #666; border-radius: 4px; }
     .btn-icon:hover { background: #D7D4D4; }
-    .layout { display: grid; grid-template-columns: 360px 1fr; gap: 20px; }
+    .layout { display: grid; grid-template-columns: 360px 1fr; gap: 20px; transition: grid-template-columns .2s; }
+    .layout.sidebar-collapsed { grid-template-columns: 40px 1fr; gap: 12px; }
+    .sidebar-toggle {
+      display: none; width: 100%; padding: 6px 0; margin-bottom: 12px;
+      background: #FFFFFF; border: 1px solid #CDD6D8; border-radius: 6px;
+      color: #666; font-size: 14px; cursor: pointer; transition: background .15s;
+    }
+    .sidebar-toggle:hover { background: #D7D4D4; }
+    .sidebar-toggle.left { display: block; }
+    .sidebar-toggle.right { display: block; }
+    .sidebar-rails {
+      display: none; flex-direction: column; align-items: center; gap: 10px; width: 40px;
+    }
+    .sidebar-rails .rail-btn {
+      width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+      background: #FFFFFF; border: 1px solid #CDD6D8; border-radius: 8px;
+      color: #666; font-size: 13px; cursor: pointer; transition: background .15s;
+    }
+    .sidebar-rails .rail-btn:hover { background: #D7D4D4; }
+    .layout.sidebar-collapsed #sidebarContent { display: none; }
     .card {
       background: #FFFFFF; border-radius: 8px; padding: 20px;
       box-shadow: 0 1px 2px rgba(0,0,0,.08);
@@ -298,38 +317,47 @@
   </div>
 
   <div class="layout" id="appContent">
-    <div>
-      <div class="card">
-        <div class="card-header"><h2>Навигация</h2></div>
-        <div class="sprint-list" id="sprintList"></div>
-      </div>
-      <div class="card" style="margin-top:16px">
-        <div class="card-header">
-          <h2>📝 Заметки</h2>
-          <div style="display:flex;gap:4px">
-            <button class="btn btn-sm btn-primary" onclick="addNote()">+ Заметка</button>
-            <button class="btn btn-sm btn-secondary" onclick="addNoteCategory()" title="Новая вкладка">+ 📂</button>
+    <div id="sidebar">
+      <button class="btn btn-icon sidebar-toggle left" id="sidebarToggleLeft" onclick="toggleSidebar()" title="Свернуть панель">◀</button>
+      <div id="sidebarContent">
+        <div class="card">
+          <div class="card-header"><h2>Навигация</h2></div>
+          <div class="sprint-list" id="sprintList"></div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <div class="card-header">
+            <h2>📝 Заметки</h2>
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-sm btn-primary" onclick="addNote()">+ Заметка</button>
+              <button class="btn btn-sm btn-secondary" onclick="addNoteCategory()" title="Новая вкладка">+ 📂</button>
+            </div>
+          </div>
+          <div id="noteCategoriesBar" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;align-items:center"></div>
+          <div id="notesList" style="display:flex;flex-direction:column;gap:8px;min-height:40px"></div>
+        </div>
+        <div class="card" style="margin-top:16px;display:none" id="settingsCard">
+          <div class="card-header"><h2>⚙️ Настройки</h2></div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button class="btn btn-sm btn-primary" onclick="saveDataToFile()" style="width:100%">💾 Сохранить данные в файл</button>
+            <button class="btn btn-sm btn-primary" onclick="document.getElementById('fileInput').click()" style="width:100%">📂 Загрузить данные из файла</button>
+            <input type="file" id="fileInput" accept=".json" style="display:none" onchange="loadDataFromFile(event)" />
+            <button class="btn btn-sm btn-secondary" onclick="showBackupList()" style="width:100%">⏱ Восстановить из бэкапа</button>
+            <div id="backupList" style="display:none;margin-top:4px"></div>
           </div>
         </div>
-        <div id="noteCategoriesBar" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;align-items:center"></div>
-        <div id="notesList" style="display:flex;flex-direction:column;gap:8px;min-height:40px"></div>
-      </div>
-      <div class="card" style="margin-top:16px;display:none" id="settingsCard">
-        <div class="card-header"><h2>⚙️ Настройки</h2></div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <button class="btn btn-sm btn-primary" onclick="saveDataToFile()" style="width:100%">💾 Сохранить данные в файл</button>
-          <button class="btn btn-sm btn-primary" onclick="document.getElementById('fileInput').click()" style="width:100%">📂 Загрузить данные из файла</button>
-          <input type="file" id="fileInput" accept=".json" style="display:none" onchange="loadDataFromFile(event)" />
-          <button class="btn btn-sm btn-secondary" onclick="showBackupList()" style="width:100%">⏱ Восстановить из бэкапа</button>
-          <div id="backupList" style="display:none;margin-top:4px"></div>
+        <div class="card" style="margin-top:16px" id="hourCalcCard">
+          <div class="card-header">
+            <h2>⏱ Калькулятор часов</h2>
+            <button class="btn btn-sm btn-secondary" onclick="toggleHourCalc()">Скрыть</button>
+          </div>
+          <div id="hourCalcBody"></div>
         </div>
       </div>
-      <div class="card" style="margin-top:16px" id="hourCalcCard">
-        <div class="card-header">
-          <h2>⏱ Калькулятор часов</h2>
-          <button class="btn btn-sm btn-secondary" onclick="toggleHourCalc()">Скрыть</button>
-        </div>
-        <div id="hourCalcBody"></div>
+      <div class="sidebar-rails" id="sidebarRails">
+        <button class="rail-btn" id="sidebarToggleRight" onclick="toggleSidebar()" title="Развернуть панель">▶</button>
+        <button class="rail-btn" onclick="openTaskModal()" title="Новая задача">＋</button>
+        <button class="rail-btn" onclick="openSprintModal()" title="Новый спринт">▦</button>
+        <button class="rail-btn" onclick="toggleSettings()" title="Настройки">⚙️</button>
       </div>
     </div>
     <div>
@@ -374,6 +402,8 @@
               <th onclick="setSort('type')">Тип <span class="sort-arrow" id="sortArrowType"></span></th>
               <th onclick="setSort('class')">Класс <span class="sort-arrow" id="sortArrowClass"></span></th>
               <th onclick="setSort('deadline')">Срок <span class="sort-arrow" id="sortArrowDeadline"></span></th>
+              <th onclick="setSort('release')">Релиз <span class="sort-arrow" id="sortArrowRelease"></span></th>
+              <th onclick="setSort('response')">Отклик <span class="sort-arrow" id="sortArrowResponse"></span></th>
               <th>Комментарий</th>
             </tr>
           </thead>
@@ -451,6 +481,10 @@
         <label>Срок сдачи</label>
         <input id="taskDeadline" type="date" />
       </div>
+      <div class="form-group">
+        <label>Дата релиза</label>
+        <input id="taskRelease" type="date" />
+      </div>
     </div>
     <div class="form-group">
       <label>Спринт</label>
@@ -519,6 +553,14 @@
       <div class="detail-field">
         <label>Срок сдачи</label>
         <div class="value" id="detailDeadline"></div>
+      </div>
+      <div class="detail-field">
+        <label>Дата релиза</label>
+        <div class="value" id="detailRelease"></div>
+      </div>
+      <div class="detail-field">
+        <label>Отклик</label>
+        <div class="value" id="detailResponse"></div>
       </div>
       <div class="detail-field">
         <label>Спринт</label>
@@ -681,11 +723,25 @@ async function loadFromFirebase() {
       const localNotes = loadNotes();
       const mergedNotes = (typeof cloudNotes === 'object' && cloudNotes !== null && !Array.isArray(cloudNotes))
         ? (() => {
-            const out = Object.assign({}, cloudNotes);
-            Object.keys(localNotes).forEach(cat => {
-              out[cat] = mergeById(localNotes[cat] || [], cloudNotes[cat] || []);
+            const out = {};
+            const maxKey = 3000000;
+            if (!localNotes['Общие']) localNotes['Общие'] = [];
+            Object.keys(localNotes).forEach(cat => { out[cat] = (localNotes[cat] || []); });
+            Object.keys(cloudNotes).forEach(cat => {
+              const base = out[cat] || [];
+              const byId = new Map();
+              base.forEach(n => { if (n && n.id) byId.set(n.id, n); });
+              (cloudNotes[cat] || []).forEach(n => {
+                if (!n || !n.id) { byId.set('_c_' + Math.floor(Math.random() * maxKey), n); return; }
+                if (byId.has(n.id)) Object.assign(byId.get(n.id), n);
+                else byId.set(n.id, n);
+              });
+              out[cat] = Array.from(byId.values()).map(n => normNote(n, cat, byId.size));
             });
-            return out;
+            Object.keys(out).forEach(cat => {
+              out[cat] = out[cat].filter(n => !isTombstoned(n));
+            });
+            return dedupeNotes(out);
           })()
         : cloudNotes;
       localStorage.setItem('tracker_notes', JSON.stringify(mergedNotes));
@@ -775,19 +831,75 @@ let myTasks = loadData('tracker_mytasks', []);
 let notes = loadNotes();
 let activeNoteCategory = 'Общие';
 
+function normNote(n, cat, idx) {
+  if (n && typeof n === 'object' && typeof n.id === 'string' && n.id) {
+    return { id: n.id, text: typeof n.text === 'string' ? n.text : '' };
+  }
+  return { id: 'n_' + cat.replace(/\s+/g, '_') + '_' + idx, text: typeof n === 'string' ? n : '' };
+}
 function loadNotes() {
   let raw = loadData('tracker_notes', null);
   if (raw === null) return { 'Общие': [] };
-  if (Array.isArray(raw)) return { 'Общие': raw };
-  if (typeof raw === 'object' && raw !== null) {
-    if (!raw['Общие']) raw['Общие'] = [];
-    return raw;
+  let out = {};
+  if (Array.isArray(raw)) {
+    out['Общие'] = raw.map((n, i) => normNote(n, 'Общие', i));
+  } else if (typeof raw === 'object' && raw !== null) {
+    Object.keys(raw).forEach(cat => {
+      out[cat] = (raw[cat] || []).map((n, i) => normNote(n, cat, i));
+    });
   }
-  return { 'Общие': [] };
+  if (!out['Общие']) out['Общие'] = [];
+  out = dedupeNotes(out);
+  let purged = false;
+  Object.keys(out).forEach(cat => {
+    const before = out[cat].length;
+    out[cat] = out[cat].filter(n => !isTombstoned(n));
+    if (out[cat].length !== before) purged = true;
+  });
+  if (purged || JSON.stringify(out) !== JSON.stringify(raw)) {
+    localStorage.setItem('tracker_notes', JSON.stringify(out));
+    autoBackup();
+  }
+  return out;
+}
+function noteTombstones() {
+  return loadData('tracker_notes_deleted', []);
+}
+function isTombstoned(n) {
+  const id = n && n.id ? n.id : null;
+  const text = n && typeof n.text === 'string' ? n.text : '';
+  if (!id && !text) return false;
+  return noteTombstones().some(t => (t.id && id && t.id === id) || (t.text && text && t.text === text));
+}
+function tombstoneNote(n) {
+  if (!n) return;
+  const ts = noteTombstones().filter(t =>
+    !(t.id && n.id && t.id === n.id) && !(t.text && n.text && t.text === n.text)
+  );
+  ts.push({ id: n.id, text: n.text });
+  localStorage.setItem('tracker_notes_deleted', JSON.stringify(ts.slice(-1000)));
+}
+function dedupeNotes(obj) {
+  const out = {};
+  Object.keys(obj).forEach(cat => {
+    const seen = new Set();
+    const seenText = new Set();
+    out[cat] = [];
+    obj[cat].forEach(n => {
+      if (!n || !n.id) return;
+      if (seen.has(n.id)) return;
+      seen.add(n.id);
+      if (n.text && seenText.has(n.text)) return;
+      if (n.text) seenText.add(n.text);
+      out[cat].push(n);
+    });
+  });
+  return out;
 }
 function saveNotes() {
   localStorage.setItem('tracker_notes', JSON.stringify(notes));
   autoBackup();
+  syncToFirebase();
 }
 
 (function migrateTaskIds() {
@@ -823,6 +935,31 @@ function formatDate(d) {
   if (!d) return '—';
   const dt = new Date(d + 'T00:00:00');
   return dt.toLocaleDateString('ru-RU');
+}
+
+function responseStartTime(t) {
+  const cls = t.taskClass || '';
+  if (cls.indexOf('P1') !== -1) return t.createdAt || null;
+  if (cls.indexOf('P2') !== -1) return t.startWorkAt || null;
+  return t.createdAt || null;
+}
+
+function calcResponseMs(t) {
+  if (!t.releaseDate) return null;
+  const release = new Date(t.releaseDate + 'T00:00:00');
+  const start = responseStartTime(t);
+  if (!start || isNaN(release.getTime())) return null;
+  return release - new Date(start);
+}
+
+function formatResponse(ms) {
+  if (ms === null || isNaN(ms)) return '—';
+  const sign = ms < 0 ? '-' : '';
+  const totalAbs = Math.abs(ms);
+  const days = Math.floor(totalAbs / 86400000);
+  const hours = Math.floor((totalAbs % 86400000) / 3600000);
+  if (days > 0) return sign + days + ' д ' + hours + ' ч';
+  return sign + hours + ' ч';
 }
 
 function badge(text, cls) { return `<span class="badge ${cls}">${text}</span>`; }
@@ -950,6 +1087,7 @@ function openTaskModal(task) {
   populateSelect('taskType', TYPES, task ? task.type : 'Фича');
   populateSelect('taskClass', TASK_CLASSES, task ? task.taskClass : '');
   document.getElementById('taskDeadline').value = task ? (task.deadline||'') : '';
+  document.getElementById('taskRelease').value = task ? (task.releaseDate||'') : '';
   populateSprintSelect('taskSprint', task ? task.sprintId : '');
   openModal('taskModal');
 }
@@ -967,6 +1105,7 @@ function saveTask() {
     type: document.getElementById('taskType').value,
     taskClass: document.getElementById('taskClass').value,
     deadline: document.getElementById('taskDeadline').value || '',
+    releaseDate: document.getElementById('taskRelease').value || '',
     sprintId: document.getElementById('taskSprint').value || '',
   };
   if (!id && !data.sprintId) {
@@ -975,10 +1114,16 @@ function saveTask() {
   }
   if (id) {
     const idx = tasks.findIndex(t => t.id === id);
-    if (idx !== -1) Object.assign(tasks[idx], data);
+    if (idx !== -1) {
+      Object.assign(tasks[idx], data);
+      if (data.status === 'В работе' && !tasks[idx].startWorkAt) tasks[idx].startWorkAt = new Date().toISOString();
+      if (data.releaseDate && !tasks[idx].releaseAt) tasks[idx].releaseAt = new Date().toISOString();
+    }
   } else {
     data.id = genId();
     data.createdAt = new Date().toISOString();
+    if (data.status === 'В работе') data.startWorkAt = new Date().toISOString();
+    if (data.releaseDate) data.releaseAt = new Date().toISOString();
     tasks.unshift(data);
     if (activeMyTasksFilter) { myTasks[myTasks.length - 1] = data.id; saveData('tracker_mytasks', myTasks); }
   }
@@ -1010,6 +1155,8 @@ function openDetail(taskId) {
   document.getElementById('detailType').innerHTML = badge(t.type, TYPE_CLASSES[t.type]);
   document.getElementById('detailClass').innerHTML = t.taskClass ? badge(t.taskClass, TASK_CLASS_CLASSES[t.taskClass]) : '';
   document.getElementById('detailDeadline').textContent = formatDate(t.deadline);
+  document.getElementById('detailRelease').textContent = formatDate(t.releaseDate);
+  document.getElementById('detailResponse').textContent = formatResponse(calcResponseMs(t));
   const sp = t.sprintId ? sprints.find(s => s.id === t.sprintId) : null;
   document.getElementById('detailSprint').textContent = sp ? sp.name : 'Бэклог';
   document.getElementById('detailCreated').textContent = new Date(t.createdAt).toLocaleString('ru-RU');
@@ -1063,6 +1210,8 @@ function sortCompare(a, b) {
     case 'type': va = a.type; vb = b.type; break;
     case 'class': va = TASK_CLASS_ORDER[a.taskClass] ?? 99; vb = TASK_CLASS_ORDER[b.taskClass] ?? 99; break;
     case 'deadline': va = a.deadline || '9999-99-99'; vb = b.deadline || '9999-99-99'; break;
+    case 'release': va = a.releaseDate || '9999-99-99'; vb = b.releaseDate || '9999-99-99'; break;
+    case 'response': va = calcResponseMs(a) ?? Infinity; vb = calcResponseMs(b) ?? Infinity; break;
     default: return 0;
   }
   if (va < vb) return sortDir === 'asc' ? -1 : 1;
@@ -1137,12 +1286,14 @@ function renderTasks() {
       <td>${badge(t.type, TYPE_CLASSES[t.type])}</td>
       <td><span class="chip-class ${t.taskClass ? TASK_CLASS_CLASSES[t.taskClass].replace('badge-','chip-') : 'empty'}"><span class="chip-label">${t.taskClass || 'Класс'}</span><span class="chip-caret">▾</span><select class="chip-select" data-task-id="${t.id}" onclick="event.stopPropagation()" onchange="inlineChangeClass(this, '${t.id}')"><option value="">—</option>${TASK_CLASSES.map(s => `<option value="${s}"${s===t.taskClass?' selected':''}>${s}</option>`).join('')}</select></span></td>
       <td><input class="inline-date" type="date" value="${t.deadline||''}" onclick="event.stopPropagation()" onchange="inlineChangeDeadline(this, '${t.id}')" /></td>
+      <td><input class="inline-date" type="date" value="${t.releaseDate||''}" onclick="event.stopPropagation()" onchange="inlineChangeRelease(this, '${t.id}')" /></td>
+      <td><span class="response-cell" id="resp-${t.id}">${formatResponse(calcResponseMs(t))}</span></td>
       <td><div class="inline-comment-wrapper"><input class="inline-comment" type="text" value="${escHtml(t.comment||'')}" placeholder="..." onclick="event.stopPropagation()" onchange="inlineChangeComment(this, '${t.id}')" onmouseenter="showCommentTooltip(this)" onmouseleave="hideCommentTooltip()" /><div class="comment-tooltip"></div></div></td>
     </tr>`;
     }).join('');
   }
 
-  ['Id','Title','Status','Priority','Type','Class','Deadline'].forEach(f => {
+  ['Id','Title','Status','Priority','Type','Class','Deadline','Release','Response'].forEach(f => {
     const el = document.getElementById(`sortArrow${f}`);
     if (sortField === f.toLowerCase()) el.textContent = sortDir === 'asc' ? '▲' : '▼';
     else el.textContent = '';
@@ -1179,11 +1330,31 @@ function escHtml(s) {
 
 function inlineChangeStatus(sel, id) {
   const task = tasks.find(t => t.id === id);
-  if (task) { task.status = sel.value; saveData('tracker_tasks', tasks); renderTasks(); }
+  if (task) {
+    task.status = sel.value;
+    if (sel.value === 'В работе' && !task.startWorkAt) task.startWorkAt = new Date().toISOString();
+    if (sel.value === 'Готово' && !task.releaseAt) task.releaseAt = new Date().toISOString();
+    saveData('tracker_tasks', tasks); renderTasks();
+  }
 }
 function inlineChangeDeadline(inp, id) {
   const task = tasks.find(t => t.id === id);
   if (task) { task.deadline = inp.value; saveData('tracker_tasks', tasks); }
+}
+function inlineChangeRelease(inp, id) {
+  const task = tasks.find(t => t.id === id);
+  if (task) {
+    task.releaseDate = inp.value;
+    if (inp.value) task.releaseAt = new Date().toISOString();
+    saveData('tracker_tasks', tasks);
+    updateInlineResponse(id);
+  }
+}
+function updateInlineResponse(id) {
+  const task = tasks.find(x => x.id === id);
+  if (!task) return;
+  const cell = document.getElementById('resp-' + id);
+  if (cell) cell.textContent = formatResponse(calcResponseMs(task));
 }
 function inlineChangeClass(sel, id) {
   const task = tasks.find(t => t.id === id);
@@ -1228,7 +1399,7 @@ function renderNotes() {
       data-note-index="${i}" data-note-category="${escHtml(activeNoteCategory)}"
       ondragstart="noteDragStart(event, ${i})" ondragend="noteDragEnd(event)"
       ondragover="noteDragOver(event)" ondragleave="noteDragLeave(event)" ondrop="noteDrop(event, ${i})">
-      <textarea style="flex:1;font-size:12px;font-family:inherit;border:1px solid transparent;border-radius:4px;padding:4px 6px;background:transparent;resize:none;overflow:hidden;min-height:32px;line-height:1.4" onfocus="this.style.borderColor='#A9D3F2';this.style.background='#fff'; autoResize(this)" onblur="saveNote(this,${i}); autoResize(this)" oninput="autoResize(this)">${escHtml(n)}</textarea>
+      <textarea style="flex:1;font-size:12px;font-family:inherit;border:1px solid transparent;border-radius:4px;padding:4px 6px;background:transparent;resize:none;overflow:hidden;min-height:32px;line-height:1.4" onfocus="this.style.borderColor='#A9D3F2';this.style.background='#fff'; autoResize(this)" onblur="saveNote(this,${i}); autoResize(this)" oninput="autoResize(this)">${escHtml(n.text)}</textarea>
       <button class="btn btn-sm btn-danger note-del-btn" style="flex-shrink:0;padding:2px 6px;font-size:10px;visibility:hidden" onclick="deleteNote(${i})">✕</button>
     </div>`
   ).join('');
@@ -1354,6 +1525,7 @@ function deleteNoteCategory() {
   if (cats.length <= 1) { toast('Нельзя удалить последнюю вкладку'); return; }
   if (!confirm('Удалить вкладку «' + activeNoteCategory + '» со всеми заметками?')) return;
   notes = loadNotes();
+  (notes[activeNoteCategory] || []).forEach(tombstoneNote);
   delete notes[activeNoteCategory];
   const remaining = Object.keys(notes);
   activeNoteCategory = remaining[0];
@@ -1370,7 +1542,7 @@ function autoResize(el) {
 function addNote() {
   notes = loadNotes();
   if (!notes[activeNoteCategory]) notes[activeNoteCategory] = [];
-  notes[activeNoteCategory].push('');
+  notes[activeNoteCategory].push({ id: 'n_' + Date.now().toString(36) + '_' + Math.floor(Math.random() * 1e6), text: '' });
   saveNotes();
   renderNotes();
   const container = document.getElementById('notesList');
@@ -1382,7 +1554,8 @@ function addNote() {
 function saveNote(el, i) {
   notes = loadNotes();
   if (!notes[activeNoteCategory]) notes[activeNoteCategory] = [];
-  notes[activeNoteCategory][i] = el.value;
+  if (notes[activeNoteCategory][i]) notes[activeNoteCategory][i].text = el.value;
+  else notes[activeNoteCategory][i] = normNote('', activeNoteCategory, i);
   saveNotes();
   el.style.borderColor = 'transparent';
   el.style.background = 'transparent';
@@ -1391,7 +1564,8 @@ function saveNote(el, i) {
 function deleteNote(i) {
   notes = loadNotes();
   if (notes[activeNoteCategory]) {
-    notes[activeNoteCategory].splice(i, 1);
+    const removed = notes[activeNoteCategory].splice(i, 1)[0];
+    if (removed) tombstoneNote(removed);
   }
   saveNotes();
   renderNotes();
@@ -1621,6 +1795,30 @@ function toggleSettings() {
   if (card) card.style.display = card.style.display === 'none' ? 'block' : 'none';
   if (card && card.style.display !== 'none') renderBackupList();
 }
+
+function setSidebar(collapsed) {
+  const layout = document.getElementById('appContent');
+  if (!layout) return;
+  layout.classList.toggle('sidebar-collapsed', collapsed);
+  try { localStorage.setItem('siberia_sidebar_collapsed', collapsed ? '1' : '0'); } catch (e) {}
+}
+
+function toggleSidebar() {
+  const layout = document.getElementById('appContent');
+  if (!layout) return;
+  setSidebar(!layout.classList.contains('sidebar-collapsed'));
+  layout._ignoreResize = true;
+  clearTimeout(layout._resizeTimer);
+  layout._resizeTimer = setTimeout(() => { layout._ignoreResize = false; }, 250);
+}
+
+window.addEventListener('resize', () => {
+  const layout = document.getElementById('appContent');
+  if (!layout) return;
+  if (layout._ignoreResize) return;
+  const shouldCollapse = window.innerWidth < 1400;
+  layout.classList.toggle('sidebar-collapsed', shouldCollapse);
+});
 
 function renderBackupList() {
   const el = document.getElementById('backupList');
