@@ -2208,6 +2208,22 @@ function dashboardTasks(cls) {
   return (loadData('tracker_tasks', [])).filter(t => t.taskClass && t.taskClass.indexOf(cls) !== -1 && t.releaseDate);
 }
 
+function daysRangeMs(start, end) {
+  let ms = end - start;
+  if (ms <= 0) return Math.max(0, ms);
+  const DAY = 86400000;
+  const s = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  const e = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+  const diff = Math.max(0, Math.round((e - s) / DAY));
+  let weekendDays = 0;
+  for (let i = 0; i < diff; i++) {
+    const d = s.getDay();
+    if (d === 0 || d === 6) weekendDays++;
+    s.setDate(s.getDate() + 1);
+  }
+  return ms - weekendDays * DAY;
+}
+
 function avgMsFor(tasks, startGetter) {
   let sum = 0, count = 0;
   tasks.forEach(t => {
@@ -2216,7 +2232,7 @@ function avgMsFor(tasks, startGetter) {
     const release = new Date(t.releaseDate + 'T00:00:00');
     const s = new Date(start);
     if (isNaN(release.getTime()) || isNaN(s.getTime())) return;
-    sum += release - s;
+    sum += daysRangeMs(s, release);
     count++;
   });
   return count ? sum / count : null;
