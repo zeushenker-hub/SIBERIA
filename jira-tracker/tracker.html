@@ -240,6 +240,22 @@
     .note-item:active { cursor: grabbing; }
     .note-item.dragging { opacity: .4; }
     .note-item.drag-over { border-color: #A9D3F2; background: #f0f8ff; }
+    .funnel {
+      display: flex; flex-direction: column; gap: 6px; margin-top: 4px;
+    }
+    .funnel-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 12px; border-radius: 6px; background: #FFFFFF;
+      border: 1px solid #eee; cursor: pointer; transition: background .15s;
+    }
+    .funnel-row:hover { background: #f0f8ff; }
+    .funnel-bar-wrap { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; }
+    .funnel-label { font-size: 12px; font-weight: 600; color: #333; white-space: nowrap; }
+    .funnel-bar {
+      height: 14px; border-radius: 4px; width: 100%;
+      max-width: 180px; transition: width .3s ease; flex-shrink: 0;
+    }
+    .funnel-count { font-size: 12px; font-weight: 700; color: #666; white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -263,6 +279,10 @@
       <div class="card">
         <div class="card-header"><h2>Навигация</h2></div>
         <div class="sprint-list" id="sprintList"></div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="card-header"><h2>Воронка работы</h2></div>
+        <div class="funnel" id="funnel"></div>
       </div>
       <div class="card" style="margin-top:16px">
         <div class="card-header">
@@ -1024,6 +1044,7 @@ function renderTasks() {
     if (sortField === f.toLowerCase()) el.textContent = sortDir === 'asc' ? '▲' : '▼';
     else el.textContent = '';
   });
+  renderFunnel();
 }
 
 function toggleView() {
@@ -1431,6 +1452,47 @@ function renderSprints() {
   container.innerHTML = urgentHtml + myTasksHtml + backlogHtml + activeHtml +
     (activeSprints.length === 0 && archivedSprints.length === 0 ? '<div class="empty-state" style="padding:20px">Нет спринтов</div>' : '') + archivedHtml;
   updateMassSprintSelect();
+}
+
+function renderFunnel() {
+  tasks = loadData('tracker_tasks', []);
+  const container = document.getElementById('funnel');
+  if (!container) return;
+  const colors = { 'Аналитика':'#9ABFDC', 'В работе':'#A9D3F2', 'Ревью':'#F7C0E3', 'QA':'#E6BFED', 'Требуется релиз':'#F0A9A0' };
+  const steps = [
+    { status: 'Аналитика', label: 'На аналитике' },
+    { status: 'В работе', label: 'В работе' },
+    { status: 'Ревью', label: 'На ревью' },
+    { status: 'QA', label: 'На тестировании' },
+    { status: 'Требуется релиз', label: 'Ждут релиз' }
+  ];
+  const counts = steps.map(s => tasks.filter(t => t.status === s.status).length);
+  const max = Math.max(1, ...counts);
+  container.innerHTML = steps.map((s, i) => {
+    const n = counts[i];
+    const pct = Math.round((n / max) * 100);
+    return `<div class="funnel-row" onclick="applyFunnelFilter('${s.status}')" title="Показать задачи: ${s.label}">
+      <span class="funnel-label">${s.label}</span>
+      <div class="funnel-bar-wrap">
+        <div class="funnel-bar" style="width:${pct}%;background:${colors[s.status]||'#CDD6D8'}"></div>
+      </div>
+      <span class="funnel-count">${n}</span>
+    </div>`;
+  }).join('');
+}
+
+function applyFunnelFilter(status) {
+  urgentView = false;
+  document.getElementById('viewToggle').textContent = 'Срочные';
+  document.getElementById('tasksHeader').textContent = 'Все задачи';
+  activeSprintFilter = '';
+  activeMyTasksFilter = false;
+  document.querySelectorAll('.sprint-item, .backlog-header, .my-tasks-header, .urgent-header').forEach(el => el.classList.remove('selected'));
+  document.getElementById('filterStatus').value = status;
+  document.getElementById('filterPriority').value = '';
+  document.getElementById('filterType').value = '';
+  document.getElementById('filterSearch').value = '';
+  renderTasks();
 }
 
 function toggleArchive() {
