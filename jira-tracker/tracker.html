@@ -241,27 +241,16 @@
     .note-item.dragging { opacity: .4; }
     .note-item.drag-over { border-color: #A9D3F2; background: #f0f8ff; }
     .funnel {
-      display: flex; flex-direction: column; gap: 6px; margin-top: 4px;
+      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;
     }
-    .funnel-row {
-      display: flex; align-items: center; gap: 10px;
-      padding: 8px 12px; border-radius: 6px; background: #FFFFFF;
-      border: 1px solid #eee; cursor: pointer; transition: background .15s;
+    .fl-item {
+      display: inline-flex; align-items: baseline; gap: 6px;
+      padding: 6px 12px; border-radius: 16px; border: 1px solid #CDD6D8;
+      background: #FAFAFA; font-size: 12px; font-weight: 600; color: #333;
+      cursor: pointer; white-space: nowrap; transition: background .15s, border-color .15s;
     }
-    .funnel-row:hover { background: #f0f8ff; }
-    .funnel-bar-wrap { flex: 1; min-width: 0; display: flex; align-items: center; }
-    .funnel-label {
-      font-size: 12px; font-weight: 600; color: #333; white-space: nowrap;
-      width: 120px; flex-shrink: 0;
-    }
-    .funnel-count {
-      font-size: 12px; font-weight: 700; color: #333; white-space: nowrap;
-      width: 26px; text-align: right; flex-shrink: 0; margin-right: 4px;
-    }
-    .funnel-bar {
-      height: 14px; border-radius: 4px; width: 100%;
-      max-width: 180px; transition: width .3s ease; flex-shrink: 0;
-    }
+    .fl-item:hover { background: #f0f8ff; border-color: #A9D3F2; }
+    .fl-item b { font-size: 13px; color: #333; }
   </style>
 </head>
 <body>
@@ -1464,7 +1453,6 @@ function renderFunnel() {
   tasks = loadData('tracker_tasks', []);
   const container = document.getElementById('funnel');
   if (!container) return;
-  const colors = { 'Аналитика':'#9ABFDC', 'В работе':'#A9D3F2', 'Ревью':'#F7C0E3', 'QA':'#E6BFED', 'Требуется релиз':'#F0A9A0' };
   const steps = [
     { status: 'Аналитика', label: 'На аналитике' },
     { status: 'В работе', label: 'В работе' },
@@ -1472,18 +1460,11 @@ function renderFunnel() {
     { status: 'QA', label: 'На тестировании' },
     { status: 'Требуется релиз', label: 'Ждут релиз' }
   ];
-  const counts = steps.map(s => tasks.filter(t => t.status === s.status).length);
-  const max = Math.max(1, ...counts);
-  container.innerHTML = steps.map((s, i) => {
-    const n = counts[i];
-    const pct = Math.round((n / max) * 100);
-    return `<div class="funnel-row" onclick="applyFunnelFilter('${s.status}')" title="Показать задачи: ${s.label}">
-      <span class="funnel-label">${s.label}</span>
-      <span class="funnel-count">${n}</span>
-      <div class="funnel-bar-wrap">
-        <div class="funnel-bar" style="width:${pct}%;background:${colors[s.status]||'#CDD6D8'}"></div>
-      </div>
-    </div>`;
+  container.innerHTML = steps.map(s => {
+    const n = tasks.filter(t => t.status === s.status).length;
+    return `<span class="fl-item" onclick="applyFunnelFilter('${s.status}')" title="Показать задачи: ${s.label}">
+      ${s.label} <b>${n}</b>
+    </span>`;
   }).join('');
 }
 
