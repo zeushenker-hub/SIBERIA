@@ -363,10 +363,6 @@
           <div class="sprint-list" id="sprintList"></div>
         </div>
         <div class="card" style="margin-top:16px">
-          <div class="card-header"><h2>Воронка работы</h2></div>
-          <div class="funnel" id="funnel"></div>
-        </div>
-        <div class="card" style="margin-top:16px">
           <div class="card-header">
             <h2>📝 Заметки</h2>
             <div style="display:flex;gap:4px">
@@ -419,6 +415,10 @@
           </div>
         </div>
         <div class="dash-metrics" id="dashMetrics"></div>
+        <div class="dash-funnel" id="dashFunnel" style="margin-top:20px">
+          <div class="card-header" style="margin-bottom:12px"><h2>Воронка работы</h2></div>
+          <div class="funnel" id="funnel"></div>
+        </div>
       </div>
       <div class="card" id="tasksSection">
         <div class="card-header">
@@ -2455,6 +2455,7 @@ function showDashboard() {
   document.getElementById('tasksSection').style.display = 'none';
   document.getElementById('dashButton').classList.add('active');
   renderDashboard();
+  renderFunnel();
 }
 
 function showTasksView() {
