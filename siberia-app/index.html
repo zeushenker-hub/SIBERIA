@@ -406,6 +406,17 @@
   </div>
 </div>
 
+<!-- Funnel Detail Modal -->
+<div class="modal-overlay" id="funnelDetailModal">
+  <div class="modal">
+    <h3 id="funnelDetailTitle">Детализация этапа</h3>
+    <div id="funnelDetailBody"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('funnelDetailModal')">Закрыть</button>
+    </div>
+  </div>
+</div>
+
 <!-- Detail Panel -->
 <div class="detail-overlay" id="detailPanel">
   <div class="detail-panel">
@@ -1151,16 +1162,70 @@ function renderFunnel() {
   ];
   container.innerHTML = steps.map(s => {
     const n = tasks.filter(t => t.status === s.status).length;
-    return `<span class="fl-item" onclick="applyFunnelFilter('${s.status}')" title="Показать задачи: ${s.label}" style="border-color:${s.color};color:${s.color}">
+    return `<span class="fl-item" onclick="showFunnelDetail('${s.status}')" title="Детализация: ${s.label}" style="border-color:${s.color};color:${s.color};cursor:pointer">
       <span>${s.label}</span><b>${n}</b>
     </span>`;
   }).join('');
 }
 
+function showFunnelDetail(status) {
+  tasks = loadData('tracker_tasks', []);
+  sprints = loadData('tracker_sprints', []);
+  const steps = [
+    { status: 'Аналитика', label: 'На аналитике', color: '#3B82F6' },
+    { status: 'В работе', label: 'В работе', color: '#F59E0B' },
+    { status: 'Ревью', label: 'На ревью', color: '#F59E0B' },
+    { status: 'QA', label: 'На тестировании', color: '#F59E0B' },
+    { status: 'Требуется релиз', label: 'Ждут релиз', color: '#EF4444' }
+  ];
+  const step = steps.find(s => s.status === status);
+  const list = tasks.filter(t => t.status === status);
+
+  const prioCount = {};
+  PRIORITIES.forEach(p => prioCount[p] = 0);
+  list.forEach(t => { prioCount[t.priority] = (prioCount[t.priority] || 0) + 1; });
+  const typeCount = {};
+  TYPES.forEach(tp => typeCount[tp] = 0);
+  list.forEach(t => { typeCount[t.type] = (typeCount[t.type] || 0) + 1; });
+
+  document.getElementById('funnelDetailTitle').textContent = 'Этап: ' + (step ? step.label : status);
+  document.getElementById('funnelDetailBody').innerHTML =
+    `<div style="display:flex;gap:8px;margin-bottom:8px;color:${step?step.color:'#333'};align-items:center">
+       <span style="font-size:24px;font-weight:700">${list.length}</span>
+       <span style="font-size:13px;color:#666">задач на этапе</span>
+     </div>
+     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+       <span class="badge">Приоритеты: ${PRIORITIES.map(p => `<b style="margin-right:2px">${prioCount[p]||0}</b> ${p}`).join(' · ')}</span>
+     </div>
+     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+       <span class="badge">Типы: ${TYPES.map(tp => `<b style="margin-right:2px">${typeCount[tp]||0}</b> ${tp}`).join(' · ')}</span>
+     </div>
+     ${list.length === 0 ? '<div style="color:#999;font-size:13px">На этом этапе нет задач</div>' :
+       '<div style="display:flex;flex-direction:column;gap:6px">' +
+       list.map(t => {
+         const sp = t.sprintId ? sprints.find(s => s.id === t.sprintId) : null;
+         return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #EAECEF;border-radius:6px;cursor:pointer" onclick="closeModal('funnelDetailModal');openDetail('${t.id}')">
+           <span class="task-id" style="min-width:48px">${escHtml(t.id)}</span>
+           <span style="flex:1;font-size:13px">${escHtml(t.title)}</span>
+           ${badge(t.priority, PRIORITY_CLASSES[t.priority])}
+           ${badge(t.type, TYPE_CLASSES[t.type])}
+           <span style="font-size:11px;color:#666;white-space:nowrap">${sp ? sp.name : 'Бэклог'} · ${formatDate(t.deadline)}</span>
+         </div>`;
+       }).join('') + '</div>'}`;
+  openModal('funnelDetailModal');
+}
+
 function applyFunnelFilter(status) {
   urgentView = false;
   document.getElementById('viewToggle').textContent = 'Срочные';
-  document.getElementById('tasksHeader').textContent = 'Все задачи';
+  const step = [
+    { status: 'Аналитика', label: 'На аналитике' },
+    { status: 'В работе', label: 'В работе' },
+    { status: 'Ревью', label: 'На ревью' },
+    { status: 'QA', label: 'На тестировании' },
+    { status: 'Требуется релиз', label: 'Ждут релиз' }
+  ].find(s => s.status === status);
+  document.getElementById('tasksHeader').textContent = step ? 'Задачи: ' + step.label : 'Все задачи';
   activeSprintFilter = '';
   activeMyTasksFilter = false;
   document.querySelectorAll('.sprint-item, .backlog-header, .my-tasks-header, .urgent-header').forEach(el => el.classList.remove('selected'));
@@ -1169,6 +1234,7 @@ function applyFunnelFilter(status) {
   document.getElementById('filterType').value = '';
   document.getElementById('filterSearch').value = '';
   renderTasks();
+  document.getElementById('taskBody')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function toggleArchive() {
