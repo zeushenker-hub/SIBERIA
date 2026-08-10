@@ -2318,6 +2318,34 @@ function calcLeadTimeP2(range) {
   return avgMsFor(dashboardTasks('P2', range), t => t.startWorkAt || t.createdAt);
 }
 
+function taskClosedAt(t) {
+  if (!t || t.status !== 'Готово') return null;
+  if (t.releaseAt) {
+    const d = new Date(t.releaseAt);
+    if (!isNaN(d.getTime())) return d;
+  }
+  if (t.releaseDate) {
+    const d = new Date(t.releaseDate + 'T00:00:00');
+    if (!isNaN(d.getTime())) return d;
+  }
+  return null;
+}
+
+function calcThroughput(range) {
+  let closed = 0;
+  let inPeriod = 0;
+  tasks.forEach(t => {
+    const d = taskClosedAt(t);
+    if (!d) return;
+    closed++;
+    if ((!range.from || d >= range.from) && (!range.to || d <= range.to)) inPeriod++;
+  });
+  const daysTotal = (range.from && range.to) ? Math.max(1, Math.round((range.to - range.from) / 86400000)) : 1;
+  const perDay = inPeriod / daysTotal;
+  const perWeek = perDay * 7;
+  return { closed, inPeriod, perDay, perWeek };
+}
+
 function renderDashboard() {
   const container = document.getElementById('dashMetrics');
   if (!container) return;
@@ -2327,8 +2355,14 @@ function renderDashboard() {
   const p2 = dashboardTasks('P2', range);
   const mttr = calcMTTR_P1(range);
   const lead = calcLeadTimeP2(range);
+  const thr = calcThroughput(range);
   container.innerHTML =
     `<div class="metric-card">
+      <div class="metric-label">📊 Throughput · Пропускная способность</div>
+      <div class="metric-value">${thr.inPeriod}</div>
+      <div class="metric-sub">Задач закрыто (статус «Готово») ${periodLabel}<br>В среднем: ${thr.perDay.toFixed(1)} в день · ${thr.perWeek.toFixed(1)} в неделю<br>Всего закрыто: ${thr.closed}</div>
+    </div>
+    <div class="metric-card">
       <div class="metric-label">⏱ MTTR-P1</div>
       <div class="metric-value">${formatAvgMs(mttr)}</div>
       <div class="metric-sub">Среднее время задач класса P-1 от постановки до релиза ${periodLabel} (выпущено: ${p1.length})</div>
