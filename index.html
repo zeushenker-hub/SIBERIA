@@ -413,6 +413,8 @@
             <input type="date" id="dashFrom" title="Начало периода" onchange="onDashRangeChange()" />
             <span class="dash-range-sep">—</span>
             <input type="date" id="dashTo" title="Конец периода" onchange="onDashRangeChange()" />
+            <span class="filter-label" style="margin-left:12px">Размер</span>
+            <select id="dashSize" onchange="onDashSizeChange()"><option value="">Все</option></select>
           </div>
         </div>
         <div class="dash-metrics" id="dashMetrics"></div>
@@ -704,6 +706,7 @@ let detailTaskId = null;
 let activeSprintFilter = '';
 let activeMyTasksFilter = false;
 let urgentView = true;
+let dashSize = '';
 
 let currentUser = null;
 
@@ -2404,6 +2407,11 @@ function onDashRangeChange() {
   renderDashboard();
 }
 
+function onDashSizeChange() {
+  dashSize = document.getElementById('dashSize').value;
+  renderDashboard();
+}
+
 function formatPeriodLabel(range) {
   const fmt = d => d.toLocaleDateString('ru-RU');
   if (range.from && range.to) return 'с ' + fmt(range.from) + ' по ' + fmt(range.to);
@@ -2413,6 +2421,7 @@ function formatPeriodLabel(range) {
 
 function dashboardTasks(cls, range) {
   let list = loadData('tracker_tasks', []).filter(t => t.taskClass && t.taskClass.indexOf(cls) !== -1 && t.releaseDate);
+  if (dashSize) list = list.filter(t => t.size === dashSize);
   if (range.from || range.to) {
     list = list.filter(t => {
       const r = new Date(t.releaseDate + 'T00:00:00');
@@ -2493,6 +2502,7 @@ function calcThroughput(range) {
   let noDate = 0;
   tasks.forEach(t => {
     if (!t || t.status !== 'Готово') return;
+    if (dashSize && t.size !== dashSize) return;
     closed++;
     const d = taskClosedAt(t);
     if (!d) { noDate++; return; }
@@ -2509,6 +2519,7 @@ function renderDashboard() {
   if (!container) return;
   const range = getDashboardRange();
   const periodLabel = formatPeriodLabel(range);
+  const sizeLabel = dashSize ? ' · размер ' + dashSize : '';
   const p1 = dashboardTasks('P1', range);
   const p2 = dashboardTasks('P2', range);
   const mttr = calcMTTR_P1(range);
@@ -2518,18 +2529,39 @@ function renderDashboard() {
     `<div class="metric-card">
       <div class="metric-label">📊 Throughput · Пропускная способность</div>
       <div class="metric-value">${thr.inPeriod}</div>
-      <div class="metric-sub">Задач закрыто (статус «Готово») ${periodLabel}<br>В среднем: ${thr.perDay.toFixed(1)} в день · ${thr.perWeek.toFixed(1)} в неделю<br>Всего закрыто: ${thr.closed}${thr.noDate ? ` (из них ${thr.noDate} без даты закрытия — не учтены в периодах)` : ''}</div>
+      <div class="metric-sub">Задач закрыто (статус «Готово»)${sizeLabel} ${periodLabel}<br>В среднем: ${thr.perDay.toFixed(1)} в день · ${thr.perWeek.toFixed(1)} в неделю<br>Всего закрыто: ${thr.closed}${thr.noDate ? ` (из них ${thr.noDate} без даты закрытия — не учтены в периодах)` : ''}</div>
     </div>
     <div class="metric-card">
       <div class="metric-label">⏱ MTTR-P1</div>
       <div class="metric-value">${formatAvgMs(mttr)}</div>
-      <div class="metric-sub">Среднее время задач класса P-1 от постановки до релиза ${periodLabel} (выпущено: ${p1.length})</div>
+      <div class="metric-sub">Среднее время задач класса P-1 от постановки до релиза${sizeLabel} ${periodLabel} (выпущено: ${p1.length})</div>
     </div>
     <div class="metric-card">
       <div class="metric-label">🚀 LEAD TIME-P2</div>
       <div class="metric-value">${formatAvgMs(lead)}</div>
-      <div class="metric-sub">Среднее время задач класса P-2 от взятия в работу до релиза ${periodLabel} (выпущено: ${p2.length})</div>
+      <div class="metric-sub">Среднее время задач класса P-2 от взятия в работу до релиза${sizeLabel} ${periodLabel} (выпущено: ${p2.length})</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">📦 Throughput по размеру</div>
+      <div class="metric-value" style="font-size:15px;line-height:1.7">${renderSizeBreakdown(range)}</div>
+      <div class="metric-sub">Закрытых задач по размеру ${periodLabel}${sizeLabel ? ' (выбран «' + dashSize + '»)' : ''}</div>
     </div>`;
+}
+
+function renderSizeBreakdown(range) {
+  const counts = {};
+  SIZES.forEach(s => counts[s] = 0);
+  let noSize = 0;
+  loadData('tracker_tasks', []).forEach(t => {
+    if (!t || t.status !== 'Готово') return;
+    if (dashSize && t.size !== dashSize) return;
+    const d = taskClosedAt(t);
+    if (!d) return;
+    if ((range.from && d < range.from) || (range.to && d > range.to)) return;
+    if (t.size && counts[t.size] !== undefined) counts[t.size]++;
+    else noSize++;
+  });
+  return SIZES.map(s => `<span class="badge ${SIZE_CLASSES[s]}">${s} · ${counts[s]}</span>`).join('&nbsp;&nbsp;') + (noSize ? `<span class="badge">— · ${noSize}</span>` : '');
 }
 
 function showDashboard() {
@@ -2556,6 +2588,7 @@ async function init() {
   populateSelect('filterType', TYPES, '');
   populateSelect('filterSize', SIZES, '');
   populateSelect('filterClass', TASK_CLASSES, '');
+  populateSelect('dashSize', SIZES, '');
   populateSprintSelect('taskSprint', '');
   renderSprints();
   renderTasks();
