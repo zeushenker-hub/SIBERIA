@@ -181,9 +181,9 @@
     .task-table tr { cursor: grab; }
     .task-table tr:active { cursor: grabbing; }
     .task-table tr.dragging { opacity: .4; }
-    .inline-status, .inline-date { font-size: 11px; font-family: inherit; padding: 2px 4px; border: 1px solid transparent; border-radius: 4px; background: transparent; cursor: pointer; max-width: 120px; }
-    .inline-status:hover, .inline-date:hover { border-color: #CDD6D8; background: #fff; }
-    .inline-status:focus, .inline-date:focus { border-color: #A9D3F2; outline: none; background: #fff; }
+    .inline-status, .inline-date, .inline-size { font-size: 11px; font-family: inherit; padding: 2px 4px; border: 1px solid transparent; border-radius: 4px; background: transparent; cursor: pointer; max-width: 120px; }
+    .inline-status:hover, .inline-date:hover, .inline-size:hover { border-color: #CDD6D8; background: #fff; }
+    .inline-status:focus, .inline-date:focus, .inline-size:focus { border-color: #A9D3F2; outline: none; background: #fff; }
     .inline-date { max-width: 130px; border: 1px solid #CDD6D8; border-radius: 4px; background: #fff; padding: 3px 6px; font-size: 12px; }
     .inline-comment { font-size: 11px; font-family: inherit; padding: 2px 6px; border: 1px solid transparent; border-radius: 4px; background: transparent; cursor: text; width: 100%; min-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .inline-comment:hover { border-color: #CDD6D8; background: #fff; position: relative; }
@@ -218,6 +218,11 @@
     .badge-feature { background: #A9D3F2; color: #333; }
     .badge-update { background: #A6E9ED; color: #333; }
     .badge-routine { background: #D7D4D4; color: #333; }
+    .badge-s { background: #A8F0CD; color: #333; }
+    .badge-m { background: #A9D3F2; color: #333; }
+    .badge-l { background: #F7C0E3; color: #333; }
+    .badge-xl { background: #E6BFED; color: #333; }
+    .badge-xxl { background: #F0A9A0; color: #333; }
     .badge-class-p1 { background: #E5484D; color: #fff; }
     .badge-class-p2 { background: #3B82F6; color: #fff; }
     .badge-class-p3 { background: #10B981; color: #fff; }
@@ -432,6 +437,8 @@
           <select id="filterPriority" onchange="renderTasks()"><option value="">Все</option></select>
           <span class="filter-label">Тип</span>
           <select id="filterType" onchange="renderTasks()"><option value="">Все</option></select>
+          <span class="filter-label">Размер</span>
+          <select id="filterSize" onchange="renderTasks()"><option value="">Все</option></select>
           <span class="filter-label">Класс</span>
           <select id="filterClass" onchange="renderTasks()"><option value="">Все</option></select>
           <span class="filter-label">Поиск</span>
@@ -455,6 +462,7 @@
               <th onclick="setSort('status')">Статус <span class="sort-arrow" id="sortArrowStatus"></span></th>
               <th onclick="setSort('priority')">Приоритет <span class="sort-arrow" id="sortArrowPriority"></span></th>
               <th onclick="setSort('type')">Тип <span class="sort-arrow" id="sortArrowType"></span></th>
+              <th onclick="setSort('size')">Размер <span class="sort-arrow" id="sortArrowSize"></span></th>
               <th onclick="setSort('class')">Класс <span class="sort-arrow" id="sortArrowClass"></span></th>
               <th onclick="setSort('deadline')">Срок <span class="sort-arrow" id="sortArrowDeadline"></span></th>
               <th onclick="setSort('release')">Релиз <span class="sort-arrow" id="sortArrowRelease"></span></th>
@@ -541,9 +549,15 @@
         <input id="taskRelease" type="date" />
       </div>
     </div>
-    <div class="form-group">
-      <label>Спринт</label>
-      <select id="taskSprint"><option value="">Без спринта</option></select>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Размер</label>
+        <select id="taskSize"></select>
+      </div>
+      <div class="form-group">
+        <label>Спринт</label>
+        <select id="taskSprint"><option value="">Без спринта</option></select>
+      </div>
     </div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeModal('taskModal')">Отмена</button>
@@ -613,6 +627,10 @@
         <div class="value"><span id="detailType"></span></div>
       </div>
       <div class="detail-field">
+        <label>Размер</label>
+        <div class="value"><span id="detailSize"></span></div>
+      </div>
+      <div class="detail-field">
         <label>Класс</label>
         <div class="value"><span id="detailClass"></span></div>
       </div>
@@ -673,6 +691,9 @@ const PRIORITIES = ['Критичный', 'Высокий', 'Средний', '�
 const PRIORITY_CLASSES = { 'Критичный':'badge-critical', 'Высокий':'badge-high', 'Средний':'badge-medium', 'Низкий':'badge-low', 'Очень низкий':'badge-verylow' };
 const TYPES = ['Баг', 'Фича', 'Обновление', 'Рутина'];
 const TYPE_CLASSES = { 'Баг':'badge-bug', 'Фича':'badge-feature', 'Обновление':'badge-update', 'Рутина':'badge-routine' };
+const SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
+const SIZE_CLASSES = { 'S':'badge-s', 'M':'badge-m', 'L':'badge-l', 'XL':'badge-xl', 'XXL':'badge-xxl' };
+const SIZE_ORDER = { 'S':0, 'M':1, 'L':2, 'XL':3, 'XXL':4 };
 const TASK_CLASSES = ['P1 · Expedite', 'P2 · Standard', 'P3 · Fixed Date'];
 const TASK_CLASS_CLASSES = { 'P1 · Expedite':'badge-class-p1', 'P2 · Standard':'badge-class-p2', 'P3 · Fixed Date':'badge-class-p3' };
 const TASK_CLASS_ORDER = { 'P1 · Expedite':0, 'P2 · Standard':1, 'P3 · Fixed Date':2 };
@@ -1132,6 +1153,7 @@ function showUrgentView() {
   document.getElementById('filterStatus').value = '';
   document.getElementById('filterPriority').value = '';
   document.getElementById('filterType').value = '';
+  document.getElementById('filterSize').value = '';
   document.getElementById('filterClass').value = '';
   document.getElementById('filterSearch').value = '';
   renderTasks();
@@ -1155,6 +1177,7 @@ function openTaskModal(task) {
   populateSelect('taskPriority', PRIORITIES, task ? task.priority : 'Средний');
   populateSelect('taskType', TYPES, task ? task.type : 'Фича');
   populateSelect('taskClass', TASK_CLASSES, task ? task.taskClass : '');
+  populateSelect('taskSize', SIZES, task ? task.size : '');
   document.getElementById('taskDeadline').value = task ? (task.deadline||'') : '';
   document.getElementById('taskRelease').value = task ? (task.releaseDate||'') : '';
   populateSprintSelect('taskSprint', task ? task.sprintId : '');
@@ -1173,6 +1196,7 @@ function saveTask() {
     priority: document.getElementById('taskPriority').value,
     type: document.getElementById('taskType').value,
     taskClass: document.getElementById('taskClass').value,
+    size: document.getElementById('taskSize').value,
     deadline: document.getElementById('taskDeadline').value || '',
     releaseDate: document.getElementById('taskRelease').value || '',
     sprintId: document.getElementById('taskSprint').value || '',
@@ -1223,6 +1247,7 @@ function openDetail(taskId) {
   document.getElementById('detailStatus').innerHTML = badge(t.status, STATUS_CLASSES[t.status]);
   document.getElementById('detailPriority').innerHTML = badge(t.priority, PRIORITY_CLASSES[t.priority]);
   document.getElementById('detailType').innerHTML = badge(t.type, TYPE_CLASSES[t.type]);
+  document.getElementById('detailSize').innerHTML = t.size ? badge(t.size, SIZE_CLASSES[t.size]) : '—';
   document.getElementById('detailClass').innerHTML = t.taskClass ? badge(t.taskClass, TASK_CLASS_CLASSES[t.taskClass]) : '';
   document.getElementById('detailDeadline').textContent = formatDate(t.deadline);
   document.getElementById('detailRelease').textContent = formatDate(t.releaseDate);
@@ -1250,6 +1275,7 @@ function resetFilters() {
   document.getElementById('filterStatus').value = '';
   document.getElementById('filterPriority').value = '';
   document.getElementById('filterType').value = '';
+  document.getElementById('filterSize').value = '';
   document.getElementById('filterClass').value = '';
   document.getElementById('filterSearch').value = '';
   if (!activeSprintFilter && !activeMyTasksFilter) {
@@ -1278,6 +1304,7 @@ function sortCompare(a, b) {
     case 'status': va = STATUS_ORDER[a.status] ?? 99; vb = STATUS_ORDER[b.status] ?? 99; break;
     case 'priority': va = PRIO_ORDER[a.priority] ?? 99; vb = PRIO_ORDER[b.priority] ?? 99; break;
     case 'type': va = a.type; vb = b.type; break;
+    case 'size': va = SIZE_ORDER[a.size] ?? 99; vb = SIZE_ORDER[b.size] ?? 99; break;
     case 'class': va = TASK_CLASS_ORDER[a.taskClass] ?? 99; vb = TASK_CLASS_ORDER[b.taskClass] ?? 99; break;
     case 'deadline': va = a.deadline || '9999-99-99'; vb = b.deadline || '9999-99-99'; break;
     case 'release': va = a.releaseDate || '9999-99-99'; vb = b.releaseDate || '9999-99-99'; break;
@@ -1305,6 +1332,7 @@ function renderTasks() {
   const fStatus = document.getElementById('filterStatus').value;
   const fPriority = document.getElementById('filterPriority').value;
   const fType = document.getElementById('filterType').value;
+  const fSize = document.getElementById('filterSize').value;
   const fClass = document.getElementById('filterClass').value;
   const fSearch = document.getElementById('filterSearch').value.toLowerCase().trim();
 
@@ -1323,6 +1351,7 @@ function renderTasks() {
     if (fStatus && t.status !== fStatus) return false;
     if (fPriority && t.priority !== fPriority) return false;
     if (fType && t.type !== fType) return false;
+    if (fSize && t.size !== fSize) return false;
     if (fClass && t.taskClass !== fClass) return false;
     if (fSearch && !t.id.toLowerCase().includes(fSearch) && !t.title.toLowerCase().includes(fSearch)) return false;
     if (urgentView && !activeSprintFilter && !activeMyTasksFilter && !fSearch) {
@@ -1354,6 +1383,7 @@ function renderTasks() {
       <td><select class="inline-status" data-task-id="${t.id}" onclick="event.stopPropagation()" onchange="inlineChangeStatus(this, '${t.id}')">${STATUSES.map(s => `<option value="${s}"${s===t.status?' selected':''}>${s}</option>`).join('')}</select></td>
       <td>${badge(t.priority, PRIORITY_CLASSES[t.priority])}</td>
       <td>${badge(t.type, TYPE_CLASSES[t.type])}</td>
+      <td><select class="inline-size inline-status" data-task-id="${t.id}" onclick="event.stopPropagation()" onchange="inlineChangeSize(this, '${t.id}')"><option value=""${!t.size?' selected':''}>—</option>${SIZES.map(s => `<option value="${s}"${s===t.size?' selected':''}>${s}</option>`).join('')}</select></td>
       <td><span class="chip-class ${t.taskClass ? TASK_CLASS_CLASSES[t.taskClass].replace('badge-','chip-') : 'empty'}"><span class="chip-label">${t.taskClass || 'Класс'}</span><span class="chip-caret">▾</span><select class="chip-select" data-task-id="${t.id}" onclick="event.stopPropagation()" onchange="inlineChangeClass(this, '${t.id}')"><option value="">—</option>${TASK_CLASSES.map(s => `<option value="${s}"${s===t.taskClass?' selected':''}>${s}</option>`).join('')}</select></span></td>
       <td><input class="inline-date" type="date" value="${t.deadline||''}" onclick="event.stopPropagation()" onchange="inlineChangeDeadline(this, '${t.id}')" /></td>
       <td><input class="inline-date" type="date" value="${t.releaseDate||''}" onclick="event.stopPropagation()" onchange="inlineChangeRelease(this, '${t.id}')" /></td>
@@ -1363,7 +1393,7 @@ function renderTasks() {
     }).join('');
   }
 
-  ['Id','Title','Status','Priority','Type','Class','Deadline','Release','Response'].forEach(f => {
+  ['Id','Title','Status','Priority','Type','Size','Class','Deadline','Release','Response'].forEach(f => {
     const el = document.getElementById(`sortArrow${f}`);
     if (sortField === f.toLowerCase()) el.textContent = sortDir === 'asc' ? '▲' : '▼';
     else el.textContent = '';
@@ -1385,6 +1415,7 @@ function toggleView() {
   document.getElementById('filterStatus').value = '';
   document.getElementById('filterPriority').value = '';
   document.getElementById('filterType').value = '';
+  document.getElementById('filterSize').value = '';
   document.getElementById('filterClass').value = '';
   document.getElementById('filterSearch').value = '';
   activeSprintFilter = '';
@@ -1411,6 +1442,10 @@ function inlineChangeStatus(sel, id) {
 function inlineChangeDeadline(inp, id) {
   const task = tasks.find(t => t.id === id);
   if (task) { task.deadline = inp.value; saveData('tracker_tasks', tasks); }
+}
+function inlineChangeSize(sel, id) {
+  const task = tasks.find(t => t.id === id);
+  if (task) { task.size = sel.value; saveData('tracker_tasks', tasks); }
 }
 function inlineChangeRelease(inp, id) {
   const task = tasks.find(t => t.id === id);
@@ -1889,6 +1924,7 @@ function applyFunnelFilter(status) {
   document.getElementById('filterStatus').value = status;
   document.getElementById('filterPriority').value = '';
   document.getElementById('filterType').value = '';
+  document.getElementById('filterSize').value = '';
   document.getElementById('filterSearch').value = '';
   renderTasks();
 }
@@ -2518,6 +2554,7 @@ async function init() {
   populateSelect('filterStatus', STATUSES, '');
   populateSelect('filterPriority', PRIORITIES, '');
   populateSelect('filterType', TYPES, '');
+  populateSelect('filterSize', SIZES, '');
   populateSelect('filterClass', TASK_CLASSES, '');
   populateSprintSelect('taskSprint', '');
   renderSprints();

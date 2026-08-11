@@ -157,9 +157,9 @@
     .task-table tr { cursor: grab; }
     .task-table tr:active { cursor: grabbing; }
     .task-table tr.dragging { opacity: .4; }
-    .inline-status, .inline-date, .inline-size { font-size: 11px; font-family: inherit; padding: 2px 4px; border: 1px solid transparent; border-radius: 4px; background: transparent; cursor: pointer; max-width: 120px; }
-    .inline-status:hover, .inline-date:hover, .inline-size:hover { border-color: #CDD6D8; background: #fff; }
-    .inline-status:focus, .inline-date:focus, .inline-size:focus { border-color: #A9D3F2; outline: none; background: #fff; }
+    .inline-status, .inline-date { font-size: 11px; font-family: inherit; padding: 2px 4px; border: 1px solid transparent; border-radius: 4px; background: transparent; cursor: pointer; max-width: 120px; }
+    .inline-status:hover, .inline-date:hover { border-color: #CDD6D8; background: #fff; }
+    .inline-status:focus, .inline-date:focus { border-color: #A9D3F2; outline: none; background: #fff; }
     .inline-date { max-width: 130px; border: 1px solid #CDD6D8; border-radius: 4px; background: #fff; padding: 3px 6px; font-size: 12px; }
     .inline-comment { font-size: 11px; font-family: inherit; padding: 2px 6px; border: 1px solid transparent; border-radius: 4px; background: transparent; cursor: text; width: 100%; min-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .inline-comment:hover { border-color: #CDD6D8; background: #fff; position: relative; }
@@ -194,11 +194,6 @@
     .badge-feature { background: #A9D3F2; color: #333; }
     .badge-update { background: #A6E9ED; color: #333; }
     .badge-routine { background: #D7D4D4; color: #333; }
-    .badge-s { background: #A8F0CD; color: #333; }
-    .badge-m { background: #A9D3F2; color: #333; }
-    .badge-l { background: #F7C0E3; color: #333; }
-    .badge-xl { background: #E6BFED; color: #333; }
-    .badge-xxl { background: #F0A9A0; color: #333; }
     .task-title { font-weight: 500; }
     .task-id { font-size: 11px; color: #666; margin-right: 6px; }
     .detail-overlay {
@@ -304,8 +299,6 @@
           <select id="filterPriority" onchange="renderTasks()"><option value="">Все</option></select>
           <span class="filter-label">Тип</span>
           <select id="filterType" onchange="renderTasks()"><option value="">Все</option></select>
-          <span class="filter-label">Размер</span>
-          <select id="filterSize" onchange="renderTasks()"><option value="">Все</option></select>
           <span class="filter-label">Поиск</span>
           <input id="filterSearch" placeholder="ID или название..." oninput="renderTasks()" />
           <button class="btn btn-sm btn-secondary" onclick="resetFilters()">Сброс</button>
@@ -327,7 +320,6 @@
               <th onclick="setSort('status')">Статус <span class="sort-arrow" id="sortArrowStatus"></span></th>
               <th onclick="setSort('priority')">Приоритет <span class="sort-arrow" id="sortArrowPriority"></span></th>
               <th onclick="setSort('type')">Тип <span class="sort-arrow" id="sortArrowType"></span></th>
-              <th onclick="setSort('size')">Размер <span class="sort-arrow" id="sortArrowSize"></span></th>
               <th onclick="setSort('deadline')">Срок <span class="sort-arrow" id="sortArrowDeadline"></span></th>
               <th>Комментарий</th>
             </tr>
@@ -377,15 +369,9 @@
         <input id="taskDeadline" type="date" />
       </div>
     </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Размер</label>
-        <select id="taskSize"></select>
-      </div>
-      <div class="form-group">
-        <label>Спринт</label>
-        <select id="taskSprint"><option value="">Без спринта</option></select>
-      </div>
+    <div class="form-group">
+      <label>Спринт</label>
+      <select id="taskSprint"><option value="">Без спринта</option></select>
     </div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeModal('taskModal')">Отмена</button>
@@ -455,10 +441,6 @@
         <div class="value"><span id="detailType"></span></div>
       </div>
       <div class="detail-field">
-        <label>Размер</label>
-        <div class="value"><span id="detailSize"></span></div>
-      </div>
-      <div class="detail-field">
         <label>Срок сдачи</label>
         <div class="value" id="detailDeadline"></div>
       </div>
@@ -495,8 +477,6 @@ const PRIORITIES = ['Критичный', 'Высокий', 'Средний', '�
 const PRIORITY_CLASSES = { 'Критичный':'badge-critical', 'Высокий':'badge-high', 'Средний':'badge-medium', 'Низкий':'badge-low', 'Очень низкий':'badge-verylow' };
 const TYPES = ['Баг', 'Фича', 'Обновление', 'Рутина'];
 const TYPE_CLASSES = { 'Баг':'badge-bug', 'Фича':'badge-feature', 'Обновление':'badge-update', 'Рутина':'badge-routine' };
-const SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
-const SIZE_CLASSES = { 'S':'badge-s', 'M':'badge-m', 'L':'badge-l', 'XL':'badge-xl', 'XXL':'badge-xxl' };
 
 let sortField = 'deadline';
 let sortDir = 'asc';
@@ -689,7 +669,6 @@ function showUrgentView() {
   document.getElementById('filterStatus').value = '';
   document.getElementById('filterPriority').value = '';
   document.getElementById('filterType').value = '';
-  document.getElementById('filterSize').value = '';
   document.getElementById('filterSearch').value = '';
   renderTasks();
 }
@@ -711,7 +690,6 @@ function openTaskModal(task) {
   populateSelect('taskStatus', STATUSES, task ? task.status : 'Новая');
   populateSelect('taskPriority', PRIORITIES, task ? task.priority : 'Средний');
   populateSelect('taskType', TYPES, task ? task.type : 'Фича');
-  populateSelect('taskSize', SIZES, task ? task.size : '');
   document.getElementById('taskDeadline').value = task ? (task.deadline||'') : '';
   populateSprintSelect('taskSprint', task ? task.sprintId : '');
   openModal('taskModal');
@@ -728,7 +706,6 @@ function saveTask() {
     status: document.getElementById('taskStatus').value,
     priority: document.getElementById('taskPriority').value,
     type: document.getElementById('taskType').value,
-    size: document.getElementById('taskSize').value,
     deadline: document.getElementById('taskDeadline').value || '',
     sprintId: document.getElementById('taskSprint').value || '',
   };
@@ -771,7 +748,6 @@ function openDetail(taskId) {
   document.getElementById('detailStatus').innerHTML = badge(t.status, STATUS_CLASSES[t.status]);
   document.getElementById('detailPriority').innerHTML = badge(t.priority, PRIORITY_CLASSES[t.priority]);
   document.getElementById('detailType').innerHTML = badge(t.type, TYPE_CLASSES[t.type]);
-  document.getElementById('detailSize').innerHTML = t.size ? badge(t.size, SIZE_CLASSES[t.size]) : '—';
   document.getElementById('detailDeadline').textContent = formatDate(t.deadline);
   const sp = t.sprintId ? sprints.find(s => s.id === t.sprintId) : null;
   document.getElementById('detailSprint').textContent = sp ? sp.name : 'Бэклог';
@@ -796,7 +772,6 @@ function resetFilters() {
   document.getElementById('filterStatus').value = '';
   document.getElementById('filterPriority').value = '';
   document.getElementById('filterType').value = '';
-  document.getElementById('filterSize').value = '';
   document.getElementById('filterSearch').value = '';
   if (!activeSprintFilter && !activeMyTasksFilter) {
     document.getElementById('tasksHeader').textContent = 'Все задачи';
@@ -812,7 +787,6 @@ function setSort(field) {
 
 const PRIO_ORDER = { 'Критичный':0, 'Высокий':1, 'Средний':2, 'Низкий':3, 'Очень низкий':4 };
 const STATUS_ORDER = { 'Требуется релиз':-1, 'Новая':0, 'На уточнении':1, 'Аналитика':2, 'В работе':3, 'QA':4, 'Ревью':5, 'Готово':6 };
-const SIZE_ORDER = { 'S':0, 'M':1, 'L':2, 'XL':3, 'XXL':4 };
 
 function sortCompare(a, b) {
   const aRelease = a.status === 'Требуется релиз';
@@ -825,7 +799,6 @@ function sortCompare(a, b) {
     case 'status': va = STATUS_ORDER[a.status] ?? 99; vb = STATUS_ORDER[b.status] ?? 99; break;
     case 'priority': va = PRIO_ORDER[a.priority] ?? 99; vb = PRIO_ORDER[b.priority] ?? 99; break;
     case 'type': va = a.type; vb = b.type; break;
-    case 'size': va = SIZE_ORDER[a.size] ?? 99; vb = SIZE_ORDER[b.size] ?? 99; break;
     case 'deadline': va = a.deadline || '9999-99-99'; vb = b.deadline || '9999-99-99'; break;
     default: return 0;
   }
@@ -850,7 +823,6 @@ function renderTasks() {
   const fStatus = document.getElementById('filterStatus').value;
   const fPriority = document.getElementById('filterPriority').value;
   const fType = document.getElementById('filterType').value;
-  const fSize = document.getElementById('filterSize').value;
   const fSearch = document.getElementById('filterSearch').value.toLowerCase().trim();
 
   const today = new Date(); const y = today.getFullYear(); const m = String(today.getMonth()+1).padStart(2,'0'); const d = String(today.getDate()).padStart(2,'0');
@@ -868,7 +840,6 @@ function renderTasks() {
     if (fStatus && t.status !== fStatus) return false;
     if (fPriority && t.priority !== fPriority) return false;
     if (fType && t.type !== fType) return false;
-    if (fSize && t.size !== fSize) return false;
     if (fSearch && !t.id.toLowerCase().includes(fSearch) && !t.title.toLowerCase().includes(fSearch)) return false;
     if (urgentView && !activeSprintFilter && !activeMyTasksFilter && !fSearch) {
       if (t.status === 'Готово') return false;
@@ -899,14 +870,13 @@ function renderTasks() {
       <td><select class="inline-status" data-task-id="${t.id}" onclick="event.stopPropagation()" onchange="inlineChangeStatus(this, '${t.id}')">${STATUSES.map(s => `<option value="${s}"${s===t.status?' selected':''}>${s}</option>`).join('')}</select></td>
       <td>${badge(t.priority, PRIORITY_CLASSES[t.priority])}</td>
       <td>${badge(t.type, TYPE_CLASSES[t.type])}</td>
-      <td><select class="inline-size inline-status" data-task-id="${t.id}" onclick="event.stopPropagation()" onchange="inlineChangeSize(this, '${t.id}')"><option value=""${!t.size?' selected':''}>—</option>${SIZES.map(s => `<option value="${s}"${s===t.size?' selected':''}>${s}</option>`).join('')}</select></td>
       <td><input class="inline-date" type="date" value="${t.deadline||''}" onclick="event.stopPropagation()" onchange="inlineChangeDeadline(this, '${t.id}')" /></td>
       <td><div class="inline-comment-wrapper"><input class="inline-comment" type="text" value="${escHtml(t.comment||'')}" placeholder="..." onclick="event.stopPropagation()" onchange="inlineChangeComment(this, '${t.id}')" onmouseenter="showCommentTooltip(this)" onmouseleave="hideCommentTooltip()" /><div class="comment-tooltip"></div></div></td>
     </tr>`;
     }).join('');
   }
 
-  ['Id','Title','Status','Priority','Type','Size','Deadline'].forEach(f => {
+  ['Id','Title','Status','Priority','Type','Deadline'].forEach(f => {
     const el = document.getElementById(`sortArrow${f}`);
     if (sortField === f.toLowerCase()) el.textContent = sortDir === 'asc' ? '▲' : '▼';
     else el.textContent = '';
@@ -928,7 +898,6 @@ function toggleView() {
   document.getElementById('filterStatus').value = '';
   document.getElementById('filterPriority').value = '';
   document.getElementById('filterType').value = '';
-  document.getElementById('filterSize').value = '';
   document.getElementById('filterSearch').value = '';
   activeSprintFilter = '';
   activeMyTasksFilter = false;
@@ -949,10 +918,6 @@ function inlineChangeStatus(sel, id) {
 function inlineChangeDeadline(inp, id) {
   const task = tasks.find(t => t.id === id);
   if (task) { task.deadline = inp.value; saveData('tracker_tasks', tasks); }
-}
-function inlineChangeSize(sel, id) {
-  const task = tasks.find(t => t.id === id);
-  if (task) { task.size = sel.value; saveData('tracker_tasks', tasks); renderTasks(); }
 }
 function inlineChangeComment(inp, id) {
   const task = tasks.find(t => t.id === id);
@@ -1267,7 +1232,6 @@ function applyFunnelFilter(status) {
   document.getElementById('filterStatus').value = status;
   document.getElementById('filterPriority').value = '';
   document.getElementById('filterType').value = '';
-  document.getElementById('filterSize').value = '';
   document.getElementById('filterSearch').value = '';
   renderTasks();
   document.getElementById('taskBody')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -1437,7 +1401,6 @@ function init() {
   populateSelect('filterStatus', STATUSES, '');
   populateSelect('filterPriority', PRIORITIES, '');
   populateSelect('filterType', TYPES, '');
-  populateSelect('filterSize', SIZES, '');
   populateSprintSelect('taskSprint', '');
   renderSprints();
   renderTasks();
