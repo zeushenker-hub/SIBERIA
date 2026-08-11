@@ -2561,7 +2561,7 @@ function renderSizeBreakdown(range) {
     if (t.size && counts[t.size] !== undefined) counts[t.size]++;
     else noSize++;
   });
-  return SIZES.map(s => `<span class="badge ${SIZE_CLASSES[s]}">${s} · ${counts[s]}</span>`).join('&nbsp;&nbsp;') + (noSize ? `<span class="badge">— · ${noSize}</span>` : '');
+  return SIZES.map(s => `<span class="badge ${SIZE_CLASSES[s]}">${s} · ${counts[s]}</span>`).join('&nbsp;&nbsp;') + (noSize ? `<span class="badge">Размер не указан · ${noSize}</span>` : '');
 }
 
 function showDashboard() {
