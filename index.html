@@ -762,119 +762,214 @@ firebase.auth().onAuthStateChanged(function(user) {
 });
 
 let fbLoaded = false;
-let saveTimeout = null;
+let onlineStatus = (navigator.onLine !== false);
+
+window.addEventListener('online', function() { onlineStatus = true; toast('Соединение восстановлено'); });
+window.addEventListener('offline', function() { onlineStatus = false; toast('Нет сети. Изменения будут отправлены при восстановлении'); });
 
 function loadData(key, def) {
   try { return JSON.parse(localStorage.getItem(key)) ?? def; } catch { return def; }
 }
-function saveData(key, data) {
-  localStorage.setItem(key, JSON.stringify(data));
-  if (key === 'tracker_tasks' || key === 'tracker_sprints' || key === 'tracker_mytasks' || key === 'tracker_notes') {
-    bumpLocalVer();
-  }
-  autoBackup();
-  syncToFirebase();
+function cacheData(key, data) {
+  try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) { console.warn('localStorage write failed:', e); }
 }
 
-function localVer() { return Number(localStorage.getItem('tracker_ver') || 0); }
-function bumpLocalVer() { localStorage.setItem('tracker_ver', String(localVer() + 1)); }
+// Для восстановления/импорта: помечаем все элементы как "только что изменённые",
+// чтобы они перезаписали облако (это явный ручной ввод данных).
+function stampAllNew(arr) {
+  const now = Date.now();
+  (Array.isArray(arr) ? arr : []).forEach(function(el) { if (el && typeof el === 'object') el.updatedAt = now + 1; });
+}
 
-function mergeById(local, cloud) {
-  const localArr = Array.isArray(local) ? local : [];
-  const cloudArr = Array.isArray(cloud) ? cloud : [];
-  const byId = new Map();
-  cloudArr.forEach(x => { if (x && x.id !== undefined && x.id !== null) byId.set(String(x.id), x); });
-  localArr.forEach(x => {
-    if (!x || x.id === undefined || x.id === null) { byId.set('__kv_' + (byId.size), x); return; }
-    const k = String(x.id);
-    if (byId.has(k)) Object.assign(byId.get(k), x);
-    else byId.set(k, x);
+// Firestore — единый источник правды. localStorage — только оффлайн-кэш.
+// Для каждой коллекции храним последнюю известную облачную копию (для merge-before-write).
+const lastCloud = { tasks: [], sprints: [], mytasks: [], notes: null };
+let cloudNotesTs = Date.now();
+let pendingIdSave = false;
+
+const KEY_TO_DOC = { 'tracker_tasks':'tasks', 'tracker_sprints':'sprints', 'tracker_mytasks':'mytasks' };
+const DOC_TO_KEY = { 'tasks':'tracker_tasks', 'sprints':'tracker_sprints', 'mytasks':'tracker_mytasks' };
+
+function itemKey(el) {
+  return (el && el.id !== undefined && el.id !== null) ? String(el.id) : String(el);
+}
+function itemStamp(el) { return Number(el && el.updatedAt) || 0; }
+function isTombstone(el) { return !!(el && el.deleted); }
+
+function mergeArrays(localArr, cloudArr) {
+  const map = new Map();
+  if (Array.isArray(cloudArr)) cloudArr.forEach(function(el) {
+    if (!el || !isTombstone(el)) {
+      const k = itemKey(el); const ex = map.get(k);
+      if (!ex) map.set(k, el);
+      else if (isTombstone(el)) map.set(k, el);
+      else if (itemStamp(el) >= itemStamp(ex)) map.set(k, el);
+    }
   });
-  return Array.from(byId.values());
+  if (Array.isArray(localArr)) localArr.forEach(function(el) {
+    if (!el) return;
+    const k = itemKey(el); const ex = map.get(k);
+    if (!ex) map.set(k, el);
+    else if (isTombstone(el)) map.set(k, el);            // локальное удаление доминирует
+    else if (itemStamp(el) > itemStamp(ex) && !isTombstone(ex)) map.set(k, el);
+  });
+  return Array.from(map.values());
+}
+
+function liveItems(arr) {
+  return (Array.isArray(arr) ? arr : []).filter(function(el) { return el && !isTombstone(el); });
+}
+
+function mergeDiffers(mergedArr, cloudArr) {
+  if (mergedArr.length !== (Array.isArray(cloudArr) ? cloudArr.length : 0)) return true;
+  const cmap = new Map();
+  (cloudArr || []).forEach(function(el) { if (el) cmap.set(itemKey(el), el); });
+  for (let i = 0; i < mergedArr.length; i++) {
+    const el = mergedArr[i]; const c = cmap.get(itemKey(el));
+    if (!c) return true;
+    if (itemStamp(el) > itemStamp(c)) return true;
+  }
+  return false;
+}
+
+function currentArr(doc) {
+  if (doc === 'tasks') return tasks;
+  if (doc === 'sprints') return sprints;
+  if (doc === 'mytasks') return myTasks;
+  return [];
+}
+function setArr(doc, arr) {
+  if (doc === 'tasks') tasks = arr;
+  else if (doc === 'sprints') sprints = arr;
+  else if (doc === 'mytasks') myTasks = arr;
+}
+
+function renderAll() {
+  try {
+    renderSprints();
+    renderTasks();
+    renderNotes();
+    renderFunnel();
+    renderDashboard();
+  } catch(e) { console.warn('render failed:', e); }
+}
+
+// ---- Пересборка при приходе снапшота из облака ----
+function applyItemsSnapshot(doc, cloudItems) {
+  const cloud = Array.isArray(cloudItems) ? cloudItems.slice() : [];
+  lastCloud[doc] = cloud;
+  if (doc === 'mytasks') {
+    const merged = [];
+    const seen = new Set();
+    cloud.forEach(function(id) { const k = String(id); if (!seen.has(k)) { seen.add(k); merged.push(id); } });
+    currentArr(doc).forEach(function(id) { const k = String(id); if (!seen.has(k)) { seen.add(k); merged.push(id); } });
+    setArr(doc, merged);
+    cacheData(DOC_TO_KEY[doc], merged);
+    if (merged.length !== cloud.length) commitItems(doc, merged, true);
+    return;
+  }
+  const local = currentArr(doc) || [];
+  let migratedLocal = false;
+  const cmap = new Map();
+  cloud.forEach(function(el) { if (el) cmap.set(itemKey(el), el); });
+  local.forEach(function(el) {
+    if (el && typeof el === 'object' && !el.updatedAt) {
+      const c = cmap.get(itemKey(el));
+      const shouldWin = !c || !c.updatedAt;
+      if (shouldWin) { el.updatedAt = Date.now(); migratedLocal = true; }
+    }
+  });
+  let merged = mergeArrays(local, cloud);
+  const purgeCutoff = Date.now() - 60 * 24 * 3600 * 1000;
+  merged = merged.filter(function(el) { return !(isTombstone(el) && itemStamp(el) < purgeCutoff); });
+  setArr(doc, merged);
+  cacheData(DOC_TO_KEY[doc], merged);
+  if (migratedLocal || mergeDiffers(merged, cloud)) {
+    commitItems(doc, merged, true);
+  } else {
+    lastCloud[doc] = merged.slice();
+  }
+}
+
+// ---- Запись исходного массива в облако (Firestore = правда) ----
+function commitItems(doc, arr) {
+  if (!onlineStatus) { if (doc !== 'notes') cacheData(DOC_TO_KEY[doc], arr); return; }
+  const cloud = lastCloud[doc] || [];
+  const merged = mergeArrays(arr, cloud);
+  setArr(doc, merged);
+  cacheData(DOC_TO_KEY[doc], merged);
+  lastCloud[doc] = Array.isArray(merged) ? merged.slice() : merged;
+  FB_COLL.doc(doc).set({ items: merged }).catch(function(e) {
+    console.warn('Firebase sync failed (' + doc + '):', e);
+  });
+}
+
+// Универсальная запись (используется как saveData для задач/спринтов/моих тасок).
+function saveData(key, data) {
+  const doc = KEY_TO_DOC[key];
+  if (!doc) { cacheData(key, data); autoBackup(); return; }
+  cacheData(key, data);
+  autoBackup();
+  commitItems(doc, data);
 }
 
 async function loadFromFirebase() {
-  try {
-    const snapTasks = await FB_COLL.doc('tasks').get();
-    const cloudTasks = snapTasks.exists && snapTasks.data().items ? snapTasks.data().items : [];
-    const mergedTasks = mergeById(loadData('tracker_tasks', []), cloudTasks);
-    localStorage.setItem('tracker_tasks', JSON.stringify(mergedTasks));
-    const snap2 = await FB_COLL.doc('sprints').get();
-    const cloudSprints = snap2.exists && snap2.data().items ? snap2.data().items : [];
-    const mergedSprints = mergeById(loadData('tracker_sprints', []), cloudSprints);
-    localStorage.setItem('tracker_sprints', JSON.stringify(mergedSprints));
-    const snap3 = await FB_COLL.doc('mytasks').get();
-    const cloudMy = snap3.exists && snap3.data().items ? snap3.data().items : [];
-    const mergedMy = Array.from(new Set([].concat(loadData('tracker_mytasks', []), cloudMy)));
-    localStorage.setItem('tracker_mytasks', JSON.stringify(mergedMy));
-    const snap4 = await FB_COLL.doc('notes').get();
-    if (snap4.exists && snap4.data().items) {
-      const cloudNotes = snap4.data().items;
-      const localNotes = loadNotes();
-      const mergedNotes = (typeof cloudNotes === 'object' && cloudNotes !== null && !Array.isArray(cloudNotes))
-        ? (() => {
-            const out = {};
-            const maxKey = 3000000;
-            if (!localNotes['Общие']) localNotes['Общие'] = [];
-            Object.keys(localNotes).forEach(cat => { out[cat] = (localNotes[cat] || []); });
-            Object.keys(cloudNotes).forEach(cat => {
-              const base = out[cat] || [];
-              const byId = new Map();
-              base.forEach(n => { if (n && n.id) byId.set(n.id, n); });
-              (cloudNotes[cat] || []).forEach(n => {
-                if (!n || !n.id) { byId.set('_c_' + Math.floor(Math.random() * maxKey), n); return; }
-                if (byId.has(n.id)) Object.assign(byId.get(n.id), n);
-                else byId.set(n.id, n);
-              });
-              out[cat] = Array.from(byId.values()).map(n => normNote(n, cat, byId.size));
-            });
-            Object.keys(out).forEach(cat => {
-              out[cat] = out[cat].filter(n => !isTombstoned(n));
-            });
-            return dedupeNotes(out);
-          })()
-        : cloudNotes;
-      localStorage.setItem('tracker_notes', JSON.stringify(mergedNotes));
-    }
-    syncNow();
-    fbLoaded = true;
-    return true;
-  } catch(e) {
-    console.warn('Firebase load failed, using localStorage:', e);
-    fbLoaded = true;
-    return false;
-  }
+  return new Promise(function(resolve) {
+    let pending = 4;
+    const finish = function() { pending--; if (pending <= 0) { fbLoaded = true; renderAll(); resolve(true); } };
+    FB_COLL.doc('tasks').onSnapshot(function(snap) {
+      applyItemsSnapshot('tasks', snap.data() ? snap.data().items : []);
+      finish();
+    }, function() { lastCloud.tasks = lastCloud.tasks || []; finish(); });
+
+    FB_COLL.doc('sprints').onSnapshot(function(snap) {
+      applyItemsSnapshot('sprints', snap.data() ? snap.data().items : []);
+      finish();
+    }, function() { lastCloud.sprints = lastCloud.sprints || []; finish(); });
+
+    FB_COLL.doc('mytasks').onSnapshot(function(snap) {
+      applyItemsSnapshot('mytasks', snap.data() ? snap.data().items : []);
+      finish();
+    }, function() { lastCloud.mytasks = lastCloud.mytasks || []; finish(); });
+
+    FB_COLL.doc('notes').onSnapshot(function(snap) {
+      const d = snap.data();
+      applyNotesSnapshot(d ? d.items : null);
+      finish();
+    }, function() { finish(); });
+  });
 }
 
-async function pushToFirebase() {
-  try {
-    const ver = localVer();
-    await FB_COLL.doc('meta').set({ ver: ver });
-    await FB_COLL.doc('tasks').set({ items: loadData('tracker_tasks', []) });
-    await FB_COLL.doc('sprints').set({ items: loadData('tracker_sprints', []) });
-    await FB_COLL.doc('mytasks').set({ items: loadData('tracker_mytasks', []) });
-    await FB_COLL.doc('notes').set({ items: loadData('tracker_notes', {}) });
-  } catch(e) {
-    console.warn('Firebase sync failed:', e);
-  }
+function applyNotesSnapshot(cloudItems) {
+  if (!cloudItems || typeof cloudItems !== 'object' || Array.isArray(cloudItems)) return;
+  // Объединяем облачные заметки с локальными по id внутри каждой категории.
+  const localNotes = loadNotes();
+  const merged = {};
+  const cats = new Set(Object.keys(localNotes).concat(Object.keys(cloudItems)));
+  cats.forEach(function(cat) {
+    const base = (localNotes[cat] || []).slice();
+    const byId = new Map();
+    base.forEach(function(n) { if (n && n.id) byId.set(n.id, n); });
+    (cloudItems[cat] || []).forEach(function(n) {
+      if (!n || !n.id) return;
+      const ex = byId.get(n.id);
+      byId.set(n.id, (ex && ex.text && n.text !== ex.text) ? ex : n);
+    });
+    merged[cat] = Array.from(byId.values()).filter(function(n) { return n && !isTombstoned(n); });
+  });
+  if (!merged['Общие']) merged['Общие'] = [];
+  notes = merged;
+  cacheData('tracker_notes', notes);
+  lastCloud.notes = notes;
 }
 
-let firebaseSyncPromise = null;
-
-function syncToFirebase() {
-  clearTimeout(saveTimeout);
-  saveTimeout = setTimeout(() => {
-    firebaseSyncPromise = (firebaseSyncPromise || Promise.resolve()).then(pushToFirebase);
-  }, 500);
+function commitNotes() {
+  cacheData('tracker_notes', notes);
+  if (!onlineStatus) return;
+  FB_COLL.doc('notes').set({ items: notes }).catch(function(e) {
+    console.warn('Firebase notes sync failed:', e);
+  });
 }
-
-function syncNow() {
-  clearTimeout(saveTimeout);
-  firebaseSyncPromise = (firebaseSyncPromise || Promise.resolve()).then(pushToFirebase);
-}
-
-window.addEventListener('pagehide', syncNow);
-window.addEventListener('beforeunload', syncNow);
 
 function playBackupSound() {
   try {
@@ -900,10 +995,10 @@ function autoBackup() {
     if (confirm('Сделать резервную копию данных?')) {
     const backups = JSON.parse(localStorage.getItem('siberia_backups') || '[]');
     const snapshot = {
-      tasks: loadData('tracker_tasks', []),
-      sprints: loadData('tracker_sprints', []),
-      myTasks: loadData('tracker_mytasks', []),
-      notes: loadData('tracker_notes', []),
+      tasks: liveItems(tasks),
+      sprints: liveItems(sprints),
+      myTasks: myTasks.slice(),
+      notes: notes && typeof notes === 'object' ? JSON.parse(JSON.stringify(notes)) : notes,
       time: new Date().toLocaleString('ru-RU')
     };
     backups.unshift(snapshot);
@@ -987,17 +1082,16 @@ function dedupeNotes(obj) {
   return out;
 }
 function saveNotes() {
-  localStorage.setItem('tracker_notes', JSON.stringify(notes));
   autoBackup();
-  syncToFirebase();
+  commitNotes();
 }
 
 (function migrateTaskIds() {
   let needsSave = false;
   tasks.forEach((t, i) => {
-    if (isNaN(Number(t.id))) { t.id = String(i + 1); needsSave = true; }
+    if (isNaN(Number(t.id))) { t.id = String(i + 1); t.updatedAt = Date.now(); needsSave = true; }
   });
-  if (needsSave) saveData('tracker_tasks', tasks);
+  if (needsSave) pendingIdSave = true; // сохраним после загрузки из облака
 })();
 
 function genId() { return tasks.length ? String(Math.max(...tasks.map(t => Number(t.id))) + 1) : '1'; }
@@ -1016,7 +1110,7 @@ function populateSelect(id, items, selected) {
 
 function populateSprintSelect(selId, selected) {
   const sel = document.getElementById(selId);
-  const available = sprints.filter(s => s.status !== 'completed');
+  const available = liveItems(sprints).filter(s => s.status !== 'completed');
   sel.innerHTML = '<option value="">Без спринта</option>' +
     available.map(s => `<option value="${s.id}"${s.id===selected?' selected':''}>${s.name}</option>`).join('');
 }
@@ -1084,7 +1178,7 @@ function handleDropOnSprint(e, sprintId) {
   const sp = sprints.find(s => s.id === sprintId);
   if (sp && sp.status === 'completed') { toast('Нельзя перемещать в завершённый спринт'); draggedTaskId = null; return; }
   const task = tasks.find(t => t.id === draggedTaskId);
-  if (task) { task.sprintId = sprintId; saveData('tracker_tasks', tasks); renderSprints(); renderTasks(); toast('Задача перемещена'); }
+  if (task) { task.sprintId = sprintId; task.updatedAt = Date.now(); saveData('tracker_tasks', tasks); renderSprints(); renderTasks(); toast('Задача перемещена'); }
   draggedTaskId = null;
 }
 
@@ -1094,7 +1188,7 @@ function handleDropOnBacklog(e) {
   document.querySelectorAll('.sprint-item, .backlog-header, .my-tasks-header').forEach(el => el.classList.remove('droppable'));
   if (!draggedTaskId) return;
   const task = tasks.find(t => t.id === draggedTaskId);
-  if (task) { task.sprintId = ''; saveData('tracker_tasks', tasks); renderSprints(); renderTasks(); toast('Задача перемещена в бэклог'); }
+  if (task) { task.sprintId = ''; task.updatedAt = Date.now(); saveData('tracker_tasks', tasks); renderSprints(); renderTasks(); toast('Задача перемещена в бэклог'); }
   draggedTaskId = null;
 }
 
@@ -1212,13 +1306,14 @@ function saveTask() {
     const idx = tasks.findIndex(t => t.id === id);
     if (idx !== -1) {
       const wasDone = tasks[idx].status === 'Готово';
-      Object.assign(tasks[idx], data);
+      Object.assign(tasks[idx], data, { updatedAt: Date.now() });
       if (data.status === 'В работе' && !tasks[idx].startWorkAt) tasks[idx].startWorkAt = new Date().toISOString();
       if (data.status === 'Готово' && !wasDone && !tasks[idx].releaseAt) tasks[idx].releaseAt = new Date().toISOString();
     }
   } else {
     data.id = genId();
     data.createdAt = new Date().toISOString();
+    data.updatedAt = Date.now();
     if (data.status === 'В работе') data.startWorkAt = new Date().toISOString();
     if (data.status === 'Готово') data.releaseAt = new Date().toISOString();
     tasks.unshift(data);
@@ -1233,7 +1328,8 @@ function saveTask() {
 
 function deleteTask(id) {
   if (!confirm('Удалить задачу?')) return;
-  tasks = tasks.filter(t => t.id !== id);
+  const t = tasks.find(x => x.id === id);
+  if (t) { t.deleted = true; t.updatedAt = Date.now(); }
   saveData('tracker_tasks', tasks);
   closeDetail();
   renderSprints();
@@ -1331,7 +1427,7 @@ function renderTasks() {
       document.getElementById('tabDone')?.classList.remove('active');
     }
   }
-  tasks = loadData('tracker_tasks', []);
+  const allTasks = liveItems(tasks);
   const fStatus = document.getElementById('filterStatus').value;
   const fPriority = document.getElementById('filterPriority').value;
   const fType = document.getElementById('filterType').value;
@@ -1345,7 +1441,7 @@ function renderTasks() {
   const tY = tomorrow.getFullYear(); const tM = String(tomorrow.getMonth()+1).padStart(2,'0'); const tD = String(tomorrow.getDate()).padStart(2,'0');
   const tomorrowStr = tY+'-'+tM+'-'+tD;
 
-  let filtered = tasks.filter(t => {
+  let filtered = allTasks.filter(t => {
     if (activeMyTasksFilter && !myTasks.includes(t.id)) return false;
     if ((activeMyTasksFilter || activeSprintFilter) && !activeDoneFilter && t.status === 'Готово') return false;
     if (activeDoneFilter && t.status !== 'Готово') return false;
@@ -1437,6 +1533,7 @@ function inlineChangeStatus(sel, id) {
   const task = tasks.find(t => t.id === id);
   if (task) {
     task.status = sel.value;
+    task.updatedAt = Date.now();
     if (sel.value === 'В работе' && !task.startWorkAt) task.startWorkAt = new Date().toISOString();
     if (sel.value === 'Готово' && !task.releaseAt) task.releaseAt = new Date().toISOString();
     saveData('tracker_tasks', tasks); renderTasks();
@@ -1444,16 +1541,17 @@ function inlineChangeStatus(sel, id) {
 }
 function inlineChangeDeadline(inp, id) {
   const task = tasks.find(t => t.id === id);
-  if (task) { task.deadline = inp.value; saveData('tracker_tasks', tasks); }
+  if (task) { task.deadline = inp.value; task.updatedAt = Date.now(); saveData('tracker_tasks', tasks); }
 }
 function inlineChangeSize(sel, id) {
   const task = tasks.find(t => t.id === id);
-  if (task) { task.size = sel.value; saveData('tracker_tasks', tasks); }
+  if (task) { task.size = sel.value; task.updatedAt = Date.now(); saveData('tracker_tasks', tasks); }
 }
 function inlineChangeRelease(inp, id) {
   const task = tasks.find(t => t.id === id);
   if (task) {
     task.releaseDate = inp.value;
+    task.updatedAt = Date.now();
     if (inp.value) task.releaseAt = new Date().toISOString();
     saveData('tracker_tasks', tasks);
     updateInlineResponse(id);
@@ -1469,6 +1567,7 @@ function inlineChangeClass(sel, id) {
   const task = tasks.find(t => t.id === id);
   if (!task) return;
   task.taskClass = sel.value;
+  task.updatedAt = Date.now();
   saveData('tracker_tasks', tasks);
   const chip = sel.closest('.chip-class');
   if (chip) {
@@ -1478,7 +1577,7 @@ function inlineChangeClass(sel, id) {
 }
 function inlineChangeComment(inp, id) {
   const task = tasks.find(t => t.id === id);
-  if (task) { task.comment = inp.value; saveData('tracker_tasks', tasks); }
+  if (task) { task.comment = inp.value; task.updatedAt = Date.now(); saveData('tracker_tasks', tasks); }
 }
 
 function showCommentTooltip(el) {
@@ -1700,9 +1799,9 @@ function saveSprint() {
 
   if (id) {
     const idx = sprints.findIndex(s => s.id === id);
-    if (idx !== -1) Object.assign(sprints[idx], { name, startDate, endDate });
+    if (idx !== -1) Object.assign(sprints[idx], { name, startDate, endDate, updatedAt: Date.now() });
   } else {
-    const newSprint = { id: genId(), name, startDate, endDate, status: 'pending' };
+    const newSprint = { id: genId(), name, startDate, endDate, status: 'pending', updatedAt: Date.now() };
     sprints.push(newSprint);
   }
   saveData('tracker_sprints', sprints);
@@ -1714,8 +1813,9 @@ function saveSprint() {
 
 function deleteSprint(id) {
   if (!confirm('Удалить спринт? Задачи останутся в бэклоге.')) return;
-  tasks.forEach(t => { if (t.sprintId === id) t.sprintId = ''; });
-  sprints = sprints.filter(s => s.id !== id);
+  tasks.forEach(t => { if (t.sprintId === id) { t.sprintId = ''; t.updatedAt = Date.now(); } });
+  const sp = sprints.find(s => s.id === id);
+  if (sp) { sp.deleted = true; sp.updatedAt = Date.now(); }
   saveData('tracker_sprints', sprints);
   saveData('tracker_tasks', tasks);
   if (activeSprintFilter === id) { activeSprintFilter = ''; document.getElementById('tasksHeader').textContent = 'Все задачи'; }
@@ -1727,16 +1827,17 @@ function deleteSprint(id) {
 
 function startSprint(id) {
   const s = sprints.find(x => x.id === id);
-  if (s) { s.status = 'active'; saveData('tracker_sprints', sprints); renderSprints(); toast(`Спринт «${s.name}» начат`); }
+  if (s) { s.status = 'active'; s.updatedAt = Date.now(); saveData('tracker_sprints', sprints); renderSprints(); toast(`Спринт «${s.name}» начат`); }
 }
 
 function completeSprint(id) {
   const s = sprints.find(x => x.id === id);
   if (!s) return;
-  const sprintTasks = tasks.filter(t => t.sprintId === id);
+  const sprintTasks = liveItems(tasks).filter(t => t.sprintId === id);
   const notDone = sprintTasks.filter(t => t.status !== 'Готово');
   if (notDone.length > 0) { toast(`Не все задачи в статусе «Готово» (${notDone.length} шт.)`); return; }
   s.status = 'completed';
+  s.updatedAt = Date.now();
   saveData('tracker_sprints', sprints);
   renderSprints();
   renderTasks();
@@ -1744,7 +1845,7 @@ function completeSprint(id) {
 }
 
 function renderSprints() {
-  sprints = loadData('tracker_sprints', []);
+  const liveTsk = liveItems(tasks);
   const tb = document.getElementById('tabBar');
   if (tb) {
     if (activeMyTasksFilter || activeSprintFilter) {
@@ -1756,19 +1857,17 @@ function renderSprints() {
       document.getElementById('tabDone')?.classList.remove('active');
     }
   }
-  tasks = loadData('tracker_tasks', []);
-  myTasks = loadData('tracker_mytasks', []);
   const container = document.getElementById('sprintList');
 
-  const backlogCount = tasks.filter(t => !t.sprintId && t.status !== 'Готово').length;
-  const myTasksCount = myTasks.filter(id => { const t = tasks.find(x => x.id === id); return t && t.status !== 'Готово'; }).length;
+  const backlogCount = liveTsk.filter(t => !t.sprintId && t.status !== 'Готово').length;
+  const myTasksCount = myTasks.filter(id => { const t = liveTsk.find(x => x.id === id); return t && t.status !== 'Готово'; }).length;
 
   const today = new Date(); const y=today.getFullYear();const m=String(today.getMonth()+1).padStart(2,'0');const d=String(today.getDate()).padStart(2,'0');
   const todayStr=y+'-'+m+'-'+d;
   const tomorrow=new Date(today);tomorrow.setDate(tomorrow.getDate()+1);
   const tY=tomorrow.getFullYear();const tM=String(tomorrow.getMonth()+1).padStart(2,'0');const tD=String(tomorrow.getDate()).padStart(2,'0');
   const tomorrowStr=tY+'-'+tM+'-'+tD;
-  const urgentCount = tasks.filter(t => t.status !== 'Готово' && t.deadline && (t.deadline === todayStr || t.deadline === tomorrowStr)).length;
+  const urgentCount = liveTsk.filter(t => t.status !== 'Готово' && t.deadline && (t.deadline === todayStr || t.deadline === tomorrowStr)).length;
 
   const urgentHtml = `<div class="urgent-header${urgentView ? ' selected' : ''}"
     onclick="showUrgentView()">
@@ -1790,15 +1889,16 @@ function renderSprints() {
     👤 Мои таски <span class="backlog-count">${myTasksCount}</span>
   </div>`;
 
-  const activeSprints = sprints.filter(s => s.status !== 'completed');
-  const archivedSprints = sprints.filter(s => s.status === 'completed');
+  const liveSp = liveItems(sprints);
+  const activeSprints = liveSp.filter(s => s.status !== 'completed');
+  const archivedSprints = liveSp.filter(s => s.status === 'completed');
 
   let activeHtml = '';
   if (activeSprints.length > 0) {
     activeHtml = activeSprints.map(s => {
       const statusCls = s.status === 'active' ? 'active' : 'pending';
       const statusLabel = s.status === 'active' ? 'Активен' : 'Ожидает';
-      const taskCount = tasks.filter(t => t.sprintId === s.id).length;
+      const taskCount = liveTsk.filter(t => t.sprintId === s.id).length;
       const selected = activeSprintFilter === s.id ? ' selected' : '';
       return `<div class="sprint-item ${statusCls}${selected}"
         draggable="false"
@@ -1826,7 +1926,7 @@ function renderSprints() {
     archivedHtml = `<div style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;font-weight:600;color:#BCC3C7;cursor:pointer" onclick="toggleArchive()" id="archiveToggle">📦 Архив <span id="archiveArrow">▶</span></div>
     <div id="archiveList" style="display:none;flex-direction:column;gap:6px">` +
     archivedSprints.map(s => {
-      const taskCount = tasks.filter(t => t.sprintId === s.id).length;
+      const taskCount = liveTsk.filter(t => t.sprintId === s.id).length;
       const selected = activeSprintFilter === s.id ? ' selected' : '';
       return `<div class="sprint-item completed${selected}"
         draggable="false"
@@ -1852,7 +1952,7 @@ function renderSprints() {
 }
 
  function renderFunnel() {
-  tasks = loadData('tracker_tasks', []);
+  const liveTsk = liveItems(tasks);
   const container = document.getElementById('funnel');
   if (!container) return;
   const steps = [
@@ -1863,7 +1963,7 @@ function renderSprints() {
     { status: 'Требуется релиз', label: 'Ждут релиз', color: '#EF4444' }
   ];
   container.innerHTML = steps.map(s => {
-    const n = tasks.filter(t => t.status === s.status).length;
+    const n = liveTsk.filter(t => t.status === s.status).length;
     return `<span class="fl-item" onclick="showFunnelDetail('${s.status}')" title="Детализация: ${s.label}" style="border-color:${s.color};color:${s.color};cursor:pointer">
       <span>${s.label}</span><b>${n}</b>
     </span>`;
@@ -1871,8 +1971,7 @@ function renderSprints() {
 }
 
 function showFunnelDetail(status) {
-  tasks = loadData('tracker_tasks', []);
-  sprints = loadData('tracker_sprints', []);
+  const liveTsk = liveItems(tasks);
   const steps = [
     { status: 'Аналитика', label: 'На аналитике', color: '#3B82F6' },
     { status: 'В работе', label: 'В работе', color: '#F59E0B' },
@@ -1881,7 +1980,7 @@ function showFunnelDetail(status) {
     { status: 'Требуется релиз', label: 'Ждут релиз', color: '#EF4444' }
   ];
   const step = steps.find(s => s.status === status);
-  const list = tasks.filter(t => t.status === status);
+  const list = liveTsk.filter(t => t.status === status);
 
   const prioCount = {};
   PRIORITIES.forEach(p => prioCount[p] = 0);
@@ -1943,10 +2042,10 @@ function applyFunnelFilter(status) {
 
 function saveDataToFile() {
   const data = {
-    tasks: loadData('tracker_tasks', []),
-    sprints: loadData('tracker_sprints', []),
-    myTasks: loadData('tracker_mytasks', []),
-    notes: loadData('tracker_notes', []),
+    tasks: liveItems(tasks),
+    sprints: liveItems(sprints),
+    myTasks: myTasks.slice(),
+    notes: notes && typeof notes === 'object' ? JSON.parse(JSON.stringify(notes)) : notes,
     savedAt: new Date().toISOString()
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
@@ -1965,13 +2064,12 @@ function loadDataFromFile(e) {
   reader.onload = function(ev) {
     try {
       const data = JSON.parse(ev.target.result);
-      if (data.tasks) { localStorage.setItem('tracker_tasks', JSON.stringify(mergeById(loadData('tracker_tasks', []), data.tasks))); }
-      if (data.sprints) { localStorage.setItem('tracker_sprints', JSON.stringify(mergeById(loadData('tracker_sprints', []), data.sprints))); }
-      if (data.myTasks) { localStorage.setItem('tracker_mytasks', JSON.stringify(Array.from(new Set([].concat(loadData('tracker_mytasks', []), data.myTasks))))); }
-      if (data.notes) { localStorage.setItem('tracker_notes', JSON.stringify(data.notes)); }
-      syncToFirebase();
+      if (data.tasks && Array.isArray(data.tasks)) { tasks = data.tasks; stampAllNew(tasks); cacheData('tracker_tasks', tasks); saveData('tracker_tasks', tasks); }
+      if (data.sprints && Array.isArray(data.sprints)) { sprints = data.sprints; stampAllNew(sprints); cacheData('tracker_sprints', sprints); saveData('tracker_sprints', sprints); }
+      if (data.myTasks && Array.isArray(data.myTasks)) { myTasks = data.myTasks; cacheData('tracker_mytasks', myTasks); saveData('tracker_mytasks', myTasks); }
+      if (data.notes && (typeof data.notes === 'object')) { notes = data.notes; cacheData('tracker_notes', notes); commitNotes(); }
+      renderAll();
       toast('Данные загружены из файла');
-      location.reload();
     } catch(err) {
       toast('Ошибка при загрузке файла');
     }
@@ -2033,12 +2131,12 @@ function restoreBackup(idx) {
   const backups = JSON.parse(localStorage.getItem('siberia_backups') || '[]');
   const snap = backups[idx];
   if (!snap) return;
-  localStorage.setItem('tracker_tasks', JSON.stringify(snap.tasks));
-  localStorage.setItem('tracker_sprints', JSON.stringify(snap.sprints));
-  localStorage.setItem('tracker_mytasks', JSON.stringify(snap.myTasks));
-  localStorage.setItem('tracker_notes', JSON.stringify(snap.notes));
+  if (snap.tasks && Array.isArray(snap.tasks)) { tasks = snap.tasks; stampAllNew(tasks); saveData('tracker_tasks', snap.tasks); }
+  if (snap.sprints && Array.isArray(snap.sprints)) { sprints = snap.sprints; stampAllNew(sprints); saveData('tracker_sprints', snap.sprints); }
+  if (snap.myTasks && Array.isArray(snap.myTasks)) { myTasks = snap.myTasks; saveData('tracker_mytasks', snap.myTasks); }
+  if (snap.notes && typeof snap.notes === 'object') { notes = snap.notes; commitNotes(); }
+  renderAll();
   toast('Бэкап восстановлен');
-  location.reload();
 }
 
 function toggleAllCheckboxes(el) {
@@ -2081,11 +2179,10 @@ function moveSelectedTasks() {
       document.getElementById('tabDone')?.classList.remove('active');
     }
   }
-  tasks = loadData('tracker_tasks', []);
   let moved = 0;
   selected.forEach(id => {
     const t = tasks.find(x => x.id === id);
-    if (t) { t.sprintId = sprintId; moved++; }
+    if (t && !isTombstone(t)) { t.sprintId = sprintId; t.updatedAt = Date.now(); moved++; }
   });
   saveData('tracker_tasks', tasks);
   clearSelection();
@@ -2096,7 +2193,7 @@ function moveSelectedTasks() {
 
 function updateMassSprintSelect() {
   const sel = document.getElementById('massSprintSelect');
-  const available = (sprints || []).filter(s => s.status !== 'completed');
+  const available = liveItems(sprints).filter(s => s.status !== 'completed');
   sel.innerHTML = '<option value="">Перенести в спринт...</option>' + available.map(s => '<option value="' + s.id + '">' + escHtml(s.name) + '</option>').join('') + '<option value="">Бэклог</option>';
 }
 
@@ -2420,7 +2517,7 @@ function formatPeriodLabel(range) {
 }
 
 function dashboardTasks(cls, range) {
-  let list = loadData('tracker_tasks', []).filter(t => t.taskClass && t.taskClass.indexOf(cls) !== -1 && t.releaseDate);
+  let list = liveItems(tasks).filter(t => t.taskClass && t.taskClass.indexOf(cls) !== -1 && t.releaseDate);
   if (dashSize) list = list.filter(t => t.size === dashSize);
   if (range.from || range.to) {
     list = list.filter(t => {
@@ -2490,6 +2587,7 @@ function migrateReleaseAt() {
   tasks.forEach(t => {
     if (t && t.status === 'Готово' && !t.releaseAt && t.releaseDate) {
       t.releaseAt = t.releaseDate + 'T00:00:00';
+      t.updatedAt = Date.now();
       needsSave = true;
     }
   });
@@ -2500,7 +2598,7 @@ function calcThroughput(range) {
   let closed = 0;
   let inPeriod = 0;
   let noDate = 0;
-  tasks.forEach(t => {
+  liveItems(tasks).forEach(t => {
     if (!t || t.status !== 'Готово') return;
     if (dashSize && t.size !== dashSize) return;
     closed++;
@@ -2552,7 +2650,7 @@ function renderSizeBreakdown(range) {
   const counts = {};
   SIZES.forEach(s => counts[s] = 0);
   let noSize = 0;
-  loadData('tracker_tasks', []).forEach(t => {
+  liveItems(tasks).forEach(t => {
     if (!t || t.status !== 'Готово') return;
     if (dashSize && t.size !== dashSize) return;
     const d = taskClosedAt(t);
@@ -2581,7 +2679,7 @@ function showTasksView() {
 async function init() {
   if (!currentUser) return;
   await loadFromFirebase();
-  tasks = loadData('tracker_tasks', []);
+  if (pendingIdSave) { saveData('tracker_tasks', tasks); pendingIdSave = false; }
   migrateReleaseAt();
   populateSelect('filterStatus', STATUSES, '');
   populateSelect('filterPriority', PRIORITIES, '');

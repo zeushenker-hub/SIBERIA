@@ -1,5 +1,4 @@
 .DS_Store
-siberia-app/node_modules/
-siberia-app/node_modules/
 node_modules/
 *.log
+.kilo/
