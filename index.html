@@ -164,23 +164,35 @@
     .tab-bar button { padding: 6px 16px; border: none; background: transparent; font-size: 13px; font-weight: 600; color: #666; cursor: pointer; border-bottom: 2px solid transparent; font-family: 'Roboto', sans-serif; }
     .tab-bar button.active { color: #333; border-bottom-color: #A9D3F2; }
     .tab-bar button:hover { color: #333; }
-    .task-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .task-table { width: 100%; border-collapse: separate; border-spacing: 0 6px; font-size: 13px; }
     .task-table th {
       text-align: left; padding: 8px 10px; font-size: 11px; font-weight: 600;
       color: #666; text-transform: uppercase; cursor: pointer; user-select: none;
-      border-bottom: 2px solid #CDD6D8; white-space: nowrap;
+      border-bottom: 2px solid #CDD6D8; white-space: nowrap; background: transparent;
     }
     .task-table th:hover { color: #333; }
     .task-table th .sort-arrow { margin-left: 4px; font-size: 10px; }
-    .task-table td { padding: 8px 10px; border-bottom: 1px solid #FFFFFF; vertical-align: middle; }
-    .task-table tr:hover td { background: #A6E9ED; }
-    .task-table tr.urgent td { background: #FFF5F5; }
+    .task-table td { padding: 8px 10px; vertical-align: middle; }
+    .task-table tbody tr {
+      cursor: grab;
+      background: #FFFFFF;
+      border: 1px solid #E0E4E6;
+      border-radius: 8px;
+      box-shadow: 0 1px 2px rgba(0,0,0,.05);
+      transition: box-shadow .15s, transform .1s, background .15s;
+    }
+    .task-table tbody tr:hover td { background: #F5FAFC; }
+    .task-table tbody tr:hover { box-shadow: 0 2px 6px rgba(0,0,0,.1); }
+    .task-table tbody tr td:first-child { border-radius: 8px 0 0 8px; }
+    .task-table tbody tr td:last-child { border-radius: 0 8px 8px 0; }
+    .task-table tr.urgent { background: #FFF5F5; border-color: #F3CDD2; }
+    .task-table tr.urgent td { background: transparent; }
     .task-table tr.urgent:hover td { background: #FFE4E4; }
-    .task-table tr.release td { background: #FFE9EF; }
+    .task-table tr.release { background: #FFE9EF; border-color: #F3BECC; }
+    .task-table tr.release td { background: transparent; }
     .task-table tr.release:hover td { background: #FFD3DF; }
-    .task-table tr { cursor: grab; }
     .task-table tr:active { cursor: grabbing; }
-    .task-table tr.dragging { opacity: .4; }
+    .task-table tr.dragging { opacity: .4; box-shadow: 0 3px 8px rgba(0,0,0,.15); }
     .inline-status, .inline-date, .inline-size { font-size: 11px; font-family: inherit; padding: 2px 4px; border: 1px solid transparent; border-radius: 4px; background: transparent; cursor: pointer; max-width: 120px; }
     .inline-status:hover, .inline-date:hover, .inline-size:hover { border-color: #CDD6D8; background: #fff; }
     .inline-status:focus, .inline-date:focus, .inline-size:focus { border-color: #A9D3F2; outline: none; background: #fff; }
