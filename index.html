@@ -348,6 +348,28 @@
     .fl-item:hover { background: #f0f8ff; border-color: #A9D3F2; }
     .fl-item span { color: #9CA3AF; font-weight: 600; }
     .fl-item b { font-size: 16px; color: inherit; font-weight: 400; line-height: 1.1; }
+    .hf-card { border: 1px solid #CDD6D8; border-radius: 8px; background: #fff; padding: 14px 16px; }
+    .hf-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .hf-card-title { font-size: 15px; font-weight: 700; color: #333; }
+    .hf-card-actions { display: flex; gap: 6px; align-items: center; }
+    .hf-metrics { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 12px; }
+    .hf-metric { min-width: 90px; }
+    .hf-metric .hf-label { font-size: 11px; font-weight: 600; color: #666; margin-bottom: 2px; }
+    .hf-metric .hf-value { font-size: 20px; font-weight: 700; color: #333; }
+    .hf-metric .hf-value.ok { color: #3E9B79; }
+    .hf-metric .hf-value.over { color: #C6555F; }
+    .hf-pct { position: relative; height: 8px; border-radius: 4px; background: #E7EDF0; overflow: hidden; margin-top: 8px; }
+    .hf-pct div { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 4px; background: #A9D3F2; transition: width .2s; }
+    .hf-pct div.warn { background: #F0B84A; }
+    .hf-pct div.over { background: #C6555F; }
+    .hf-logs { border-top: 1px dashed #CDD6D8; margin-top: 10px; padding-top: 8px; }
+    .hf-log { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #555; padding: 2px 0; }
+    .hf-log .hf-log-date { color: #999; width: 74px; flex-shrink: 0; }
+    .hf-log .hf-log-post { font-size: 12px; font-weight: 700; color: #446E9B; text-align: right; }
+    .hf-log .hf-log-x { cursor: pointer; color: #BBBBBB; font-size: 12px; }
+    .hf-log .hf-log-x:hover { color: #C6555F; }
+    .hf-log .hf-empty { color: #AAA; font-style: italic; }
+
   </style>
 </head>
 <body>
@@ -373,6 +395,7 @@
         <div class="card">
           <div class="card-header"><h2>Навигация</h2></div>
           <button class="nav-btn" id="dashButton" onclick="showDashboard()">📊 Дашборд</button>
+          <button class="nav-btn" id="hoursButton" onclick="showHoursView()">⏱ Часы по фичам</button>
           <div class="sprint-list" id="sprintList"></div>
         </div>
         <div class="card" style="margin-top:16px">
@@ -438,9 +461,20 @@
           <div class="funnel" id="funnel"></div>
         </div>
       </div>
-      <div class="card" id="tasksSection">
-        <div class="card-header">
-          <h2 id="tasksHeader">Срочные задачи</h2>
+        <div class="card" id="hoursSection" style="display:none">
+          <div class="card-header dash-header">
+            <h2>⏱ Часы по фичам</h2>
+            <div class="dash-period">
+              <button class="btn btn-sm btn-primary" onclick="openHoursFeatureModal()">+ Новая фича</button>
+            </div>
+          </div>
+          <div id="hoursSummary" style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px"></div>
+          <div id="hoursFeaturesList" style="display:flex;flex-direction:column;gap:12px"></div>
+          <div id="hoursEmpty" class="empty-state" style="display:none">Пока нет фич. Добавьте первую через «+ Новая фича».</div>
+        </div>
+        <div class="card" id="tasksSection">
+          <div class="card-header">
+            <h2 id="tasksHeader">Срочные задачи</h2>
           <button class="btn btn-sm btn-secondary" id="viewToggle" onclick="toggleView()">Все задачи</button>
         </div>
         <div class="tab-bar" id="tabBar" style="display:none">
@@ -605,6 +639,36 @@
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeModal('sprintModal')">Отмена</button>
       <button class="btn btn-primary" onclick="saveSprint()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hours Feature Modal -->
+<div class="modal-overlay" id="hoursFeatureModal">
+  <div class="modal">
+    <h3 id="hoursFeatureTitle">Новая фича</h3>
+    <input type="hidden" id="hfId" />
+    <div class="form-group">
+      <label>Название фичи</label>
+      <input id="hfName" placeholder="Название фичи" />
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Выделено часов</label>
+        <input id="hfBudget" type="number" placeholder="Например: 40" />
+      </div>
+      <div class="form-group">
+        <label>Потрачено часов (старт)</label>
+        <input id="hfSpentStart" type="number" placeholder="0" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Комментарий (опционально)</label>
+      <input id="hfComment" placeholder="Описание фичи" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('hoursFeatureModal')">Отмена</button>
+      <button class="btn btn-primary" onclick="saveHoursFeature()">Сохранить</button>
     </div>
   </div>
 </div>
@@ -798,12 +862,12 @@ function stampAllNew(arr) {
 
 // Firestore — единый источник правды. localStorage — только оффлайн-кэш.
 // Для каждой коллекции храним последнюю известную облачную копию (для merge-before-write).
-const lastCloud = { tasks: [], sprints: [], mytasks: [], notes: null };
+const lastCloud = { tasks: [], sprints: [], mytasks: [], 'hours_features': [], notes: null };
 let cloudNotesTs = Date.now();
 let pendingIdSave = false;
 
-const KEY_TO_DOC = { 'tracker_tasks':'tasks', 'tracker_sprints':'sprints', 'tracker_mytasks':'mytasks' };
-const DOC_TO_KEY = { 'tasks':'tracker_tasks', 'sprints':'tracker_sprints', 'mytasks':'tracker_mytasks' };
+const KEY_TO_DOC = { 'tracker_tasks':'tasks', 'tracker_sprints':'sprints', 'tracker_mytasks':'mytasks', 'tracker_hours_features':'hours_features' };
+const DOC_TO_KEY = { 'tasks':'tracker_tasks', 'sprints':'tracker_sprints', 'mytasks':'tracker_mytasks', 'hours_features':'tracker_hours_features' };
 
 function itemKey(el) {
   return (el && el.id !== undefined && el.id !== null) ? String(el.id) : String(el);
@@ -851,12 +915,14 @@ function currentArr(doc) {
   if (doc === 'tasks') return tasks;
   if (doc === 'sprints') return sprints;
   if (doc === 'mytasks') return myTasks;
+  if (doc === 'hours_features') return hoursFeatures;
   return [];
 }
 function setArr(doc, arr) {
   if (doc === 'tasks') tasks = arr;
   else if (doc === 'sprints') sprints = arr;
   else if (doc === 'mytasks') myTasks = arr;
+  else if (doc === 'hours_features') hoursFeatures = arr;
 }
 
 function renderAll() {
@@ -866,6 +932,7 @@ function renderAll() {
     renderNotes();
     renderFunnel();
     renderDashboard();
+    if (document.getElementById('hoursSection').style.display !== 'none') renderHours();
   } catch(e) { console.warn('render failed:', e); }
 }
 
@@ -930,7 +997,7 @@ function saveData(key, data) {
 
 async function loadFromFirebase() {
   return new Promise(function(resolve) {
-    let pending = 4;
+    let pending = 5;
     const finish = function() { pending--; if (pending <= 0) { fbLoaded = true; renderAll(); resolve(true); } };
     FB_COLL.doc('tasks').onSnapshot(function(snap) {
       applyItemsSnapshot('tasks', snap.data() ? snap.data().items : []);
@@ -952,6 +1019,11 @@ async function loadFromFirebase() {
       applyNotesSnapshot(d ? d.items : null);
       finish();
     }, function() { finish(); });
+
+    FB_COLL.doc('hours_features').onSnapshot(function(snap) {
+      applyItemsSnapshot('hours_features', snap.data() ? snap.data().items : []);
+      finish();
+    }, function() { lastCloud['hours_features'] = lastCloud['hours_features'] || []; finish(); });
   });
 }
 
@@ -1014,6 +1086,7 @@ function autoBackup() {
       sprints: liveItems(sprints),
       myTasks: myTasks.slice(),
       notes: notes && typeof notes === 'object' ? JSON.parse(JSON.stringify(notes)) : notes,
+      hoursFeatures: hoursFeatures.slice(),
       time: new Date().toLocaleString('ru-RU')
     };
     backups.unshift(snapshot);
@@ -2061,6 +2134,7 @@ function saveDataToFile() {
     sprints: liveItems(sprints),
     myTasks: myTasks.slice(),
     notes: notes && typeof notes === 'object' ? JSON.parse(JSON.stringify(notes)) : notes,
+    hoursFeatures: hoursFeatures.slice(),
     savedAt: new Date().toISOString()
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
@@ -2083,6 +2157,7 @@ function loadDataFromFile(e) {
       if (data.sprints && Array.isArray(data.sprints)) { sprints = data.sprints; stampAllNew(sprints); cacheData('tracker_sprints', sprints); saveData('tracker_sprints', sprints); }
       if (data.myTasks && Array.isArray(data.myTasks)) { myTasks = data.myTasks; cacheData('tracker_mytasks', myTasks); saveData('tracker_mytasks', myTasks); }
       if (data.notes && (typeof data.notes === 'object')) { notes = data.notes; cacheData('tracker_notes', notes); commitNotes(); }
+      if (data.hoursFeatures && Array.isArray(data.hoursFeatures)) { hoursFeatures = data.hoursFeatures; stampAllNew(hoursFeatures); cacheData('tracker_hours_features', hoursFeatures); saveHoursFeatures(); }
       renderAll();
       toast('Данные загружены из файла');
     } catch(err) {
@@ -2186,6 +2261,7 @@ function restoreBackup(idx) {
   if (snap.sprints && Array.isArray(snap.sprints)) { sprints = snap.sprints; stampAllNew(sprints); saveData('tracker_sprints', snap.sprints); }
   if (snap.myTasks && Array.isArray(snap.myTasks)) { myTasks = snap.myTasks; saveData('tracker_mytasks', snap.myTasks); }
   if (snap.notes && typeof snap.notes === 'object') { notes = snap.notes; commitNotes(); }
+  if (snap.hoursFeatures && Array.isArray(snap.hoursFeatures)) { hoursFeatures = snap.hoursFeatures; stampAllNew(hoursFeatures); saveHoursFeatures(); }
   renderAll();
   toast('Бэкап восстановлен');
 }
@@ -2508,6 +2584,179 @@ function copyHourResult() {
   navigator.clipboard.writeText(t).then(function() { toast('Смета скопирована'); }).catch(function() { toast('Ошибка копирования'); });
 }
 
+// ===== ЧАСЫ ПО ФИЧАМ =====
+let hoursFeatures = loadData('tracker_hours_features', []);
+
+function hfSpent(f) {
+  const base = Number(f.spent) || 0;
+  const logs = (f.spentAt && f.spentAt.length) ? f.spentAt.reduce(function(a, e) { return a + (e && Number(e.hours) || 0); }, 0) : 0;
+  return base + logs;
+}
+function hfRemaining(f) { return (Number(f.budget) || 0) - hfSpent(f); }
+function saveHoursFeatures() {
+  saveData('tracker_hours_features', hoursFeatures);
+}
+
+function showHoursView() {
+  document.getElementById('dashboardSection').style.display = 'none';
+  document.getElementById('tasksSection').style.display = 'none';
+  document.getElementById('hoursSection').style.display = '';
+  document.getElementById('dashButton').classList.remove('active');
+  document.getElementById('hoursButton').classList.add('active');
+  renderHours();
+}
+
+function showDashboard() {
+  document.getElementById('dashboardSection').style.display = '';
+  document.getElementById('tasksSection').style.display = 'none';
+  document.getElementById('hoursSection').style.display = 'none';
+  document.getElementById('dashButton').classList.add('active');
+  document.getElementById('hoursButton').classList.remove('active');
+  renderDashboard();
+  renderFunnel();
+}
+
+function showTasksView() {
+  document.getElementById('dashboardSection').style.display = 'none';
+  document.getElementById('tasksSection').style.display = '';
+  document.getElementById('hoursSection').style.display = 'none';
+  document.getElementById('dashButton').classList.remove('active');
+  document.getElementById('hoursButton').classList.remove('active');
+}
+
+function openHoursFeatureModal() {
+  const f = { id: '', name: '', budget: '', spent: '', comment: '' };
+  document.getElementById('hoursFeatureTitle').textContent = 'Новая фича';
+  document.getElementById('hfId').value = '';
+  document.getElementById('hfName').value = '';
+  document.getElementById('hfBudget').value = '';
+  document.getElementById('hfSpentStart').value = '';
+  document.getElementById('hfComment').value = '';
+  openModal('hoursFeatureModal');
+}
+function editHoursFeature(id) {
+  const f = hoursFeatures.find(x => x.id === id);
+  if (!f) return;
+  document.getElementById('hoursFeatureTitle').textContent = 'Редактирование фичи';
+  document.getElementById('hfId').value = f.id;
+  document.getElementById('hfName').value = f.name || '';
+  document.getElementById('hfBudget').value = f.budget || '';
+  document.getElementById('hfSpentStart').value = f.spent || '';
+  document.getElementById('hfComment').value = f.comment || '';
+  openModal('hoursFeatureModal');
+}
+function saveHoursFeature() {
+  const name = document.getElementById('hfName').value.trim();
+  if (!name) { toast('Введите название фичи'); return; }
+  const id = document.getElementById('hfId').value;
+  const budget = document.getElementById('hfBudget').value;
+  const spent = document.getElementById('hfSpentStart').value;
+  const comment = document.getElementById('hfComment').value.trim();
+  if (id) {
+    const f = hoursFeatures.find(x => x.id === id);
+    if (f) {
+      f.name = name; f.budget = budget; f.spent = spent; f.comment = comment; f.updatedAt = Date.now();
+    }
+  } else {
+    const newId = 'hf_' + Date.now().toString(36) + '_' + Math.floor(Math.random() * 1000);
+    hoursFeatures.push({ id: newId, name: name, budget: budget, spent: spent, comment: comment, spentAt: [], createdAt: Date.now(), updatedAt: Date.now() });
+  }
+  saveHoursFeatures();
+  closeModal('hoursFeatureModal');
+  renderHours();
+  toast('Фича сохранена');
+}
+function deleteHoursFeature(id) {
+  if (!confirm('Удалить фичу и историю затрат?')) return;
+  hoursFeatures = hoursFeatures.filter(function(x) { return x.id !== id; });
+  saveHoursFeatures();
+  renderHours();
+}
+
+function addHoursLog(id) {
+  const v = prompt('Сколько часов списать на фичу?', '');
+  if (v === null) return;
+  const hours = parseFloat(v);
+  if (isNaN(hours) || hours <= 0) { toast('Введите число больше 0'); return; }
+  const f = hoursFeatures.find(x => x.id === id);
+  if (!f) return;
+  if (!Array.isArray(f.spentAt)) f.spentAt = [];
+  f.spentAt.push({ date: new Date().toISOString().slice(0, 10), hours: hours });
+  f.updatedAt = Date.now();
+  saveHoursFeatures();
+  renderHours();
+  toast('+ ' + hours + ' ч');
+}
+function removeHoursLog(id, idx) {
+  const f = hoursFeatures.find(x => x.id === id);
+  if (!f || !Array.isArray(f.spentAt)) return;
+  if (!confirm('Удалить эту запись?')) return;
+  f.spentAt.splice(idx, 1);
+  f.updatedAt = Date.now();
+  saveHoursFeatures();
+  renderHours();
+}
+
+function renderHoursSummary() {
+  const live = hoursFeatures.filter(function(f) { return f && !f.deleted; });
+  const totalBudget = live.reduce((a, f) => a + (Number(f.budget) || 0), 0);
+  const totalSpent = live.reduce((a, f) => a + hfSpent(f), 0);
+  const totalRemain = totalBudget - totalSpent;
+  const el = document.getElementById('hoursSummary');
+  if (!el) return;
+  el.innerHTML =
+    '<div class="metric-card"><div class="metric-label">Всего выделено</div><div class="metric-value">' + Math.round(totalBudget) + ' ч</div></div>' +
+    '<div class="metric-card"><div class="metric-label">Всего потрачено</div><div class="metric-value">' + Math.round(totalSpent) + ' ч</div></div>' +
+    '<div class="metric-card"><div class="metric-label">Остаток</div><div class="metric-value' + (totalRemain < 0 ? ' over' : ' ok') + '">' + Math.round(totalRemain) + ' ч</div></div>';
+}
+
+function renderHours() {
+  const list = document.getElementById('hoursFeaturesList');
+  const empty = document.getElementById('hoursEmpty');
+  if (!list) return;
+  const live = hoursFeatures.filter(function(f) { return f && !f.deleted; });
+  renderHoursSummary();
+  if (!live.length) {
+    if (empty) empty.style.display = '';
+    list.innerHTML = '';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  list.innerHTML = live.map(function(f) {
+    const budget = Number(f.budget) || 0;
+    const spent = hfSpent(f);
+    const remain = budget - spent;
+    const pct = budget > 0 ? Math.min(100, (spent / budget) * 100) : 0;
+    const over = budget > 0 && spent > budget;
+    const barCls = over ? 'over' : (pct >= 80 ? 'warn' : '');
+    const logs = (Array.isArray(f.spentAt) && f.spentAt.length)
+      ? f.spentAt.map(function(e, i) {
+          return '<div class="hf-log"><span class="hf-log-date">' + (e.date || '') + '</span><span>' + (Number(e.hours) || 0) + ' ч</span><span class="hf-log-x" title="Удалить запись" onclick="removeHoursLog(\'' + f.id + '\',' + i + ')">✕</span></div>';
+        }).join('')
+      : '<div class="hf-log"><span class="hf-empty">Пока нет записей о затратах</span></div>';
+    const startVal = (Number(f.spent) || 0) ? '<div class="hf-log"><span class="hf-log-date">старт</span><span>' + (Number(f.spent) || 0) + ' ч</span></div>' : '';
+    return (
+      '<div class="hf-card">' +
+        '<div class="hf-card-head">' +
+          '<div class="hf-card-title">' + (f.name || 'Без названия') + (f.comment ? ' <span style="font-weight:400;color:#888;font-size:12px">— ' + f.comment + '</span>' : '') + '</div>' +
+          '<div class="hf-card-actions">' +
+            '<button class="btn btn-sm btn-primary" onclick="addHoursLog(\'' + f.id + '\')">+ Списать часы</button>' +
+            '<button class="btn btn-sm btn-secondary" onclick="editHoursFeature(\'' + f.id + '\')">✎</button>' +
+            '<button class="btn btn-sm btn-danger" onclick="deleteHoursFeature(\'' + f.id + '\')">🗑</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="hf-metrics">' +
+          '<div class="hf-metric"><div class="hf-label">Выделено</div><div class="hf-value">' + Math.round(budget) + ' ч</div></div>' +
+          '<div class="hf-metric"><div class="hf-label">Потрачено</div><div class="hf-value">' + Math.round(spent) + ' ч</div></div>' +
+          '<div class="hf-metric"><div class="hf-label">Остаток</div><div class="hf-value' + (over ? ' over' : (remain >= 0 ? ' ok' : ' over')) + '">' + Math.round(remain) + ' ч</div></div>' +
+        '</div>' +
+        '<div class="hf-pct"><div class="' + barCls + '" style="width:' + pct + '%"></div></div>' +
+        '<div class="hf-logs">' + startVal + logs + '</div>' +
+      '</div>'
+    );
+  }).join('');
+}
+
 function formatAvgMs(ms) {
   if (ms === null || isNaN(ms)) return '—';
   const totalHours = ms / 3600000;
@@ -2713,20 +2962,6 @@ function renderSizeBreakdown(range) {
   return SIZES.map(s => `<span class="badge ${SIZE_CLASSES[s]}">${s} · ${counts[s]}</span>`).join('&nbsp;&nbsp;') + (noSize ? `<span class="badge">Размер не указан · ${noSize}</span>` : '');
 }
 
-function showDashboard() {
-  document.getElementById('dashboardSection').style.display = '';
-  document.getElementById('tasksSection').style.display = 'none';
-  document.getElementById('dashButton').classList.add('active');
-  renderDashboard();
-  renderFunnel();
-}
-
-function showTasksView() {
-  document.getElementById('dashboardSection').style.display = 'none';
-  document.getElementById('tasksSection').style.display = '';
-  document.getElementById('dashButton').classList.remove('active');
-}
-
 async function init() {
   if (!currentUser) return;
   await loadFromFirebase();
@@ -2743,6 +2978,7 @@ async function init() {
   renderTasks();
   renderNotes();
   renderHourCalc();
+  renderHours();
   toast('Данные загружены из облака');
 }
 init();
