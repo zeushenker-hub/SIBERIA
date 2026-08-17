@@ -37,3 +37,13 @@ jobs:
           timeout: 600000
           error_count: 10
           reporting_interval: 5000
+
+      - name: Deploy to reg.ru via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
+          port: ${{ secrets.FTP_PORT }}
+          server-dir: ${{ secrets.FTP_DIR }}
+          local-dir: ./
