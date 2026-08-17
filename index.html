@@ -188,9 +188,15 @@
     .task-table tr.urgent { background: #FFF5F5; border-color: #F3CDD2; }
     .task-table tr.urgent td { background: transparent; }
     .task-table tr.urgent:hover td { background: #FFE4E4; }
-    .task-table tr.release { background: #FFE9EF; border-color: #F3BECC; }
+    .task-table tr.release { background: #FFF1F4; border-color: #F5D6DF; }
     .task-table tr.release td { background: transparent; }
-    .task-table tr.release:hover td { background: #FFD3DF; }
+    .task-table tr.release:hover td { background: #FCE4EA; }
+    .task-table tr.clarify { background: #F3F4F6; border-color: #E2E5EA; }
+    .task-table tr.clarify td { background: transparent; }
+    .task-table tr.clarify:hover td { background: #E8EAEE; }
+    .task-table tr.working { background: #FFFDF3; border-color: #F0E8C8; }
+    .task-table tr.working td { background: transparent; }
+    .task-table tr.working:hover td { background: #FCF5D9; }
     .task-table tr:active { cursor: grabbing; }
     .task-table tr.dragging { opacity: .4; box-shadow: 0 3px 8px rgba(0,0,0,.15); }
     .inline-status, .inline-date, .inline-size { font-size: 11px; font-family: inherit; padding: 2px 4px; border: 1px solid transparent; border-radius: 4px; background: transparent; cursor: pointer; max-width: 120px; }
@@ -1484,6 +1490,9 @@ function sortCompare(a, b) {
   const aRelease = a.status === 'Требуется релиз';
   const bRelease = b.status === 'Требуется релиз';
   if (aRelease !== bRelease) return aRelease ? -1 : 1;
+  const aClarify = a.status === 'На уточнении';
+  const bClarify = b.status === 'На уточнении';
+  if (aClarify !== bClarify) return aClarify ? 1 : -1;
   let va, vb;
   switch (sortField) {
     case 'id': va = Number(a.id); vb = Number(b.id); break;
@@ -1561,7 +1570,9 @@ function renderTasks() {
     tbody.innerHTML = filtered.map(t => {
       const urg = !activeSprintFilter && !activeMyTasksFilter && !fSearch && t.status !== 'Готово' && t.deadline && (t.deadline === todayStr || t.deadline === tomorrowStr);
       const rel = t.status === 'Требуется релиз';
-      return `<tr class="${[rel?'release':'',urg?'urgent':''].filter(Boolean).join(' ')}" draggable="true" data-task-id="${t.id}"
+      const clar = t.status === 'На уточнении';
+      const working = ['В работе', 'Аналитика', 'QA', 'Ревью'].includes(t.status);
+      return `<tr class="${[rel?'release':'',clar?'clarify':'',working?'working':'',urg?'urgent':''].filter(Boolean).join(' ')}" draggable="true" data-task-id="${t.id}"
       ondragstart="handleDragStart(event)" ondragend="handleDragEnd(event)"
       onclick="openDetail('${t.id}')">
       <td><input type="checkbox" class="task-checkbox" data-task-id="${t.id}" onclick="event.stopPropagation()" /></td>
