@@ -369,10 +369,12 @@
     .hf-pct div.warn { background: #F0B84A; }
     .hf-pct div.over { background: #C6555F; }
     .hf-logs { border-top: 1px dashed #CDD6D8; margin-top: 10px; padding-top: 8px; }
-    .hf-log { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #555; padding: 2px 0; }
+    .hf-log { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: #555; padding: 2px 0; }
     .hf-log .hf-log-date { color: #999; width: 74px; flex-shrink: 0; }
-    .hf-log .hf-log-post { font-size: 12px; font-weight: 700; color: #446E9B; text-align: right; }
-    .hf-log .hf-log-x { cursor: pointer; color: #BBBBBB; font-size: 12px; }
+    .hf-log .hf-log-body { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+    .hf-log .hf-log-comment { color: #666; word-break: break-word; }
+    .hf-log .hf-log-post { font-size: 12px; font-weight: 700; color: #446E9B; text-align: right; white-space: nowrap; }
+    .hf-log .hf-log-x { cursor: pointer; color: #BBBBBB; font-size: 12px; flex-shrink: 0; }
     .hf-log .hf-log-x:hover { color: #C6555F; }
     .hf-log .hf-empty { color: #AAA; font-style: italic; }
 
@@ -675,6 +677,25 @@
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeModal('hoursFeatureModal')">Отмена</button>
       <button class="btn btn-primary" onclick="saveHoursFeature()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hours Log Modal -->
+<div class="modal-overlay" id="hoursLogModal">
+  <div class="modal">
+    <h3 id="hoursLogTitle">Списать часы</h3>
+    <div class="form-group">
+      <label>Сколько часов списать?</label>
+      <input id="hlHours" type="number" step="0.5" placeholder="Например: 2" />
+    </div>
+    <div class="form-group">
+      <label>Описание (за что списали)</label>
+      <textarea id="hlComment" placeholder="Что было сделано в эти часы" style="min-height:60px"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('hoursLogModal')">Отмена</button>
+      <button class="btn btn-primary" onclick="saveHoursLog()">Сохранить</button>
     </div>
   </div>
 </div>
@@ -2684,19 +2705,51 @@ function deleteHoursFeature(id) {
   renderHours();
 }
 
+let hoursLogTarget = null;
+
 function addHoursLog(id) {
-  const v = prompt('Сколько часов списать на фичу?', '');
-  if (v === null) return;
-  const hours = parseFloat(v);
-  if (isNaN(hours) || hours <= 0) { toast('Введите число больше 0'); return; }
+  hoursLogTarget = id;
+  delete document.getElementById('hlHours').dataset.editIdx;
+  document.getElementById('hoursLogTitle').textContent = 'Списать часы';
+  document.getElementById('hlHours').value = '';
+  document.getElementById('hlComment').value = '';
+  openModal('hoursLogModal');
+}
+function editHoursLog(id, idx) {
   const f = hoursFeatures.find(x => x.id === id);
+  if (!f || !Array.isArray(f.spentAt)) return;
+  const e = f.spentAt[idx];
+  if (!e) return;
+  hoursLogTarget = id;
+  document.getElementById('hoursLogTitle').textContent = 'Редактировать запись';
+  document.getElementById('hlHours').value = e.hours;
+  document.getElementById('hlComment').value = e.comment || '';
+  openModal('hoursLogModal');
+  document.getElementById('hlHours').dataset.editIdx = idx;
+}
+function saveHoursLog() {
+  const f = hoursFeatures.find(x => x.id === hoursLogTarget);
   if (!f) return;
   if (!Array.isArray(f.spentAt)) f.spentAt = [];
-  f.spentAt.push({ date: new Date().toISOString().slice(0, 10), hours: hours });
+  const hoursEl = document.getElementById('hlHours');
+  const v = hoursEl.value;
+  const hours = parseFloat(v);
+  if (isNaN(hours) || hours <= 0) { toast('Введите число больше 0'); return; }
+  const comment = document.getElementById('hlComment').value.trim();
+  const idx = hoursEl.dataset.editIdx;
+  if (idx !== undefined && idx !== '' && f.spentAt[idx]) {
+    f.spentAt[idx].hours = hours;
+    f.spentAt[idx].comment = comment;
+  } else {
+    f.spentAt.push({ date: new Date().toISOString().slice(0, 10), hours: hours, comment: comment });
+  }
+  delete hoursEl.dataset.editIdx;
+  hoursLogTarget = null;
   f.updatedAt = Date.now();
   saveHoursFeatures();
+  closeModal('hoursLogModal');
   renderHours();
-  toast('+ ' + hours + ' ч');
+  toast('Сохранено');
 }
 function removeHoursLog(id, idx) {
   const f = hoursFeatures.find(x => x.id === id);
@@ -2742,7 +2795,10 @@ function renderHours() {
     const barCls = over ? 'over' : (pct >= 80 ? 'warn' : '');
     const logs = (Array.isArray(f.spentAt) && f.spentAt.length)
       ? f.spentAt.map(function(e, i) {
-          return '<div class="hf-log"><span class="hf-log-date">' + (e.date || '') + '</span><span>' + (Number(e.hours) || 0) + ' ч</span><span class="hf-log-x" title="Удалить запись" onclick="removeHoursLog(\'' + f.id + '\',' + i + ')">✕</span></div>';
+          const cmt = e.comment
+            ? '<span class="hf-log-comment">' + escHtml(e.comment) + '</span>'
+            : '';
+          return '<div class="hf-log"><span class="hf-log-date">' + (e.date || '') + '</span><span class="hf-log-body">' + (Number(e.hours) || 0) + ' ч' + cmt + '</span><span class="hf-log-x" title="Редактировать запись" onclick="editHoursLog(\'' + f.id + '\',' + i + ')">✎</span><span class="hf-log-x" title="Удалить запись" onclick="removeHoursLog(\'' + f.id + '\',' + i + ')">✕</span></div>';
         }).join('')
       : '<div class="hf-log"><span class="hf-empty">Пока нет записей о затратах</span></div>';
     const startVal = (Number(f.spent) || 0) ? '<div class="hf-log"><span class="hf-log-date">старт</span><span>' + (Number(f.spent) || 0) + ' ч</span></div>' : '';
