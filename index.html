@@ -95,6 +95,7 @@
     .modal h3 { font-size: 20px; font-weight: 700; font-family: 'Roboto', sans-serif; margin-bottom: 16px; }
     .form-group { margin-bottom: 14px; }
     .form-group label { display: block; font-size: 12px; font-weight: 600; color: #666; margin-bottom: 4px; }
+    .label-hint { font-weight: 400; color: #99a; font-size: 11px; }
     .form-group input, .form-group select, .form-group textarea {
       width: 100%; padding: 8px 10px; border: 1px solid #CDD6D8; border-radius: 6px;
       font-size: 13px; font-family: inherit; background: #FFFFFF;
@@ -104,6 +105,12 @@
       border-color: #A9D3F2; outline: none; box-shadow: 0 0 0 2px rgba(169,211,242,.25);
     }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .dt-group { display: flex; gap: 8px; align-items: center; }
+    .dt-group .dt-date { flex: 1 1 60%; }
+    .dt-group .dt-time { flex: 1 1 40%; }
+    .dt-group input { width: auto !important; min-width: 0; }
+    .link-btn { margin-top: 6px; background: none; border: none; color: #3B82F6; font-size: 12px; cursor: pointer; padding: 0; font-family: inherit; }
+    .link-btn:hover { text-decoration: underline; }
     .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
     .sprint-list { display: flex; flex-direction: column; gap: 8px; }
     .sprint-item {
@@ -174,7 +181,7 @@
     .task-table th .sort-arrow { margin-left: 4px; font-size: 10px; }
     .task-table td { padding: 8px 10px; vertical-align: middle; }
     .task-table tbody tr {
-      cursor: grab;
+      cursor: pointer;
       background: #FFFFFF;
       border: 1px solid #E0E4E6;
       border-radius: 8px;
@@ -197,12 +204,66 @@
     .task-table tr.working { background: #FFFDF3; border-color: #F0E8C8; }
     .task-table tr.working td { background: transparent; }
     .task-table tr.working:hover td { background: #FCF5D9; }
+    .task-table tr.analytics { background: #EFF6FF; border-color: #CBE1F5; }
+    .task-table tr.analytics td { background: transparent; }
+    .task-table tr.analytics:hover td { background: #E0EEFA; }
+    .task-table tr.backlog { background: rgba(0,0,0,.5); border-color: rgba(0,0,0,.3); color: #F0F0F0; }
+    .task-table tr.backlog td { background: transparent; color: #F0F0F0; }
+    .task-table tr.backlog:hover td { background: rgba(0,0,0,.16); }
+    .task-table tr.backlog:hover { box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+    .task-table tr.backlog .task-id { color: #CBD0D6; }
+    .task-table tr.backlog .dates-label { color: #C9CDD3; }
+    .task-table tr.backlog .row-drag { color: #C2C7CD; }
+    .task-table tr.backlog .inline-date,
+    .task-table tr.backlog .inline-comment,
+    .task-table tr.backlog .inline-status,
+    .task-table tr.backlog .inline-size,
+    .task-table tr.backlog .time-btn { color: #F0F0F0; }
+    .task-table tr.backlog .inline-date:hover,
+    .task-table tr.backlog .inline-comment:hover,
+    .task-table tr.backlog .inline-status:hover,
+    .task-table tr.backlog .inline-size:hover { border-color: rgba(0,0,0,.4); background: rgba(255,255,255,.28); color: #1A1A1A; }
+    .task-table tr.backlog .time-btn { background: rgba(255,255,255,.18); border-color: rgba(0,0,0,.35); color: #F0F0F0; }
+    .task-table tr.backlog .time-btn:hover { background: rgba(255,255,255,.32); border-color: rgba(0,0,0,.5); }
     .task-table tr:active { cursor: grabbing; }
     .task-table tr.dragging { opacity: .4; box-shadow: 0 3px 8px rgba(0,0,0,.15); }
+    .row-drag { cursor: grab; color: #BCC3C7; font-size: 13px; padding: 2px 4px; margin-right: 4px; user-select: none; -webkit-user-drag: none; }
+    .row-drag:hover { color: #666; }
+    .row-drag:active { cursor: grabbing; }
     .inline-status, .inline-date, .inline-size { font-size: 11px; font-family: inherit; padding: 2px 4px; border: 1px solid transparent; border-radius: 4px; background: transparent; cursor: pointer; max-width: 120px; }
     .inline-status:hover, .inline-date:hover, .inline-size:hover { border-color: #CDD6D8; background: #fff; }
     .inline-status:focus, .inline-date:focus, .inline-size:focus { border-color: #A9D3F2; outline: none; background: #fff; }
+    .inline-status-btn, .chip-menu-btn { font-size: 11px; font-family: inherit; padding: 2px 4px; border: 1px solid transparent; border-radius: 4px; background: transparent; cursor: pointer; color: inherit; white-space: nowrap; }
+    .inline-status-btn:hover, .chip-menu-btn:hover { border-color: #CDD6D8; background: #fff; }
+    .chip-class .chip-menu-btn { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: none; background: transparent; }
+    .inline-menu {
+      position: fixed; z-index: 2100; min-width: 150px; background: #fff;
+      border: 1px solid #CDD6D8; border-radius: 6px; box-shadow: 0 6px 18px rgba(0,0,0,.16);
+      padding: 4px; font-size: 12px; max-height: 320px; overflow-y: auto;
+    }
+    .inline-menu .opt { padding: 5px 10px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
+    .inline-menu .opt:hover { background: #EAF4FB; }
+    .inline-menu .opt.active { background: #A9D3F2; font-weight: 600; }
+    .badge.inline-badge { border: none; cursor: pointer; font-family: inherit; line-height: 1.5; }
+    .badge.inline-badge:hover { filter: brightness(1.12); box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+    .badge.inline-badge .inline-caret { font-size: 8px; opacity: .7; margin-left: 2px; line-height: 1; }
+    .badge-empty { background: #E8EAED; color: #88909A; font-weight: 500; }
     .inline-date { max-width: 130px; border: 1px solid #CDD6D8; border-radius: 4px; background: #fff; padding: 3px 6px; font-size: 12px; }
+    .dt-inline { display: flex; gap: 4px; align-items: center; }
+    .dt-inline .inline-date { max-width: none; }
+    .dt-inline .inline-date:first-child { width: 96px; }
+    .dt-inline .inline-date.inline-time { width: 110px; font-size: 12px; }
+    .time-btn { font-size: 12px; font-family: inherit; padding: 3px 8px; border: 1px solid #CDD6D8; border-radius: 4px; background: #fff; cursor: pointer; white-space: nowrap; }
+    .time-btn:hover { border-color: #A9D3F2; background: #F5F9FF; }
+    .dates-stack { display: flex; flex-direction: column; gap: 3px; }
+    .dates-row { display: flex; align-items: center; gap: 6px; }
+    .dates-label { font-size: 10px; color: #889; white-space: nowrap; width: 52px; }
+    .dates-row .dt-inline .inline-date { width: 96px; }
+    .dates-row .dt-inline .time-btn { padding: 3px 6px; }
+    .modal-sm { max-width: 320px; }
+    .time-editor { display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .time-editor .time-select { font-size: 22px; padding: 8px 10px; border: 1px solid #CDD6D8; border-radius: 6px; width: 90px; text-align: center; font-family: inherit; }
+    .time-colon { font-size: 24px; color: #444; }
     .inline-comment { font-size: 11px; font-family: inherit; padding: 2px 6px; border: 1px solid transparent; border-radius: 4px; background: transparent; cursor: text; width: 100%; min-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .inline-comment:hover { border-color: #CDD6D8; background: #fff; position: relative; }
     .inline-comment:focus { border-color: #A9D3F2; outline: none; background: #fff; overflow: visible; white-space: normal; }
@@ -219,6 +280,7 @@
       font-size: 11px; font-weight: 600;
       white-space: nowrap;
     }
+    .badge-backlog { background: #BFCBDD; color: #333; }
     .badge-new { background: #CDD6D8; color: #333; }
     .badge-clarify { background: #CECCCB; color: #333; }
     .badge-analytics { background: #9ABFDC; color: #333; }
@@ -227,6 +289,7 @@
     .badge-review { background: #F7C0E3; color: #333; }
     .badge-done { background: #A8F0CD; color: #333; }
     .badge-release { background: #F0A9A0; color: #333; }
+    .badge-cancelled { background: #B9B9B9; color: #333; }
     .badge-critical { background: rgba(0,0,0,.5); color: #fff; }
     .badge-high { background: rgba(220,38,38,.5); color: #fff; }
     .badge-medium { background: rgba(234,179,8,.5); color: #333; }
@@ -244,6 +307,7 @@
     .badge-class-p1 { background: #E5484D; color: #fff; }
     .badge-class-p2 { background: #3B82F6; color: #fff; }
     .badge-class-p3 { background: #10B981; color: #fff; }
+    .badge-project { background: #E3E8FA; color: #3B4A8C; }
     .chip-class {
       position: relative; display: inline-flex; align-items: center; gap: 4px;
       padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;
@@ -342,6 +406,11 @@
     .metric-card .metric-label { font-size: 12px; font-weight: 600; color: #666; margin-bottom: 8px; }
     .metric-card .metric-value { font-size: 26px; font-weight: 700; color: #333; }
     .metric-card .metric-sub { font-size: 11px; color: #999; margin-top: 6px; line-height: 1.4; }
+    .metric-card .metric-stats { display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+    .metric-card .metric-stat { font-size: 13px; font-weight: 700; color: #333; background: #EAF1F3; border: 1px solid #CFDFE3; border-radius: 6px; padding: 4px 10px; }
+    .metric-card .metric-stat.median { color: #fff; background: #3E7BFA; border-color: #2F63C9; }
+    .metric-card .metric-stat-label { font-weight: 500; font-size: 10px; color: #666; display: block; }
+    .metric-card .metric-stat.median .metric-stat-label { color: #DCE8FF; }
     .funnel {
       display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;
     }
@@ -358,25 +427,100 @@
     .hf-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
     .hf-card-title { font-size: 15px; font-weight: 700; color: #333; }
     .hf-card-actions { display: flex; gap: 6px; align-items: center; }
+    .hf-caret { display: inline-block; margin-right: 8px; color: #99a; font-size: 11px; transition: transform .18s; }
+    .hf-caret.open { transform: rotate(90deg); }
+    .hf-logs-head { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #446E9B; cursor: pointer; border-top: 1px dashed #CDD6D8; margin-top: 10px; padding-top: 8px; justify-content: space-between; }
+    .hf-section-label { display: inline-flex; align-items: center; gap: 6px; }
+    .hf-logs-head:hover { color: #2d4f78; }
     .hf-metrics { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 12px; }
     .hf-metric { min-width: 90px; }
     .hf-metric .hf-label { font-size: 11px; font-weight: 600; color: #666; margin-bottom: 2px; }
     .hf-metric .hf-value { font-size: 20px; font-weight: 700; color: #333; }
     .hf-metric .hf-value.ok { color: #3E9B79; }
-    .hf-metric .hf-value.over { color: #C6555F; }
-    .hf-pct { position: relative; height: 8px; border-radius: 4px; background: #E7EDF0; overflow: hidden; margin-top: 8px; }
-    .hf-pct div { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 4px; background: #A9D3F2; transition: width .2s; }
-    .hf-pct div.warn { background: #F0B84A; }
-    .hf-pct div.over { background: #C6555F; }
-    .hf-logs { border-top: 1px dashed #CDD6D8; margin-top: 10px; padding-top: 8px; }
-    .hf-log { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: #555; padding: 2px 0; }
+    .hf-metric .hf-value.over { color: #C41A2A; }
+    .hf-chips { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 12px; }
+    .hf-chip .lbl { font-size: 11px; font-weight: 600; color: #666; }
+    .hf-chip .val { font-size: 16px; font-weight: 700; color: #333; }
+    .hf-chip .val.ok { color: #3E9B79; }
+    .hf-chip .val.over { color: #C41A2A; }
+    .hf-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+    .hf-table th, .hf-table td { border: 1px solid #E6ECEF; padding: 5px 8px; }
+    .hf-table th { background: #F5F7F9; color: #444; font-weight: 600; text-align: left; }
+    .hf-table td.num, .hf-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .hf-table tbody tr:hover { background: #FAFBFC; }
+    .hf-table tfoot td { font-weight: 700; background: #F5F7F9; }
+    .hf-table .pct.ok { color: #3E9B79; font-weight: 700; }
+    .hf-table .pct.warn { color: #E07C1F; font-weight: 700; }
+    .hf-table .pct.over { color: #C41A2A; font-weight: 700; }
+    .hf-table .role-be { color: #4B3F72; font-weight: 700; }
+    .hf-table .role-fe { color: #0F766E; font-weight: 700; }
+    .hf-table .grp { text-align: center; font-size: 11px; letter-spacing: .2px; }
+    .hf-table .grp-dev { background: #EEF2FF; color: #4B3F72; border-bottom: 2px solid #4B3F72; }
+    .hf-table .grp-fin { background: #ECFDF5; color: #0F766E; border-bottom: 2px solid #0F766E; }
+    .hf-table .grp-test { background: #FEF7EC; color: #E07C1F; border-bottom: 2px solid #E07C1F; }
+    .hf-table td.c-dev { background: #F8F9FF; }
+    .hf-table td.c-fin { background: #F3FDF8; }
+    .hf-table td.c-test { background: #FFFBF4; }
+    .est-body { margin-top: 10px; padding: 12px; background: #f8f8f8; border: 1px solid #E6ECEF; border-radius: 6px; font-size: 12px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+    .est-link { display: inline-flex; align-items: center; gap: 4px; color: #3B82F6; font-size: 12px; text-decoration: none; }
+    .est-link:hover { text-decoration: underline; }
+    .est-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; font-size: 12px; color: #666; }
+    .est-date { font-weight: 600; color: #444; }
+    .est-preview-hint { font-size: 11px; color: #999; margin-bottom: 4px; }
+    .hf-pct { position: relative; height: 12px; border-radius: 6px; background: #E7EDF0; overflow: hidden; margin-top: 8px; }
+    .hf-pct div { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 6px; background: #A9D3F2; transition: width .2s; }
+    .hf-pct div.ok { background: #BFE3D0; }
+    .hf-pct div.warn { background: #FBD9A3; }
+    .hf-pct div.over { background: #F5B6B3; }
+    .hf-bars { margin-top: 12px; }
+    .hf-bar-row { margin-bottom: 10px; }
+    .hf-bar-row:last-child { margin-bottom: 0; }
+    .hf-bar-label { font-size: 11px; font-weight: 600; color: #666; display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; gap: 8px; flex-wrap: wrap; }
+    .hf-bar-label .v { font-weight: 700; color: #333; }
+    .hf-bar-label .v.ok { color: #3E9B79; }
+    .hf-bar-label .v.over { color: #C41A2A; }
+    .hf-bar-label .v.warn { color: #E07C1F; }
+    .hf-logs { margin-top: 2px; padding-top: 6px; }
+    .search-wrap { position: relative; }
+    .search-wrap .search-ico { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #99a; font-size: 14px; pointer-events: none; }
+    .search-wrap input { padding: 9px 14px 9px 34px; border: 1px solid #CDD6D8; border-radius: 8px; font-size: 13px; font-family: inherit; background: #fff; min-width: 300px; transition: border-color .15s, box-shadow .15s; }
+    .search-wrap input::placeholder { color: #99a; opacity: 1; }
+    .search-wrap input:focus { border-color: #A9D3F2; outline: none; box-shadow: 0 0 0 2px rgba(169,211,242,.25); }
+    .hf-none { color: #AAA; font-style: italic; font-size: 13px; padding: 12px 4px; }
+    .hf-log { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: #555; padding: 7px 0; }
+    .hf-logs .hf-log:not(:first-child) { margin-top: 8px; }
     .hf-log .hf-log-date { color: #999; width: 74px; flex-shrink: 0; }
     .hf-log .hf-log-body { display: flex; flex-direction: column; gap: 2px; flex: 1; }
     .hf-log .hf-log-comment { color: #666; word-break: break-word; }
+    .hf-log-role { display: inline-block; margin-left: 8px; padding: 1px 6px; border-radius: 8px; font-size: 10px; font-weight: 700; vertical-align: middle; }
+    .hf-log-role.be { background: #4B3F72; color: #fff; }
+    .hf-log-role.fe { background: #0F766E; color: #fff; }
+    .hf-log-role.both { background: #B45309; color: #fff; }
     .hf-log .hf-log-post { font-size: 12px; font-weight: 700; color: #446E9B; text-align: right; white-space: nowrap; }
     .hf-log .hf-log-x { cursor: pointer; color: #BBBBBB; font-size: 12px; flex-shrink: 0; }
-    .hf-log .hf-log-x:hover { color: #C6555F; }
+    .hf-log .hf-log-x:hover { color: #C41A2A; }
     .hf-log .hf-empty { color: #AAA; font-style: italic; }
+    .hf-scenarios-head { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #3E7A6E; cursor: pointer; border-top: 1px dashed #CDD6D8; margin-top: 10px; padding-top: 8px; justify-content: space-between; }
+    .hf-scenarios-head:hover { color: #2c5c53; }
+    .hf-scenarios { margin-top: 8px; }
+    .hf-scn-list { margin-top: 8px; }
+    .hf-scn-row { display: flex; align-items: center; gap: 10px; font-size: 12px; padding: 7px 0; border-bottom: 1px solid #F0F3F5; }
+    .hf-scn-row:last-child { border-bottom: none; }
+    .hf-scn-row.done .hf-scn-name { color: #3E9B79; }
+    .hf-scn-pct { flex-shrink: 0; width: 42px; font-weight: 700; color: #666; font-variant-numeric: tabular-nums; }
+    .hf-scn-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .hf-scn-name { font-weight: 600; color: #333; word-break: break-word; }
+    .hf-scn-desc { font-size: 12px; color: #777; word-break: break-word; }
+    .hf-scn-meta { font-size: 11px; color: #888; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .hf-scn-badge { display: inline-block; padding: 1px 7px; border-radius: 8px; font-size: 10px; font-weight: 700; color: #fff; }
+    .hf-scn-x { cursor: pointer; color: #BBBBBB; font-size: 13px; flex-shrink: 0; }
+    .hf-scn-x:hover { color: #C41A2A; }
+    .hf-scn-empty { color: #AAA; font-style: italic; padding: 6px 2px; }
+    .hf-dist { display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: #E7EDF0; }
+    .hf-dist-seg { height: 100%; }
+    .hf-dist-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 6px; font-size: 11px; color: #666; }
+    .hf-dist-legend span { display: inline-flex; align-items: center; gap: 5px; }
+    .hf-dist-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; }
 
   </style>
 </head>
@@ -404,6 +548,7 @@
           <div class="card-header"><h2>Навигация</h2></div>
           <button class="nav-btn" id="dashButton" onclick="showDashboard()">📊 Дашборд</button>
           <button class="nav-btn" id="hoursButton" onclick="showHoursView()">⏱ Часы по фичам</button>
+          <button class="nav-btn" id="estimatesButton" onclick="showEstimatesView()">📋 Проектная оценка</button>
           <div class="sprint-list" id="sprintList"></div>
         </div>
         <div class="card" style="margin-top:16px">
@@ -425,6 +570,7 @@
             <input type="file" id="fileInput" accept=".json" style="display:none" onchange="loadDataFromFile(event)" />
             <button class="btn btn-sm btn-secondary" onclick="showBackupList()" style="width:100%">⏱ Восстановить из бэкапа</button>
             <div id="backupList" style="display:none;margin-top:4px"></div>
+            <button class="btn btn-sm btn-secondary" onclick="removeDuplicateTasks()" style="width:100%">🧹 Удалить дубли задач</button>
             <div style="border-top:1px solid #eee;padding-top:8px;font-size:11px;color:#666">Диагностика источника данных</div>
             <button class="btn btn-sm btn-secondary" onclick="checkDataSource()" style="width:100%">🔎 Проверить: Firestore vs localStorage</button>
             <div id="datasourceResult" style="margin-top:6px;font-size:11px;white-space:pre-wrap;background:#f5f5f5;border-radius:6px;padding:8px;display:none"></div>
@@ -476,9 +622,24 @@
               <button class="btn btn-sm btn-primary" onclick="openHoursFeatureModal()">+ Новая фича</button>
             </div>
           </div>
-          <div id="hoursSummary" style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px"></div>
+          <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+            <div class="search-wrap"><span class="search-ico">🔍</span><input id="hoursSearch" type="text" placeholder="Поиск по названию фичи и списаниям…" oninput="onHoursSearch(this.value)" /></div>
+          </div>
           <div id="hoursFeaturesList" style="display:flex;flex-direction:column;gap:12px"></div>
           <div id="hoursEmpty" class="empty-state" style="display:none">Пока нет фич. Добавьте первую через «+ Новая фича».</div>
+        </div>
+        <div class="card" id="estimatesSection" style="display:none">
+          <div class="card-header dash-header">
+            <h2>📋 Проектная оценка</h2>
+            <div class="dash-period">
+              <button class="btn btn-sm btn-primary" onclick="openEstimateModal()">+ Новая оценка</button>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+            <div class="search-wrap"><span class="search-ico">🔍</span><input id="estimatesSearch" type="text" placeholder="Поиск по названию и ТЗ…" oninput="onEstimatesSearch(this.value)" /></div>
+          </div>
+          <div id="estimatesList" style="display:flex;flex-direction:column;gap:12px"></div>
+          <div id="estimatesEmpty" class="empty-state" style="display:none">Пока нет сохранённых оценок. Добавьте первую через «+ Новая оценка».</div>
         </div>
         <div class="card" id="tasksSection">
           <div class="card-header">
@@ -488,6 +649,7 @@
         <div class="tab-bar" id="tabBar" style="display:none">
           <button class="active" id="tabActive" onclick="switchTab('active')">Активные</button>
           <button id="tabDone" onclick="switchTab('done')">Закрытые</button>
+          <button id="tabCancelled" onclick="switchTab('cancelled')">🗑 Отменены</button>
         </div>
         <div class="filters">
           <span class="filter-label">Статус</span>
@@ -517,14 +679,14 @@
             <tr>
               <th style="width:24px"><input type="checkbox" id="selectAllTasks" onchange="toggleAllCheckboxes(this)" /></th>
               <th onclick="setSort('id')">ID <span class="sort-arrow" id="sortArrowId"></span></th>
+              <th onclick="setSort('project')">Проект <span class="sort-arrow" id="sortArrowProject"></span></th>
               <th onclick="setSort('title')">Название <span class="sort-arrow" id="sortArrowTitle"></span></th>
               <th onclick="setSort('status')">Статус <span class="sort-arrow" id="sortArrowStatus"></span></th>
               <th onclick="setSort('priority')">Приоритет <span class="sort-arrow" id="sortArrowPriority"></span></th>
               <th onclick="setSort('type')">Тип <span class="sort-arrow" id="sortArrowType"></span></th>
               <th onclick="setSort('size')">Размер <span class="sort-arrow" id="sortArrowSize"></span></th>
               <th onclick="setSort('class')">Класс <span class="sort-arrow" id="sortArrowClass"></span></th>
-              <th onclick="setSort('deadline')">Срок <span class="sort-arrow" id="sortArrowDeadline"></span></th>
-              <th onclick="setSort('release')">Релиз <span class="sort-arrow" id="sortArrowRelease"></span></th>
+              <th onclick="setSort('deadline')">Даты <span class="sort-arrow" id="sortArrowDeadline"></span></th>
               <th onclick="setSort('response')">Отклик <span class="sort-arrow" id="sortArrowResponse"></span></th>
               <th>Комментарий</th>
             </tr>
@@ -600,13 +762,32 @@
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label>Срок сдачи</label>
-        <input id="taskDeadline" type="date" />
+        <label>Проект</label>
+        <select id="taskProject"></select>
       </div>
       <div class="form-group">
-        <label>Дата релиза</label>
-        <input id="taskRelease" type="date" />
+        <label style="opacity:0">&nbsp;</label>
+        <button type="button" class="btn btn-sm btn-secondary" style="width:100%" onclick="addProjectFromModal()">＋ Новый проект</button>
       </div>
+    </div>
+    <div class="form-group">
+      <label>Срок сдачи</label>
+      <input id="taskDeadline" type="date" />
+    </div>
+    <div class="form-group">
+      <label>Дата релиза <span class="label-hint">(дата и время)</span></label>
+      <div class="dt-group">
+        <input id="taskReleaseDate" type="date" class="dt-date" />
+        <input id="taskReleaseTime" type="time" class="dt-time" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Взята в работу <span class="label-hint">(если начали раньше, чем поставили статус)</span></label>
+      <div class="dt-group">
+        <input id="taskStartWorkDate" type="date" class="dt-date" />
+        <input id="taskStartWorkTime" type="time" class="dt-time" />
+      </div>
+      <button type="button" class="link-btn" onclick="setStartWorkNowFromModal()">Установить сейчас</button>
     </div>
     <div class="form-row">
       <div class="form-group">
@@ -670,6 +851,30 @@
         <input id="hfSpentStart" type="number" placeholder="0" />
       </div>
     </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>План BE (ч)</label>
+        <input id="hfPlanBE" type="number" step="0.5" min="0" placeholder="0" />
+      </div>
+      <div class="form-group">
+        <label>План FE (ч)</label>
+        <input id="hfPlanFE" type="number" step="0.5" min="0" placeholder="0" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Часы QA (ч) <span class="label-hint">авто: 50% BE + 50% FE, можно переопределить</span></label>
+      <input id="hfPlanQA" type="number" step="0.5" min="0" placeholder="авто" />
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Дата начала (от)</label>
+        <input id="hfStartDate" type="date" />
+      </div>
+      <div class="form-group">
+        <label>Дедлайн</label>
+        <input id="hfDeadline" type="date" />
+      </div>
+    </div>
     <div class="form-group">
       <label>Комментарий (опционально)</label>
       <input id="hfComment" placeholder="Описание фичи" />
@@ -685,9 +890,24 @@
 <div class="modal-overlay" id="hoursLogModal">
   <div class="modal">
     <h3 id="hoursLogTitle">Списать часы</h3>
-    <div class="form-group">
-      <label>Сколько часов списать?</label>
-      <input id="hlHours" type="number" step="0.5" placeholder="Например: 2" />
+    <div class="form-row">
+      <div class="form-group">
+        <label>Часы (план)</label>
+        <input id="hlPlan" type="number" step="0.5" min="0" placeholder="Например: 4" />
+      </div>
+      <div class="form-group">
+        <label>Часы (факт)</label>
+        <input id="hlHours" type="number" step="0.5" placeholder="Например: 2" />
+      </div>
+      <div class="form-group">
+        <label>BE / FE</label>
+        <select id="hlRole">
+          <option value="">—</option>
+          <option value="BE">BE</option>
+          <option value="FE">FE</option>
+          <option value="BE+FE">BE+FE</option>
+        </select>
+      </div>
     </div>
     <div class="form-group">
       <label>Описание (за что списали)</label>
@@ -696,6 +916,136 @@
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeModal('hoursLogModal')">Отмена</button>
       <button class="btn btn-primary" onclick="saveHoursLog()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hours Scenario Modal -->
+<div class="modal-overlay" id="hoursScenarioModal">
+  <div class="modal modal-sm">
+    <h3 id="hoursScenarioTitle">Новый сценарий</h3>
+    <input type="hidden" id="hssFeatureId" />
+    <input type="hidden" id="hssIdx" />
+    <div class="form-group">
+      <label>Сценарий (продуктовая история)</label>
+      <input id="hssText" placeholder="Например: Регистрация по email" />
+    </div>
+    <div class="form-group">
+      <label>Описание <span class="label-hint">(что должно работать / приёмка)</span></label>
+      <textarea id="hssDesc" placeholder="Краткое описание сценария и критерий приёмки" style="min-height:70px"></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Этап</label>
+        <select id="hssStage"></select>
+      </div>
+      <div class="form-group">
+        <label>Вес (ч из ТЗ)</label>
+        <input id="hssWeight" type="number" min="0" step="0.5" placeholder="0" />
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('hoursScenarioModal')">Отмена</button>
+      <button class="btn btn-primary" onclick="saveHoursScenario(true)">Сохранить и создать ещё</button>
+      <button class="btn btn-primary" onclick="saveHoursScenario()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- Project Estimate Modal -->
+<div class="modal-overlay" id="estimateModal">
+  <div class="modal" style="min-width:620px">
+    <h3 id="estimateTitle">Новая оценка</h3>
+    <input type="hidden" id="estId" />
+    <div class="form-group">
+      <label>Название <span class="label-hint">(например: SR Tutu)</span></label>
+      <input id="estTitle" placeholder="SR Tutu" />
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Ссылка на ТЗ (Google Doc)</label>
+        <input id="estDocUrl" placeholder="https://docs.google.com/…" />
+      </div>
+      <div class="form-group">
+        <label>Дата отправки бизнесу</label>
+        <input id="estDate" type="date" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>📋 Текст сметы <span class="label-hint">— вставьте целиком, как отправили бизнесу</span></label>
+      <textarea id="estText" placeholder="Вставьте готовую смету (ВВОДНЫЕ ДАННЫЕ / РАСЧЁТ / НАЗНАЧЕНИЕ)…" style="min-height:150px;font-family:monospace;white-space:pre" oninput="updateEstimatePreview()"></textarea>
+    </div>
+    <div style="font-size:11px;color:#999;margin:2px 0 12px">— или, если не вставляете текст, рассчитайте по полям ниже —</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>FRONTEND (ч)</label>
+        <input id="estFrontend" type="number" placeholder="100" oninput="updateEstimatePreview()" />
+      </div>
+      <div class="form-group">
+        <label>BACKEND (ч)</label>
+        <input id="estBackend" type="number" placeholder="100" oninput="updateEstimatePreview()" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>QA коэффициент</label>
+        <select id="estQA" onchange="updateEstimatePreview()">
+          <option value="0.1">0.1</option>
+          <option value="0.2" selected>0.2</option>
+          <option value="0.3">0.3</option>
+          <option value="0.4">0.4</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>PM коэффициент</label>
+        <select id="estPM" onchange="updateEstimatePreview()">
+          <option value="0.05">0.05</option>
+          <option value="0.1">0.1</option>
+          <option value="0.2" selected>0.2</option>
+          <option value="0.3">0.3</option>
+          <option value="0.4">0.4</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Ставки</label>
+      <select id="estRateMode" onchange="toggleEstimateRateMode()">
+        <option value="none">Без стоимости</option>
+        <option value="single">Единая ставка</option>
+        <option value="separate">Разные ставки</option>
+      </select>
+    </div>
+    <div id="estRateFields">
+      <div id="estRateSingleWrap" class="form-group" style="display:none">
+        <label>Ставка (₽/ч)</label>
+        <input id="estRateSingle" type="number" placeholder="3500" oninput="updateEstimatePreview()" />
+      </div>
+      <div id="estRateSeparateWrap" class="form-row" style="display:none">
+        <div class="form-group">
+          <label>Разработка (₽/ч)</label>
+          <input id="estRateDev" type="number" placeholder="3500" oninput="updateEstimatePreview()" />
+        </div>
+        <div class="form-group">
+          <label>Тестирование (₽/ч)</label>
+          <input id="estRateQA" type="number" placeholder="2500" oninput="updateEstimatePreview()" />
+        </div>
+        <div class="form-group">
+          <label>Управление (₽/ч)</label>
+          <input id="estRatePM" type="number" placeholder="3000" oninput="updateEstimatePreview()" />
+        </div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Заметка (опционально)</label>
+      <textarea id="estNote" placeholder="Комментарий / что отправили" style="min-height:50px"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Предпросмотр сметы</label>
+      <div id="estPreview" class="est-body" style="min-height:40px"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('estimateModal')">Отмена</button>
+      <button class="btn btn-primary" onclick="saveEstimate()">Сохранить</button>
     </div>
   </div>
 </div>
@@ -735,6 +1085,10 @@
         <div class="value"><span id="detailType"></span></div>
       </div>
       <div class="detail-field">
+        <label>Проект</label>
+        <div class="value"><span id="detailProject"></span></div>
+      </div>
+      <div class="detail-field">
         <label>Размер</label>
         <div class="value"><span id="detailSize"></span></div>
       </div>
@@ -749,6 +1103,10 @@
       <div class="detail-field">
         <label>Дата релиза</label>
         <div class="value" id="detailRelease"></div>
+      </div>
+      <div class="detail-field">
+        <label>Взята в работу</label>
+        <div class="value" id="detailStartWork"></div>
       </div>
       <div class="detail-field">
         <label>Отклик</label>
@@ -780,6 +1138,23 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- Time Editor Modal -->
+<div class="modal-overlay" id="timeModal">
+  <div class="modal modal-sm">
+    <h3 id="timeModalTitle">Время взятия в работу</h3>
+    <div class="form-group">
+      <label>Часы и минуты</label>
+      <div class="time-editor">
+        <select id="timeModalHour" class="time-select"></select><span class="time-colon">:</span><select id="timeModalMin" class="time-select"></select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('timeModal')">Отмена</button>
+      <button class="btn btn-primary" onclick="saveTaskTime()">ОК</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyBRYeMKAJxLQf5B6ZzkCggTlb1ZUf_o75o",
@@ -793,8 +1168,8 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const FB_COLL = db.collection('siberia_tracker');
 
-const STATUSES = ['Новая', 'На уточнении', 'Аналитика', 'В работе', 'QA', 'Ревью', 'Требуется релиз', 'Готово'];
-const STATUS_CLASSES = { 'Новая':'badge-new', 'На уточнении':'badge-clarify', 'Аналитика':'badge-analytics', 'В работе':'badge-inprogress', 'QA':'badge-qa', 'Ревью':'badge-review', 'Требуется релиз':'badge-release', 'Готово':'badge-done' };
+const STATUSES = ['Бэклог', 'Новая', 'На уточнении', 'Аналитика', 'В работе', 'QA', 'Ревью', 'Требуется релиз', 'Готово', 'Отменена'];
+const STATUS_CLASSES = { 'Бэклог':'badge-backlog', 'Новая':'badge-new', 'На уточнении':'badge-clarify', 'Аналитика':'badge-analytics', 'В работе':'badge-inprogress', 'QA':'badge-qa', 'Ревью':'badge-review', 'Требуется релиз':'badge-release', 'Готово':'badge-done', 'Отменена':'badge-cancelled' };
 const PRIORITIES = ['Критичный', 'Высокий', 'Средний', 'Низкий', 'Очень низкий'];
 const PRIORITY_CLASSES = { 'Критичный':'badge-critical', 'Высокий':'badge-high', 'Средний':'badge-medium', 'Низкий':'badge-low', 'Очень низкий':'badge-verylow' };
 const TYPES = ['Баг', 'Фича', 'Обновление', 'Рутина'];
@@ -811,6 +1186,8 @@ let sortDir = 'asc';
 let detailTaskId = null;
 let activeSprintFilter = '';
 let activeMyTasksFilter = false;
+let activeDoneFilter = false;
+let activeCancelledFilter = false;
 let urgentView = true;
 let dashSize = '';
 
@@ -889,12 +1266,15 @@ function stampAllNew(arr) {
 
 // Firestore — единый источник правды. localStorage — только оффлайн-кэш.
 // Для каждой коллекции храним последнюю известную облачную копию (для merge-before-write).
-const lastCloud = { tasks: [], sprints: [], mytasks: [], 'hours_features': [], notes: null };
+const lastCloud = { tasks: [], sprints: [], mytasks: [], 'hours_features': [], estimates: [], notes: null };
+// lastCloudMap — индекс id → элемент последней известной облачной копии (для diff записи «по ключу»).
+const lastCloudMap = { tasks: {}, sprints: {}, mytasks: {}, 'hours_features': {}, estimates: {} };
+let _itemsConverted = {};
 let cloudNotesTs = Date.now();
 let pendingIdSave = false;
 
-const KEY_TO_DOC = { 'tracker_tasks':'tasks', 'tracker_sprints':'sprints', 'tracker_mytasks':'mytasks', 'tracker_hours_features':'hours_features' };
-const DOC_TO_KEY = { 'tasks':'tracker_tasks', 'sprints':'tracker_sprints', 'mytasks':'tracker_mytasks', 'hours_features':'tracker_hours_features' };
+const KEY_TO_DOC = { 'tracker_tasks':'tasks', 'tracker_sprints':'sprints', 'tracker_mytasks':'mytasks', 'tracker_hours_features':'hours_features', 'tracker_estimates':'estimates' };
+const DOC_TO_KEY = { 'tasks':'tracker_tasks', 'sprints':'tracker_sprints', 'mytasks':'tracker_mytasks', 'hours_features':'tracker_hours_features', 'estimates':'tracker_estimates' };
 
 function itemKey(el) {
   return (el && el.id !== undefined && el.id !== null) ? String(el.id) : String(el);
@@ -902,22 +1282,76 @@ function itemKey(el) {
 function itemStamp(el) { return Number(el && el.updatedAt) || 0; }
 function isTombstone(el) { return !!(el && el.deleted); }
 
+// Приводим items к виду «карта id → элемент». Поддерживаем старый формат (массив)
+// и новый (объект-карта). Для mytasks значение карты — сам id (строка).
+function itemsAsMap(items) {
+  const m = {};
+  if (Array.isArray(items)) {
+    items.forEach(function(el) {
+      if (el == null || el === '') return;
+      m[itemKey(el)] = el;
+    });
+  } else if (items && typeof items === 'object') {
+    Object.keys(items).forEach(function(k) {
+      const v = items[k];
+      if (v == null || v === '') return;
+      m[k] = v;
+    });
+  }
+  return m;
+}
+function itemsAsArray(map) {
+  if (Array.isArray(map)) return map.slice();
+  if (map && typeof map === 'object') {
+    return Object.keys(map).filter(function(k) { return map[k] != null && map[k] !== ''; }).map(function(k) { return map[k]; });
+  }
+  return [];
+}
+
+// Статус «Новая» — значение по умолчанию; он не должен затирать реальный статус.
+// Это защита от потери статуса при конфликте одноимённых записей в слиянии.
+function isMeaningfulStatus(el) {
+  return !!(el && typeof el === 'object' && el.status && el.status !== 'Новая');
+}
+// Решение «кто побеждает» для двух записей с одним ключом (id):
+// 1) tombstone (удаление) доминирует над живой записью;
+// 2) запись с реальным статусом не затирается дефолтной «Новой»;
+// 3) иначе — побеждает более свежая по updatedAt (last-write-wins), при равенстве — текущая.
+function shouldReplace(cur, cand) {
+  if (!cur) return true;
+  if (!cand) return false;
+  if (isTombstone(cand)) return true;
+  if (isTombstone(cur)) return false;
+  const curMeaningful = isMeaningfulStatus(cur);
+  const candMeaningful = isMeaningfulStatus(cand);
+  if (candMeaningful && !curMeaningful) return true;
+  if (curMeaningful && !candMeaningful) return false;
+  const sc = itemStamp(cand), ss = itemStamp(cur);
+  return sc > ss;
+}
 function mergeArrays(localArr, cloudArr) {
   const map = new Map();
-  if (Array.isArray(cloudArr)) cloudArr.forEach(function(el) {
-    if (!el || !isTombstone(el)) {
-      const k = itemKey(el); const ex = map.get(k);
-      if (!ex) map.set(k, el);
-      else if (isTombstone(el)) map.set(k, el);
-      else if (itemStamp(el) >= itemStamp(ex)) map.set(k, el);
-    }
-  });
-  if (Array.isArray(localArr)) localArr.forEach(function(el) {
+  const put = function(el) {
     if (!el) return;
-    const k = itemKey(el); const ex = map.get(k);
-    if (!ex) map.set(k, el);
-    else if (isTombstone(el)) map.set(k, el);            // локальное удаление доминирует
-    else if (itemStamp(el) > itemStamp(ex) && !isTombstone(ex)) map.set(k, el);
+    const k = itemKey(el);
+    const ex = map.get(k);
+    if (ex === undefined) { map.set(k, el); return; }
+    if (shouldReplace(ex, el)) map.set(k, el);
+  };
+  (Array.isArray(cloudArr) ? cloudArr : []).forEach(put);  // облако — базовый порядок
+  (Array.isArray(localArr) ? localArr : []).forEach(put);
+  return Array.from(map.values());
+}
+
+// Страховка: схлопывает записи с одинаковым id в локальном массиве (по тем же правилам).
+function dedupeById(arr) {
+  if (!Array.isArray(arr)) return arr;
+  const map = new Map();
+  (arr).forEach(function(el) {
+    if (el == null) return;
+    const k = itemKey(el);
+    const ex = map.get(k);
+    if (ex === undefined || shouldReplace(ex, el)) map.set(k, el);
   });
   return Array.from(map.values());
 }
@@ -943,6 +1377,7 @@ function currentArr(doc) {
   if (doc === 'sprints') return sprints;
   if (doc === 'mytasks') return myTasks;
   if (doc === 'hours_features') return hoursFeatures;
+  if (doc === 'estimates') return estimates;
   return [];
 }
 function setArr(doc, arr) {
@@ -950,6 +1385,7 @@ function setArr(doc, arr) {
   else if (doc === 'sprints') sprints = arr;
   else if (doc === 'mytasks') myTasks = arr;
   else if (doc === 'hours_features') hoursFeatures = arr;
+  else if (doc === 'estimates') estimates = arr;
 }
 
 function renderAll() {
@@ -960,13 +1396,17 @@ function renderAll() {
     renderFunnel();
     renderDashboard();
     if (document.getElementById('hoursSection').style.display !== 'none') renderHours();
+    if (document.getElementById('estimatesSection').style.display !== 'none') renderEstimates();
   } catch(e) { console.warn('render failed:', e); }
 }
 
 // ---- Пересборка при приходе снапшота из облака ----
 function applyItemsSnapshot(doc, cloudItems) {
-  const cloud = Array.isArray(cloudItems) ? cloudItems.slice() : [];
-  lastCloud[doc] = cloud;
+  const isLegacyArray = Array.isArray(cloudItems);
+  const cloud = itemsAsArray(cloudItems);
+  const cloudMap = itemsAsMap(cloudItems);
+  lastCloud[doc] = cloud.slice();
+  lastCloudMap[doc] = cloudMap;
   if (doc === 'mytasks') {
     const merged = [];
     const seen = new Set();
@@ -977,7 +1417,7 @@ function applyItemsSnapshot(doc, cloudItems) {
     if (merged.length !== cloud.length) commitItems(doc, merged, true);
     return;
   }
-  const local = currentArr(doc) || [];
+  const local = dedupeById(currentArr(doc) || []);
   let migratedLocal = false;
   const cmap = new Map();
   cloud.forEach(function(el) { if (el) cmap.set(itemKey(el), el); });
@@ -1000,15 +1440,86 @@ function applyItemsSnapshot(doc, cloudItems) {
   }
 }
 
-// ---- Запись исходного массива в облако (Firestore = правда) ----
+// Конвертация старого формата (items — массив) в новый (items — карта id → элемент).
+// Атомарно, чтобы не потерять параллельные правки; флаг ставится после успеха.
+function migrateDocToMap(doc, merged) {
+  const ref = FB_COLL.doc(doc);
+  db.runTransaction(function(transaction) {
+    return transaction.get(ref).then(function(snap) {
+      const cur = snap.data() ? snap.data().items : [];
+      const target = Array.isArray(cur)
+        ? itemsAsMap(mergeArrays(itemsAsArray(cur), merged))
+        : itemsAsMap(cur);
+      transaction.set(ref, { items: target });
+    });
+  }).then(function() {
+    _itemsConverted[doc] = true;
+  }).catch(function(e) {
+    console.warn('Firestore migrate (' + doc + '):', e);
+  });
+}
+
+// Страховка на случай, если миграция в снапшоте не прошла: конвертируем оставшиеся
+// массив-документы в карту при старте.
+async function ensureItemsMaps() {
+  const types = ['tasks', 'sprints', 'mytasks', 'hours_features', 'estimates'];
+  for (const doc of types) {
+    try {
+      const snap = await FB_COLL.doc(doc).get();
+      const it = snap.data() ? snap.data().items : null;
+      if (Array.isArray(it)) {
+        const arr = itemsAsArray(it);
+        if (!_itemsConverted[doc]) _itemsConverted[doc] = true;
+        await db.runTransaction(function(transaction) {
+          return transaction.get(FB_COLL.doc(doc)).then(function(ts) {
+            const cur = ts.data() ? ts.data().items : [];
+            const target = Array.isArray(cur) ? itemsAsMap(mergeArrays(itemsAsArray(cur), arr)) : itemsAsMap(cur);
+            transaction.set(FB_COLL.doc(doc), { items: target });
+          });
+        });
+      }
+    } catch(e) { console.warn('ensureItemsMaps (' + doc + '):', e); }
+  }
+}
+
+// Очистка объектов от undefined (Firestore не принимает undefined в значениях).
+function sanitizeForFirestore(o) {
+  if (o == null) return o;
+  if (Array.isArray(o)) { const r = []; o.forEach(function(v){ r.push(sanitizeForFirestore(v)); }); return r; }
+  if (typeof o === 'object') {
+    const r = {};
+    Object.keys(o).forEach(function(k) {
+      const v = o[k];
+      if (v === undefined) return;
+      r[k] = sanitizeForFirestore(v);
+    });
+    return r;
+  }
+  return o;
+}
+
+// ---- Запись в облако: атомарно (транзакция), чтобы не потерять чужие правки ----
+// Читаем ТЕКУЩЕЕ облако, объединяем с локальным массивом (приоритет по updatedAt,
+// tombstone побеждает) и пишем целиком. Работает и с форматом «массив», и «карта»:
+// itemsAsArray() приводит любое хранимое значение к массиву.
 function commitItems(doc, arr) {
   if (!onlineStatus) { if (doc !== 'notes') cacheData(DOC_TO_KEY[doc], arr); return; }
-  const cloud = lastCloud[doc] || [];
-  const merged = mergeArrays(arr, cloud);
-  setArr(doc, merged);
-  cacheData(DOC_TO_KEY[doc], merged);
-  lastCloud[doc] = Array.isArray(merged) ? merged.slice() : merged;
-  FB_COLL.doc(doc).set({ items: merged }).catch(function(e) {
+  const ref = FB_COLL.doc(doc);
+  db.runTransaction(function(transaction) {
+    return transaction.get(ref).then(function(snap) {
+      const cloud = snap.data() ? itemsAsArray(snap.data().items) : [];
+      // «Мои таски» — это личный набор id: пишем его целиком (удаление = исчезновение).
+      // Остальные коллекции объединяем с облаком (чтобы не потерять чужие правки).
+      const merged = doc === 'mytasks' ? itemsAsArray(arr).slice() : mergeArrays(arr, cloud);
+      transaction.set(ref, { items: sanitizeForFirestore(merged) });
+      return merged;
+    });
+  }).then(function(merged) {
+    setArr(doc, merged);
+    lastCloud[doc] = merged.slice();
+    lastCloudMap[doc] = itemsAsMap(merged);
+    if (doc !== 'notes') cacheData(DOC_TO_KEY[doc], merged);
+  }).catch(function(e) {
     console.warn('Firebase sync failed (' + doc + '):', e);
   });
 }
@@ -1022,35 +1533,58 @@ function saveData(key, data) {
   commitItems(doc, data);
 }
 
+let _renderTimer = null;
+function scheduleRender() {
+  if (_renderTimer) clearTimeout(_renderTimer);
+  _renderTimer = setTimeout(function() { _renderTimer = null; renderAll(); }, 150);
+}
+
 async function loadFromFirebase() {
   return new Promise(function(resolve) {
-    let pending = 5;
-    const finish = function() { pending--; if (pending <= 0) { fbLoaded = true; renderAll(); resolve(true); } };
+    let pending = 6;
+    // Инициализацию завершаем ровно один раз (guard по pending<=0), иначе
+    // renderAll() вызывался бы на КАЖДОМ снапшоте — отсюда мерцание списка.
+    const finish = function() {
+      if (pending <= 0) return;
+      pending--;
+      if (pending <= 0) { fbLoaded = true; resolve(true); }
+    };
     FB_COLL.doc('tasks').onSnapshot(function(snap) {
       applyItemsSnapshot('tasks', snap.data() ? snap.data().items : []);
       finish();
+      if (fbLoaded) scheduleRender();
     }, function() { lastCloud.tasks = lastCloud.tasks || []; finish(); });
 
     FB_COLL.doc('sprints').onSnapshot(function(snap) {
       applyItemsSnapshot('sprints', snap.data() ? snap.data().items : []);
       finish();
+      if (fbLoaded) scheduleRender();
     }, function() { lastCloud.sprints = lastCloud.sprints || []; finish(); });
 
     FB_COLL.doc('mytasks').onSnapshot(function(snap) {
       applyItemsSnapshot('mytasks', snap.data() ? snap.data().items : []);
       finish();
+      if (fbLoaded) scheduleRender();
     }, function() { lastCloud.mytasks = lastCloud.mytasks || []; finish(); });
 
     FB_COLL.doc('notes').onSnapshot(function(snap) {
       const d = snap.data();
       applyNotesSnapshot(d ? d.items : null);
       finish();
+      if (fbLoaded) scheduleRender();
     }, function() { finish(); });
 
     FB_COLL.doc('hours_features').onSnapshot(function(snap) {
       applyItemsSnapshot('hours_features', snap.data() ? snap.data().items : []);
       finish();
+      if (fbLoaded) scheduleRender();
     }, function() { lastCloud['hours_features'] = lastCloud['hours_features'] || []; finish(); });
+
+    FB_COLL.doc('estimates').onSnapshot(function(snap) {
+      applyItemsSnapshot('estimates', snap.data() ? snap.data().items : []);
+      finish();
+      if (fbLoaded) scheduleRender();
+    }, function() { lastCloud['estimates'] = lastCloud['estimates'] || []; finish(); });
   });
 }
 
@@ -1077,10 +1611,37 @@ function applyNotesSnapshot(cloudItems) {
   lastCloud.notes = notes;
 }
 
+function mergeNotesForWrite(localNotes, cloudNotes) {
+  const out = {};
+  const cloudObj = (cloudNotes && typeof cloudNotes === 'object' && !Array.isArray(cloudNotes)) ? cloudNotes : {};
+  const cats = new Set(Object.keys(localNotes || {}).concat(Object.keys(cloudObj)));
+  cats.forEach(function(cat) {
+    const byId = new Map();
+    (cloudObj[cat] || []).forEach(function(n) { if (n && n.id) byId.set(n.id, n); });
+    (localNotes && localNotes[cat] ? localNotes[cat] : []).forEach(function(n) {
+      if (!n || !n.id) return;
+      const ex = byId.get(n.id);
+      if (!ex || (ex.text && n.text !== ex.text)) byId.set(n.id, n);
+    });
+    out[cat] = Array.from(byId.values()).filter(function(n) { return n && !isTombstoned(n); });
+  });
+  if (!out['Общие']) out['Общие'] = [];
+  return out;
+}
+
 function commitNotes() {
   cacheData('tracker_notes', notes);
   if (!onlineStatus) return;
-  FB_COLL.doc('notes').set({ items: notes }).catch(function(e) {
+  const ref = FB_COLL.doc('notes');
+  db.runTransaction(function(transaction) {
+    return transaction.get(ref).then(function(snap) {
+      const cloud = snap.data() ? snap.data().items : null;
+      const merged = mergeNotesForWrite(notes, cloud);
+      transaction.set(ref, { items: merged });
+    });
+  }).then(function() {
+    lastCloud.notes = notes;
+  }).catch(function(e) {
     console.warn('Firebase notes sync failed:', e);
   });
 }
@@ -1127,6 +1688,16 @@ function autoBackup() {
 let tasks = loadData('tracker_tasks', []);
 let sprints = loadData('tracker_sprints', []);
 let myTasks = loadData('tracker_mytasks', []);
+const DEFAULT_PROJECTS = ['Tutu SR', 'Tutu', 'Tutu Портал', 'RDetector', 'Щепка', 'Петрович'];
+let PROJECTS = loadData('tracker_projects', DEFAULT_PROJECTS);
+if (!Array.isArray(PROJECTS)) PROJECTS = DEFAULT_PROJECTS.slice();
+function saveProjects() { cacheData('tracker_projects', PROJECTS); }
+function addProject(name) {
+  name = (name || '').trim();
+  if (!name) return '';
+  if (PROJECTS.indexOf(name) === -1) { PROJECTS.push(name); saveProjects(); }
+  return name;
+}
 
 let notes = loadNotes();
 let activeNoteCategory = 'Общие';
@@ -1201,15 +1772,51 @@ function saveNotes() {
   commitNotes();
 }
 
-(function migrateTaskIds() {
-  let needsSave = false;
-  tasks.forEach((t, i) => {
-    if (isNaN(Number(t.id))) { t.id = String(i + 1); t.updatedAt = Date.now(); needsSave = true; }
+// Нормализация id задач: задача с некорректным id (NaN / пустым / не числом)
+// получает новый уникальный числовой id. Старый id помечаем tombstone, чтобы
+// облако удалило его (иначе он останется «дублем» с прежним NaN-ключом).
+function normalizeTaskIds() {
+  let max = 0;
+  const seen = new Set();
+  tasks.forEach(function(t) {
+    if (!t || t.deleted) return;
+    const s = t.id == null ? '' : String(t.id).trim();
+    if (s === '') return;
+    const n = Number(s);
+    if (Number.isFinite(n)) { max = Math.max(max, n); seen.add(String(n)); }
   });
-  if (needsSave) pendingIdSave = true; // сохраним после загрузки из облака
+  let needsSave = false;
+  let next = max + 1;
+  const toFix = [];
+  tasks.forEach(function(t) {
+    if (!t || t.deleted) return;
+    const s = t.id == null ? '' : String(t.id).trim();
+    if (s !== '' && Number.isFinite(Number(s))) return;
+    toFix.push(t);
+  });
+  toFix.forEach(function(t) {
+    const oldId = t.id; // может быть NaN/null — ключ в облаке останется именно с ним
+    let id = String(next++);
+    while (seen.has(id)) id = String(next++);
+    seen.add(id);
+    tasks.push({ id: oldId, deleted: true, updatedAt: Date.now() }); // удалить старый NaN-ключ из облака
+    t.id = id; t.updatedAt = Date.now(); needsSave = true;
+  });
+  return needsSave;
+}
+(function migrateTaskIds() {
+  if (normalizeTaskIds()) pendingIdSave = true; // сохраним после загрузки из облака
 })();
 
-function genId() { return tasks.length ? String(Math.max(...tasks.map(t => Number(t.id))) + 1) : '1'; }
+// Следующий id — максимальный числовой id среди задач + 1 (устойчив к NaN).
+function genId() {
+  let max = 0;
+  (Array.isArray(tasks) ? tasks : []).forEach(function(t) {
+    const n = Number(t && t.id);
+    if (Number.isFinite(n)) max = Math.max(max, n);
+  });
+  return String(max + 1);
+}
 
 function toast(msg) {
   const t = document.getElementById('toast');
@@ -1229,6 +1836,17 @@ function populateSprintSelect(selId, selected) {
   sel.innerHTML = '<option value="">Без спринта</option>' +
     available.map(s => `<option value="${s.id}"${s.id===selected?' selected':''}>${s.name}</option>`).join('');
 }
+function populateProjectSelect(selId, selected) {
+  const sel = document.getElementById(selId);
+  sel.innerHTML = '<option value="">Без проекта</option>' +
+    PROJECTS.map(p => `<option value="${escHtml(p)}"${p===selected?' selected':''}>${escHtml(p)}</option>`).join('');
+}
+function addProjectFromModal() {
+  const name = prompt('Название нового проекта:');
+  if (!name) return;
+  const p = addProject(name);
+  populateProjectSelect('taskProject', p);
+}
 
 function formatDate(d) {
   if (!d) return '—';
@@ -1236,19 +1854,154 @@ function formatDate(d) {
   return dt.toLocaleDateString('ru-RU');
 }
 
+function toISODate(d) {
+  if (!d) return '';
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function toDateInput(iso) {
+  if (!iso) return '';
+  const dt = new Date(iso);
+  if (isNaN(dt.getTime())) return '';
+  return toISODate(dt);
+}
+
+function toTimeInput(iso) {
+  if (!iso) return '';
+  const dt = new Date(iso);
+  if (isNaN(dt.getTime())) return '';
+  return String(dt.getHours()).padStart(2, '0') + ':' + String(dt.getMinutes()).padStart(2, '0');
+}
+
+function combineDT(date, time, fallbackIso) {
+  if (!date) return '';
+  let t = time;
+  if (!t && fallbackIso) {
+    const ft = new Date(fallbackIso);
+    if (!isNaN(ft.getTime())) t = String(ft.getHours()).padStart(2, '0') + ':' + String(ft.getMinutes()).padStart(2, '0');
+  }
+  if (!t) {
+    const now = new Date();
+    t = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  }
+  const d = new Date(date + 'T' + t);
+  if (isNaN(d.getTime())) return '';
+  return d.toISOString();
+}
+
+let timeEditorTaskId = null;
+
+function fillTimeModal(iso) {
+  const sel = document.getElementById('timeModalHour');
+  const selM = document.getElementById('timeModalMin');
+  let h = 0, m = 0;
+  if (iso) {
+    const dt = new Date(iso);
+    if (!isNaN(dt.getTime())) { h = dt.getHours(); m = dt.getMinutes(); }
+  }
+  sel.innerHTML = '';
+  for (let i = 0; i < 24; i++) sel.appendChild(new Option(String(i).padStart(2, '0'), String(i).padStart(2, '0'), false, i === h));
+  selM.innerHTML = '';
+  for (let i = 0; i < 60; i++) selM.appendChild(new Option(String(i).padStart(2, '0'), String(i).padStart(2, '0'), false, i === m));
+}
+
+let timeEditorCtx = null;
+
+function openReleaseTimeModal(id) {
+  timeEditorCtx = { id: id, field: 'releaseAt' };
+  document.getElementById('timeModalTitle').textContent = 'Время релиза';
+  const task = tasks.find(t => t.id === id);
+  fillTimeModal(task ? task.releaseAt : '');
+  openModal('timeModal');
+}
+
+function openTimeModal(id) {
+  timeEditorCtx = { id: id, field: 'startWorkAt' };
+  document.getElementById('timeModalTitle').textContent = 'Время взятия в работу';
+  const task = tasks.find(t => t.id === id);
+  fillTimeModal(task ? task.startWorkAt : '');
+  openModal('timeModal');
+}
+
+function saveTaskTime() {
+  const ctx = timeEditorCtx;
+  timeEditorCtx = null;
+  if (!ctx) return;
+  const task = tasks.find(t => t.id === ctx.id);
+  if (task) {
+    const currentIso = task[ctx.field];
+    let date = currentIso ? toDateInput(currentIso) : '';
+    if (!date) date = toISODate(new Date());
+    const h = document.getElementById('timeModalHour').value;
+    const m = document.getElementById('timeModalMin').value;
+    task[ctx.field] = combineDT(date, h + ':' + m, currentIso);
+    if (ctx.field === 'releaseAt') task.releaseDate = toDateInput(task[ctx.field]) || date;
+    task.updatedAt = Date.now();
+    saveData('tracker_tasks', tasks);
+    const btn = document.querySelector('[data-id="' + (ctx.field === 'startWorkAt' ? 'wbtn-' : 'rbtn-') + ctx.id + '"]');
+    if (btn) btn.textContent = toTimeInput(task[ctx.field]);
+    updateInlineResponse(ctx.id);
+  }
+  closeModal('timeModal');
+}
+
+function setStartWorkNowFromModal() {
+  const now = new Date();
+  document.getElementById('taskStartWorkDate').value = toISODate(now);
+  document.getElementById('taskStartWorkTime').value = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+}
+
 function responseStartTime(t) {
-  const cls = t.taskClass || '';
-  if (cls.indexOf('P1') !== -1) return t.createdAt || null;
-  if (cls.indexOf('P2') !== -1) return t.startWorkAt || null;
-  return t.createdAt || null;
+  const start = t.startWorkAt || null;
+  if (start) {
+    const d = new Date(start);
+    if (!isNaN(d.getTime())) return d;
+  }
+  return null;
+}
+
+function responseCloseTime(t) {
+  if (t.releaseAt) {
+    const d = new Date(t.releaseAt);
+    if (!isNaN(d.getTime())) return d;
+  }
+  if (t.releaseDate) {
+    const d = new Date(t.releaseDate + 'T00:00:00');
+    if (!isNaN(d.getTime())) return d;
+  }
+  return null;
+}
+
+function workingMsBetween(start, end) {
+  if (start >= end) return 0;
+  const WORK_START_H = 8, WORK_END_H = 20;
+  const MS_H = 3600000;
+  let total = 0;
+  const cur = new Date(start);
+  while (cur < end) {
+    const dow = cur.getDay();
+    const dayStart = new Date(cur.getFullYear(), cur.getMonth(), cur.getDate(), WORK_START_H, 0, 0, 0);
+    const dayEnd = new Date(cur.getFullYear(), cur.getMonth(), cur.getDate(), WORK_END_H, 0, 0, 0);
+    if (dow === 0 || dow === 6) {
+      cur.setDate(cur.getDate() + 1);
+      cur.setHours(0, 0, 0, 0);
+      continue;
+    }
+    const s = new Date(Math.max(cur.getTime(), dayStart.getTime()));
+    const e = new Date(Math.min(end.getTime(), dayEnd.getTime()));
+    if (e > s) total += e - s;
+    cur.setDate(cur.getDate() + 1);
+    cur.setHours(0, 0, 0, 0);
+  }
+  return total;
 }
 
 function calcResponseMs(t) {
-  if (!t.releaseDate) return null;
-  const release = new Date(t.releaseDate + 'T00:00:00');
+  const release = responseCloseTime(t);
   const start = responseStartTime(t);
-  if (!start || isNaN(release.getTime())) return null;
-  return release - new Date(start);
+  if (!start) return null;
+  const end = release || new Date();
+  return workingMsBetween(start, end);
 }
 
 function formatResponse(ms) {
@@ -1257,8 +2010,10 @@ function formatResponse(ms) {
   const totalAbs = Math.abs(ms);
   const days = Math.floor(totalAbs / 86400000);
   const hours = Math.floor((totalAbs % 86400000) / 3600000);
+  const minutes = Math.floor((totalAbs % 3600000) / 60000);
   if (days > 0) return sign + days + ' д ' + hours + ' ч';
-  return sign + hours + ' ч';
+  if (hours > 0) return sign + hours + ' ч ' + minutes + ' мин';
+  return sign + minutes + ' мин';
 }
 
 function badge(text, cls) { return `<span class="badge ${cls}">${text}</span>`; }
@@ -1269,10 +2024,28 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 let draggedTaskId = null;
 
 function handleDragStart(e) {
+  const t = e.target;
+  if (t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA')) {
+    e.preventDefault();
+    return;
+  }
   draggedTaskId = e.currentTarget.dataset.taskId;
   e.currentTarget.classList.add('dragging');
   e.dataTransfer.effectAllowed = 'move';
   document.querySelectorAll('.sprint-item, .backlog-header, .my-tasks-header').forEach(el => el.classList.add('droppable'));
+}
+
+function setRowDrag(input, on) {
+  const tr = input && input.closest('tr');
+  if (tr) tr.draggable = on;
+}
+
+function openNativePicker(el) {
+  if (el && typeof el.showPicker === 'function') {
+    try { el.showPicker(); } catch (e) {}
+  } else {
+    el && el.focus();
+  }
 }
 
 function handleDragEnd(e) {
@@ -1318,37 +2091,37 @@ function handleDropOnMyTasks(e) {
 
 function filterBySprint(sprintId) {
   showTasksView();
-  urgentView = false; document.getElementById('viewToggle').textContent = 'Срочные'; document.getElementById('tasksHeader').textContent = 'Задачи';
+  urgentView = false; document.getElementById('viewToggle').textContent = 'Срочные'; document.getElementById('tasksHeader').dataset.base = 'Задачи'; document.getElementById('tasksHeader').textContent = 'Задачи';
   activeSprintFilter = sprintId;
   activeMyTasksFilter = false;
   document.querySelectorAll('.sprint-item, .backlog-header, .my-tasks-header, .urgent-header').forEach(el => el.classList.remove('selected'));
   if (sprintId === '_backlog') {
     document.querySelector('.backlog-header')?.classList.add('selected');
-    document.getElementById('tasksHeader').textContent = 'Бэклог';
+    document.getElementById('tasksHeader').dataset.base = 'Бэклог'; document.getElementById('tasksHeader').textContent = 'Бэклог';
   } else if (sprintId) {
     const el = document.querySelector(`[data-sprint-id="${sprintId}"]`);
     if (el) el.classList.add('selected');
     const sp = sprints.find(s => s.id === sprintId);
-    document.getElementById('tasksHeader').textContent = sp ? `Задачи: ${sp.name}` : 'Задачи';
+    document.getElementById('tasksHeader').dataset.base = sp ? `Задачи: ${sp.name}` : 'Задачи'; document.getElementById('tasksHeader').textContent = document.getElementById('tasksHeader').dataset.base;
   } else {
-    document.getElementById('tasksHeader').textContent = 'Все задачи';
+    document.getElementById('tasksHeader').dataset.base = 'Все задачи'; document.getElementById('tasksHeader').textContent = 'Все задачи';
   }
   renderTasks();
 }
 
 function filterMyTasks() {
   showTasksView();
-  urgentView = false; document.getElementById('viewToggle').textContent = 'Срочные'; document.getElementById('tasksHeader').textContent = 'Задачи';
+  urgentView = false; document.getElementById('viewToggle').textContent = 'Срочные'; document.getElementById('tasksHeader').dataset.base = 'Задачи'; document.getElementById('tasksHeader').textContent = 'Задачи';
   activeMyTasksFilter = !activeMyTasksFilter;
   activeSprintFilter = '';
   document.querySelectorAll('.sprint-item, .backlog-header, .my-tasks-header, .urgent-header').forEach(el => el.classList.remove('selected'));
   if (activeMyTasksFilter) {
     document.querySelector('.my-tasks-header')?.classList.add('selected');
     const hh = document.getElementById('tasksHeader');
-    hh.dataset.original = 'Мои таски';
+    hh.dataset.base = 'Мои таски';
     hh.textContent = 'Мои таски';
   } else {
-    document.getElementById('tasksHeader').textContent = 'Все задачи';
+    document.getElementById('tasksHeader').dataset.base = 'Все задачи'; document.getElementById('tasksHeader').textContent = 'Все задачи';
   }
   renderTasks();
 }
@@ -1360,7 +2133,7 @@ function showUrgentView() {
   urgentView = true;
   document.querySelectorAll('.sprint-item, .backlog-header, .my-tasks-header, .urgent-header').forEach(el => el.classList.remove('selected'));
   document.querySelector('.urgent-header')?.classList.add('selected');
-  document.getElementById('tasksHeader').textContent = 'Срочные задачи';
+  document.getElementById('tasksHeader').dataset.base = 'Срочные задачи'; document.getElementById('tasksHeader').textContent = 'Срочные задачи';
   document.getElementById('viewToggle').textContent = 'Все задачи';
   document.getElementById('filterStatus').value = '';
   document.getElementById('filterPriority').value = '';
@@ -1389,9 +2162,15 @@ function openTaskModal(task) {
   populateSelect('taskPriority', PRIORITIES, task ? task.priority : 'Средний');
   populateSelect('taskType', TYPES, task ? task.type : 'Фича');
   populateSelect('taskClass', TASK_CLASSES, task ? task.taskClass : '');
+  populateProjectSelect('taskProject', task ? (task.project || '') : '');
   populateSelect('taskSize', SIZES, task ? task.size : '');
   document.getElementById('taskDeadline').value = task ? (task.deadline||'') : '';
-  document.getElementById('taskRelease').value = task ? (task.releaseDate||'') : '';
+  const relIso = task ? (task.releaseAt || (task.releaseDate ? task.releaseDate + 'T00:00:00' : '')) : '';
+  const swIso = task ? task.startWorkAt : '';
+  document.getElementById('taskReleaseDate').value = relIso ? toDateInput(relIso) : '';
+  document.getElementById('taskReleaseTime').value = relIso ? toTimeInput(relIso) : '';
+  document.getElementById('taskStartWorkDate').value = swIso ? toDateInput(swIso) : '';
+  document.getElementById('taskStartWorkTime').value = swIso ? toTimeInput(swIso) : '';
   populateSprintSelect('taskSprint', task ? task.sprintId : '');
   openModal('taskModal');
 }
@@ -1408,11 +2187,25 @@ function saveTask() {
     priority: document.getElementById('taskPriority').value,
     type: document.getElementById('taskType').value,
     taskClass: document.getElementById('taskClass').value,
+    project: document.getElementById('taskProject').value,
     size: document.getElementById('taskSize').value,
     deadline: document.getElementById('taskDeadline').value || '',
-    releaseDate: document.getElementById('taskRelease').value || '',
     sprintId: document.getElementById('taskSprint').value || '',
   };
+  const relDate = document.getElementById('taskReleaseDate').value;
+  const relTime = document.getElementById('taskReleaseTime').value;
+  const swDate = document.getElementById('taskStartWorkDate').value;
+  const swTime = document.getElementById('taskStartWorkTime').value;
+  const existing = id ? tasks.find(t => t.id === id) : null;
+  if (relDate) {
+    data.releaseDate = relDate;
+    data.releaseAt = combineDT(relDate, relTime, existing ? existing.releaseAt : '');
+  } else {
+    data.releaseDate = '';
+    data.releaseAt = '';
+  }
+  if (swDate) data.startWorkAt = combineDT(swDate, swTime, existing ? existing.startWorkAt : '');
+  else data.startWorkAt = '';
   if (!id && !data.sprintId) {
     if (activeMyTasksFilter) { myTasks.push('(new)'); }
     if (activeSprintFilter && activeSprintFilter !== '_backlog') data.sprintId = activeSprintFilter;
@@ -1429,8 +2222,8 @@ function saveTask() {
     data.id = genId();
     data.createdAt = new Date().toISOString();
     data.updatedAt = Date.now();
-    if (data.status === 'В работе') data.startWorkAt = new Date().toISOString();
-    if (data.status === 'Готово') data.releaseAt = new Date().toISOString();
+    if (data.status === 'В работе' && !data.startWorkAt) data.startWorkAt = new Date().toISOString();
+    if (data.status === 'Готово' && !data.releaseAt) data.releaseAt = new Date().toISOString();
     tasks.unshift(data);
     if (activeMyTasksFilter) { myTasks[myTasks.length - 1] = data.id; saveData('tracker_mytasks', myTasks); }
   }
@@ -1461,10 +2254,12 @@ function openDetail(taskId) {
   document.getElementById('detailStatus').innerHTML = badge(t.status, STATUS_CLASSES[t.status]);
   document.getElementById('detailPriority').innerHTML = badge(t.priority, PRIORITY_CLASSES[t.priority]);
   document.getElementById('detailType').innerHTML = badge(t.type, TYPE_CLASSES[t.type]);
+  document.getElementById('detailProject').innerHTML = t.project ? badge(t.project, 'badge-project') : '—';
   document.getElementById('detailSize').innerHTML = t.size ? badge(t.size, SIZE_CLASSES[t.size]) : '—';
   document.getElementById('detailClass').innerHTML = t.taskClass ? badge(t.taskClass, TASK_CLASS_CLASSES[t.taskClass]) : '';
   document.getElementById('detailDeadline').textContent = formatDate(t.deadline);
-  document.getElementById('detailRelease').textContent = formatDate(t.releaseDate);
+  document.getElementById('detailRelease').textContent = t.releaseAt ? new Date(t.releaseAt).toLocaleString('ru-RU') : (t.releaseDate ? formatDate(t.releaseDate) : '—');
+  document.getElementById('detailStartWork').textContent = t.startWorkAt ? new Date(t.startWorkAt).toLocaleString('ru-RU') : '—';
   document.getElementById('detailResponse').textContent = formatResponse(calcResponseMs(t));
   const sp = t.sprintId ? sprints.find(s => s.id === t.sprintId) : null;
   document.getElementById('detailSprint').textContent = sp ? sp.name : 'Бэклог';
@@ -1493,6 +2288,7 @@ function resetFilters() {
   document.getElementById('filterClass').value = '';
   document.getElementById('filterSearch').value = '';
   if (!activeSprintFilter && !activeMyTasksFilter) {
+    document.getElementById('tasksHeader').dataset.base = 'Все задачи';
     document.getElementById('tasksHeader').textContent = 'Все задачи';
   }
   renderTasks();
@@ -1505,26 +2301,43 @@ function setSort(field) {
 }
 
 const PRIO_ORDER = { 'Критичный':0, 'Высокий':1, 'Средний':2, 'Низкий':3, 'Очень низкий':4 };
-const STATUS_ORDER = { 'Требуется релиз':-1, 'Новая':0, 'На уточнении':1, 'Аналитика':2, 'В работе':3, 'QA':4, 'Ревью':5, 'Готово':6 };
+const STATUS_ORDER = { 'Требуется релиз':-1, 'Бэклог':0, 'Новая':1, 'На уточнении':2, 'Аналитика':3, 'В работе':4, 'QA':5, 'Ревью':6, 'Готово':7, 'Отменена':8 };
 
 function sortCompare(a, b) {
-  const aRelease = a.status === 'Требуется релиз';
-  const bRelease = b.status === 'Требуется релиз';
-  if (aRelease !== bRelease) return aRelease ? -1 : 1;
+  const aBacklog = a.status === 'Бэклог';
+  const bBacklog = b.status === 'Бэклог';
+  if (aBacklog !== bBacklog) return aBacklog ? 1 : -1;
   const aClarify = a.status === 'На уточнении';
   const bClarify = b.status === 'На уточнении';
   if (aClarify !== bClarify) return aClarify ? 1 : -1;
+  const aAnalytics = a.status === 'Аналитика';
+  const bAnalytics = b.status === 'Аналитика';
+  if (aAnalytics !== bAnalytics) return aAnalytics ? 1 : -1;
+  const aRelease = a.status === 'Требуется релиз';
+  const bRelease = b.status === 'Требуется релиз';
+  if (aRelease !== bRelease) return aRelease ? -1 : 1;
   let va, vb;
   switch (sortField) {
     case 'id': va = Number(a.id); vb = Number(b.id); break;
+    case 'project': va = (a.project || '').toLowerCase(); vb = (b.project || '').toLowerCase(); break;
     case 'title': va = a.title.toLowerCase(); vb = b.title.toLowerCase(); break;
     case 'status': va = STATUS_ORDER[a.status] ?? 99; vb = STATUS_ORDER[b.status] ?? 99; break;
-    case 'priority': va = PRIO_ORDER[a.priority] ?? 99; vb = PRIO_ORDER[b.priority] ?? 99; break;
+    case 'priority': {
+      const pa = PRIO_ORDER[a.priority] ?? 99, pb = PRIO_ORDER[b.priority] ?? 99;
+      if (pa !== pb) return (pa - pb) * (sortDir === 'asc' ? 1 : -1);
+      const ca = TASK_CLASS_ORDER[a.taskClass] ?? 99, cb = TASK_CLASS_ORDER[b.taskClass] ?? 99;
+      if (ca !== cb) return (ca - cb) * (sortDir === 'asc' ? 1 : -1);
+      const da = a.deadline || '9999-99-99', db = b.deadline || '9999-99-99';
+      if (da !== db) return da < db ? -1 : 1;
+      const ta = a.createdAt || '', tb = b.createdAt || '';
+      return ta < tb ? 1 : (ta > tb ? -1 : 0);
+    } break;
     case 'type': va = a.type; vb = b.type; break;
     case 'size': va = SIZE_ORDER[a.size] ?? 99; vb = SIZE_ORDER[b.size] ?? 99; break;
     case 'class': va = TASK_CLASS_ORDER[a.taskClass] ?? 99; vb = TASK_CLASS_ORDER[b.taskClass] ?? 99; break;
     case 'deadline': va = a.deadline || '9999-99-99'; vb = b.deadline || '9999-99-99'; break;
     case 'release': va = a.releaseDate || '9999-99-99'; vb = b.releaseDate || '9999-99-99'; break;
+    case 'startwork': va = a.startWorkAt || ''; vb = b.startWorkAt || ''; break;
     case 'response': va = calcResponseMs(a) ?? Infinity; vb = calcResponseMs(b) ?? Infinity; break;
     default: return 0;
   }
@@ -1541,8 +2354,10 @@ function renderTasks() {
     } else {
       tb.style.display = 'none';
       activeDoneFilter = false;
+      activeCancelledFilter = false;
       document.getElementById('tabActive')?.classList.add('active');
       document.getElementById('tabDone')?.classList.remove('active');
+      document.getElementById('tabCancelled')?.classList.remove('active');
     }
   }
   const allTasks = liveItems(tasks);
@@ -1561,7 +2376,9 @@ function renderTasks() {
 
   let filtered = allTasks.filter(t => {
     if (activeMyTasksFilter && !myTasks.includes(t.id)) return false;
-    if ((activeMyTasksFilter || activeSprintFilter) && !activeDoneFilter && t.status === 'Готово') return false;
+    if (activeCancelledFilter && t.status !== 'Отменена') return false;
+    if (activeCancelledFilter) return true;
+    if ((activeMyTasksFilter || activeSprintFilter) && !activeDoneFilter && (t.status === 'Готово' || t.status === 'Отменена')) return false;
     if (activeDoneFilter && t.status !== 'Готово') return false;
     if (activeSprintFilter === '_backlog' && t.sprintId) return false;
     if (activeSprintFilter && activeSprintFilter !== '_backlog' && t.sprintId !== activeSprintFilter) return false;
@@ -1572,7 +2389,7 @@ function renderTasks() {
     if (fClass && t.taskClass !== fClass) return false;
     if (fSearch && !t.id.toLowerCase().includes(fSearch) && !t.title.toLowerCase().includes(fSearch)) return false;
     if (urgentView && !activeSprintFilter && !activeMyTasksFilter && !fSearch) {
-      if (t.status === 'Готово') return false;
+      if (t.status === 'Готово' || t.status === 'Отменена') return false;
       if (!t.deadline) return false;
       if (t.deadline !== todayStr && t.deadline !== tomorrowStr) return false;
     }
@@ -1589,34 +2406,63 @@ function renderTasks() {
   } else {
     empty.style.display = 'none';
     tbody.innerHTML = filtered.map(t => {
-      const urg = !activeSprintFilter && !activeMyTasksFilter && !fSearch && t.status !== 'Готово' && t.deadline && (t.deadline === todayStr || t.deadline === tomorrowStr);
+      const urg = !activeSprintFilter && !activeMyTasksFilter && !fSearch && t.status !== 'Готово' && t.status !== 'Отменена' && t.deadline && (t.deadline === todayStr || t.deadline === tomorrowStr);
       const rel = t.status === 'Требуется релиз';
       const clar = t.status === 'На уточнении';
-      const working = ['В работе', 'Аналитика', 'QA', 'Ревью'].includes(t.status);
-      return `<tr class="${[rel?'release':'',clar?'clarify':'',working?'working':'',urg?'urgent':''].filter(Boolean).join(' ')}" draggable="true" data-task-id="${t.id}"
-      ondragstart="handleDragStart(event)" ondragend="handleDragEnd(event)"
+      const analytics = t.status === 'Аналитика';
+      const backlog = t.status === 'Бэклог';
+      const working = ['В работе', 'QA', 'Ревью'].includes(t.status);
+      return `<tr class="${[rel?'release':'',clar?'clarify':'',analytics?'analytics':'',backlog?'backlog':'',working?'working':'',urg?'urgent':''].filter(Boolean).join(' ')}" data-task-id="${t.id}"
       onclick="openDetail('${t.id}')">
-      <td><input type="checkbox" class="task-checkbox" data-task-id="${t.id}" onclick="event.stopPropagation()" /></td>
+      <td><span class="row-drag" data-task-id="${t.id}" draggable="true" onclick="event.stopPropagation()" ondragstart="handleDragStart(event)" ondragend="handleDragEnd(event)" title="Перетащить">⠿</span><input type="checkbox" class="task-checkbox" data-task-id="${t.id}" onclick="event.stopPropagation()" /></td>
       <td><span class="task-id">${t.id}</span></td>
+      <td><button type="button" class="badge ${t.project ? 'badge-project' : 'badge-empty'} inline-badge" data-task-id="${t.id}" onclick="event.stopPropagation(); onInlineBtnClick(event, this, '${t.id}', 'project')">${escHtml(t.project || 'Проект')}<span class="inline-caret">▾</span></button></td>
       <td><span class="task-title">${escHtml(t.title)}</span></td>
-      <td><select class="inline-status" data-task-id="${t.id}" onclick="event.stopPropagation()" onchange="inlineChangeStatus(this, '${t.id}')">${STATUSES.map(s => `<option value="${s}"${s===t.status?' selected':''}>${s}</option>`).join('')}</select></td>
-      <td>${badge(t.priority, PRIORITY_CLASSES[t.priority])}</td>
-      <td>${badge(t.type, TYPE_CLASSES[t.type])}</td>
-      <td><select class="inline-size inline-status" data-task-id="${t.id}" onclick="event.stopPropagation()" onchange="inlineChangeSize(this, '${t.id}')"><option value=""${!t.size?' selected':''}>—</option>${SIZES.map(s => `<option value="${s}"${s===t.size?' selected':''}>${s}</option>`).join('')}</select></td>
-      <td><span class="chip-class ${t.taskClass ? TASK_CLASS_CLASSES[t.taskClass].replace('badge-','chip-') : 'empty'}"><span class="chip-label">${t.taskClass || 'Класс'}</span><span class="chip-caret">▾</span><select class="chip-select" data-task-id="${t.id}" onclick="event.stopPropagation()" onchange="inlineChangeClass(this, '${t.id}')"><option value="">—</option>${TASK_CLASSES.map(s => `<option value="${s}"${s===t.taskClass?' selected':''}>${s}</option>`).join('')}</select></span></td>
-      <td><input class="inline-date" type="date" value="${t.deadline||''}" onclick="event.stopPropagation()" onchange="inlineChangeDeadline(this, '${t.id}')" /></td>
-      <td><input class="inline-date" type="date" value="${t.releaseDate||''}" onclick="event.stopPropagation()" onchange="inlineChangeRelease(this, '${t.id}')" /></td>
+      <td><button type="button" class="badge ${STATUS_CLASSES[t.status] || 'badge-empty'} inline-badge" data-task-id="${t.id}" onclick="event.stopPropagation(); onInlineBtnClick(event, this, '${t.id}', 'status')">${t.status}<span class="inline-caret">▾</span></button></td>
+      <td><button type="button" class="badge ${PRIORITY_CLASSES[t.priority] || ''} inline-badge" data-task-id="${t.id}" onclick="event.stopPropagation(); onInlineBtnClick(event, this, '${t.id}', 'priority')">${t.priority || '—'}<span class="inline-caret">▾</span></button></td>
+      <td><button type="button" class="badge ${TYPE_CLASSES[t.type] || ''} inline-badge" data-task-id="${t.id}" onclick="event.stopPropagation(); onInlineBtnClick(event, this, '${t.id}', 'type')">${t.type || '—'}<span class="inline-caret">▾</span></button></td>
+      <td><button type="button" class="badge ${SIZE_CLASSES[t.size] || 'badge-empty'} inline-badge" data-task-id="${t.id}" onclick="event.stopPropagation(); onInlineBtnClick(event, this, '${t.id}', 'size')">${t.size || '—'}<span class="inline-caret">▾</span></button></td>
+      <td><span class="chip-class ${t.taskClass && TASK_CLASS_CLASSES[t.taskClass] ? TASK_CLASS_CLASSES[t.taskClass].replace('badge-','chip-') : 'empty'}"><span class="chip-label">${t.taskClass || 'Класс'}</span><span class="chip-caret">▾</span><button type="button" class="chip-menu-btn" data-task-id="${t.id}" onclick="event.stopPropagation(); onInlineBtnClick(event, this, '${t.id}', 'class')"></button></span></td>
+      <td><div class="dates-stack">
+        <div class="dates-row"><span class="dates-label">Дедлайн</span><input class="inline-date" type="date" value="${t.deadline||''}" onclick="event.stopPropagation()" onchange="inlineChangeDeadline(this, '${t.id}')" /></div>
+        <div class="dates-row"><span class="dates-label">Релиз</span><div class="dt-inline"><input class="inline-date" type="date" value="${t.releaseDate||''}" data-id="rdate-${t.id}" onclick="event.stopPropagation()" onchange="inlineChangeRelease(this, '${t.id}')" /><button type="button" class="time-btn" data-id="rbtn-${t.id}" onclick="event.stopPropagation(); openReleaseTimeModal('${t.id}')">${t.releaseAt ? toTimeInput(t.releaseAt) : '—:—'}</button></div></div>
+        <div class="dates-row"><span class="dates-label">В работе</span><div class="dt-inline"><input class="inline-date" type="date" value="${t.startWorkAt ? toDateInput(t.startWorkAt) : ''}" data-id="wdate-${t.id}" onclick="event.stopPropagation()" onchange="inlineChangeStartWork(this, '${t.id}')" /><button type="button" class="time-btn" data-id="wbtn-${t.id}" onclick="event.stopPropagation(); openTimeModal('${t.id}')">${t.startWorkAt ? toTimeInput(t.startWorkAt) : '—:—'}</button></div></div>
+      </div></td>
       <td><span class="response-cell" id="resp-${t.id}">${formatResponse(calcResponseMs(t))}</span></td>
-      <td><div class="inline-comment-wrapper"><input class="inline-comment" type="text" value="${escHtml(t.comment||'')}" placeholder="..." onclick="event.stopPropagation()" onchange="inlineChangeComment(this, '${t.id}')" onmouseenter="showCommentTooltip(this)" onmouseleave="hideCommentTooltip()" /><div class="comment-tooltip"></div></div></td>
+      <td><div class="inline-comment-wrapper"><input class="inline-comment" type="text" value="${escHtml(t.comment||'')}" placeholder="..." onclick="event.stopPropagation()" onmouseenter="showCommentTooltip(this)" onmouseleave="hideCommentTooltip()" onchange="inlineChangeComment(this, '${t.id}')" /><div class="comment-tooltip"></div></div></td>
     </tr>`;
     }).join('');
   }
 
-  ['Id','Title','Status','Priority','Type','Size','Class','Deadline','Release','Response'].forEach(f => {
+  ['Id','Project','Title','Status','Priority','Type','Size','Class','Deadline','Response'].forEach(f => {
     const el = document.getElementById(`sortArrow${f}`);
-    if (sortField === f.toLowerCase()) el.textContent = sortDir === 'asc' ? '▲' : '▼';
-    else el.textContent = '';
+    if (el && sortField === f.toLowerCase()) el.textContent = sortDir === 'asc' ? '▲' : '▼';
+    else if (el) el.textContent = '';
   });
+  const hdr = document.getElementById('tasksHeader');
+  if (hdr) {
+    const base = hdr.dataset.base || hdr.textContent.replace(/\s*\(\d+\)$/, '');
+    hdr.innerHTML = `${escHtml(base)} <span class="hdr-count" style="font-size:12px;font-weight:600;color:#889;vertical-align:middle;margin-left:6px">${filtered.length}</span>`;
+    hdr.dataset.base = base;
+  }
+  const tabBar = document.getElementById('tabBar');
+  if (tabBar && tabBar.style.display !== 'none') {
+    const tabBase = allTasks.filter(t => {
+      if (activeMyTasksFilter && !myTasks.includes(t.id)) return false;
+      if (activeSprintFilter === '_backlog' && t.sprintId) return false;
+      if (activeSprintFilter && activeSprintFilter !== '_backlog' && t.sprintId !== activeSprintFilter) return false;
+      if (fStatus && t.status !== fStatus) return false;
+      if (fPriority && t.priority !== fPriority) return false;
+      if (fType && t.type !== fType) return false;
+      if (fSize && t.size !== fSize) return false;
+      if (fClass && t.taskClass !== fClass) return false;
+      if (fSearch && !t.id.toLowerCase().includes(fSearch) && !t.title.toLowerCase().includes(fSearch)) return false;
+      return true;
+    });
+    document.getElementById('tabActive').innerHTML = 'Активные <span style="opacity:.5;font-size:11px">' + tabBase.filter(t => t.status !== 'Готово' && t.status !== 'Отменена').length + '</span>';
+    document.getElementById('tabDone').innerHTML = 'Закрытые <span style="opacity:.5;font-size:11px">' + tabBase.filter(t => t.status === 'Готово').length + '</span>';
+    document.getElementById('tabCancelled').innerHTML = '🗑 Отменены <span style="opacity:.5;font-size:11px">' + tabBase.filter(t => t.status === 'Отменена').length + '</span>';
+  }
   renderFunnel();
 }
 
@@ -1626,9 +2472,11 @@ function toggleView() {
   const header = document.getElementById('tasksHeader');
   if (urgentView) {
     btn.textContent = 'Все задачи';
+    header.dataset.base = 'Срочные задачи';
     header.textContent = 'Срочные задачи';
   } else {
     btn.textContent = 'Срочные';
+    header.dataset.base = 'Все задачи';
     header.textContent = 'Все задачи';
   }
   document.getElementById('filterStatus').value = '';
@@ -1670,10 +2518,29 @@ function inlineChangeSize(sel, id) {
 function inlineChangeRelease(inp, id) {
   const task = tasks.find(t => t.id === id);
   if (task) {
-    task.releaseDate = inp.value;
+    const grp = inp.closest('.dt-inline');
+    const dateInput = grp ? grp.querySelector('input[type="date"]') : null;
+    const date = dateInput ? dateInput.value : '';
+    task.releaseDate = date;
+    task.releaseAt = date ? combineDT(date, '', task.releaseAt) : '';
     task.updatedAt = Date.now();
-    if (inp.value) task.releaseAt = new Date().toISOString();
     saveData('tracker_tasks', tasks);
+    const btn = document.querySelector('[data-id="rbtn-' + id + '"]');
+    if (btn) btn.textContent = toTimeInput(task.releaseAt);
+    updateInlineResponse(id);
+  }
+}
+function inlineChangeStartWork(inp, id) {
+  const task = tasks.find(t => t.id === id);
+  if (task) {
+    const grp = inp.closest('.dt-inline');
+    const dateInput = grp ? grp.querySelector('input[type="date"]') : null;
+    const date = dateInput ? dateInput.value : '';
+    task.startWorkAt = date ? combineDT(date, '', task.startWorkAt) : '';
+    task.updatedAt = Date.now();
+    saveData('tracker_tasks', tasks);
+    const btn = document.querySelector('[data-id="wbtn-' + id + '"]');
+    if (btn) btn.textContent = toTimeInput(task.startWorkAt);
     updateInlineResponse(id);
   }
 }
@@ -1699,6 +2566,137 @@ function inlineChangeComment(inp, id) {
   const task = tasks.find(t => t.id === id);
   if (task) { task.comment = inp.value; task.updatedAt = Date.now(); saveData('tracker_tasks', tasks); }
 }
+
+// ===== Управляемый выпадающий список для инлайн-полей (статус/размер/класс) =====
+let inlineMenuEl = null;
+
+function onInlineBtnClick(e, anchor, taskId, field) {
+  e.preventDefault();
+  e.stopPropagation();
+  if (inlineMenuEl && inlineMenuEl._anchor === anchor) { closeInlineMenu(); return; }
+  openInlineSelect(anchor, taskId, field);
+}
+
+function closeInlineMenu() {
+  if (inlineMenuEl) { inlineMenuEl.remove(); inlineMenuEl = null; }
+}
+
+function inlineMenuOptions(field, task) {
+  if (field === 'status') {
+    return STATUSES.map(s => ({ value: s, label: s, current: s === task.status }));
+  }
+  if (field === 'size') {
+    const cur = task.size || '';
+    return [{ value: '', label: '—', current: false }].concat(SIZES.map(s => ({ value: s, label: s, current: s === cur })));
+  }
+  if (field === 'class') {
+    const cur = task.taskClass || '';
+    return [{ value: '', label: 'Класс', current: !cur }].concat(TASK_CLASSES.map(s => ({ value: s, label: s, current: s === cur })));
+  }
+  if (field === 'priority') {
+    return PRIORITIES.map(s => ({ value: s, label: s, current: s === task.priority }));
+  }
+  if (field === 'type') {
+    return TYPES.map(s => ({ value: s, label: s, current: s === task.type }));
+  }
+  if (field === 'project') {
+    const cur = task.project || '';
+    return [{ value: '', label: 'Проект', current: !cur }]
+      .concat(PROJECTS.map(s => ({ value: s, label: s, current: s === cur })))
+      .concat([{ value: '__add__', label: '＋ Новый проект...', current: false }]);
+  }
+  return [];
+}
+
+function openInlineSelect(anchor, taskId, field) {
+  closeInlineMenu();
+  const task = tasks.find(t => t.id === taskId);
+  if (!task) return;
+  const opts = inlineMenuOptions(field, task);
+  const menu = document.createElement('div');
+  menu.className = 'inline-menu';
+  menu._anchor = anchor;
+  menu.innerHTML = opts.map(function(o) {
+    return '<div class="opt' + (o.current ? ' active' : '') + '" data-value="' + o.value.replace(/"/g, '&quot;') + '">' + o.label + '</div>';
+  }).join('');
+  document.body.appendChild(menu);
+  // позиционирование под якорем (в пределах вьюпорта)
+  const rect = anchor.getBoundingClientRect();
+  menu.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - menu.offsetWidth - 8)) + 'px';
+  let top = rect.bottom + 4;
+  if (top + menu.offsetHeight > window.innerHeight - 8) top = rect.top - menu.offsetHeight - 4;
+  menu.style.top = Math.max(8, top) + 'px';
+  // обработчики опций
+  Array.prototype.forEach.call(menu.querySelectorAll('.opt'), function(el) {
+    el.addEventListener('mousedown', function(e) { e.preventDefault(); e.stopPropagation(); });
+    el.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const v = el.getAttribute('data-value');
+      if (field === 'project' && v === '__add__') {
+        const name = prompt('Название нового проекта:');
+        if (name && name.trim()) applyInlineField(field, anchor, taskId, addProject(name));
+        closeInlineMenu();
+        return;
+      }
+      applyInlineField(field, anchor, taskId, v);
+      closeInlineMenu();
+    });
+  });
+  inlineMenuEl = menu;
+}
+
+function applyInlineField(field, anchor, taskId, rawValue) {
+  const value = rawValue === null ? '' : rawValue;
+  if (field === 'status') {
+    inlineChangeStatus({ value: value }, taskId);
+  } else if (field === 'size') {
+    inlineChangeSize({ value: value }, taskId);
+  } else if (field === 'class') {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    task.taskClass = value;
+    task.updatedAt = Date.now();
+    saveData('tracker_tasks', tasks);
+    const chip = anchor.closest('.chip-class');
+    if (chip) {
+      chip.className = 'chip-class' + (value ? ' ' + TASK_CLASS_CLASSES[value].replace('badge-', 'chip-') : ' empty');
+      chip.querySelector('.chip-label').textContent = value || 'Класс';
+    }
+  } else if (field === 'priority') {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    task.priority = value;
+    task.updatedAt = Date.now();
+    saveData('tracker_tasks', tasks);
+    renderTasks();
+  } else if (field === 'type') {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    task.type = value;
+    task.updatedAt = Date.now();
+    saveData('tracker_tasks', tasks);
+    renderTasks();
+  } else if (field === 'project') {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    task.project = value;
+    task.updatedAt = Date.now();
+    saveData('tracker_tasks', tasks);
+    renderTasks();
+  }
+}
+
+document.addEventListener('click', function(e) {
+  if (!inlineMenuEl) return;
+  if (inlineMenuEl.contains(e.target)) return;
+  if (e.target.closest && e.target.closest('.inline-status-btn, .chip-menu-btn, .inline-badge')) return;
+  closeInlineMenu();
+}, true);
+window.addEventListener('scroll', function() { closeInlineMenu(); }, true);
+window.addEventListener('resize', function() { closeInlineMenu(); });
+window.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeInlineMenu(); });
+
 
 function showCommentTooltip(el) {
   const tip = el.parentElement.querySelector('.comment-tooltip');
@@ -1938,7 +2936,7 @@ function deleteSprint(id) {
   if (sp) { sp.deleted = true; sp.updatedAt = Date.now(); }
   saveData('tracker_sprints', sprints);
   saveData('tracker_tasks', tasks);
-  if (activeSprintFilter === id) { activeSprintFilter = ''; document.getElementById('tasksHeader').textContent = 'Все задачи'; }
+  if (activeSprintFilter === id) { activeSprintFilter = ''; const hd = document.getElementById('tasksHeader'); hd.dataset.base = 'Все задачи'; hd.textContent = 'Все задачи'; }
   renderSprints();
   populateSprintSelect('taskSprint', '');
   renderTasks();
@@ -1954,7 +2952,7 @@ function completeSprint(id) {
   const s = sprints.find(x => x.id === id);
   if (!s) return;
   const sprintTasks = liveItems(tasks).filter(t => t.sprintId === id);
-  const notDone = sprintTasks.filter(t => t.status !== 'Готово');
+  const notDone = sprintTasks.filter(t => t.status !== 'Готово' && t.status !== 'Отменена');
   if (notDone.length > 0) { toast(`Не все задачи в статусе «Готово» (${notDone.length} шт.)`); return; }
   s.status = 'completed';
   s.updatedAt = Date.now();
@@ -1973,21 +2971,23 @@ function renderSprints() {
     } else {
       tb.style.display = 'none';
       activeDoneFilter = false;
+      activeCancelledFilter = false;
       document.getElementById('tabActive')?.classList.add('active');
       document.getElementById('tabDone')?.classList.remove('active');
+      document.getElementById('tabCancelled')?.classList.remove('active');
     }
   }
   const container = document.getElementById('sprintList');
 
-  const backlogCount = liveTsk.filter(t => !t.sprintId && t.status !== 'Готово').length;
-  const myTasksCount = myTasks.filter(id => { const t = liveTsk.find(x => x.id === id); return t && t.status !== 'Готово'; }).length;
+  const backlogCount = liveTsk.filter(t => !t.sprintId && t.status !== 'Готово' && t.status !== 'Отменена').length;
+  const myTasksCount = myTasks.filter(id => { const t = liveTsk.find(x => x.id === id); return t && t.status !== 'Готово' && t.status !== 'Отменена'; }).length;
 
   const today = new Date(); const y=today.getFullYear();const m=String(today.getMonth()+1).padStart(2,'0');const d=String(today.getDate()).padStart(2,'0');
   const todayStr=y+'-'+m+'-'+d;
   const tomorrow=new Date(today);tomorrow.setDate(tomorrow.getDate()+1);
   const tY=tomorrow.getFullYear();const tM=String(tomorrow.getMonth()+1).padStart(2,'0');const tD=String(tomorrow.getDate()).padStart(2,'0');
   const tomorrowStr=tY+'-'+tM+'-'+tD;
-  const urgentCount = liveTsk.filter(t => t.status !== 'Готово' && t.deadline && (t.deadline === todayStr || t.deadline === tomorrowStr)).length;
+  const urgentCount = liveTsk.filter(t => t.status !== 'Готово' && t.status !== 'Отменена' && t.deadline && (t.deadline === todayStr || t.deadline === tomorrowStr)).length;
 
   const urgentHtml = `<div class="urgent-header${urgentView ? ' selected' : ''}"
     onclick="showUrgentView()">
@@ -2139,6 +3139,7 @@ function showFunnelDetail(status) {
 function applyFunnelFilter(status) {
   urgentView = false;
   document.getElementById('viewToggle').textContent = 'Срочные';
+  document.getElementById('tasksHeader').dataset.base = 'Все задачи';
   document.getElementById('tasksHeader').textContent = 'Все задачи';
   activeSprintFilter = '';
   activeMyTasksFilter = false;
@@ -2200,6 +3201,45 @@ function loadDataFromFile(e) {
   e.target.value = '';
 }
 
+// Удаление дублей задач: записи с одинаковым содержанием (title+описание+проект+тип+приоритет+спринт)
+// считаются дублями. Оставшейся делаем запись с реальным статусом (не «Новая»), при равенстве —
+// с наименьшим id. Остальные помечаются tombstone (deleted) и синкаются в облако.
+function removeDuplicateTasks() {
+  if (!confirm('Удалить дубли задач? Записи с одинаковым содержанием и статусом «Новая» будут помечены на удаление.')) return;
+  const sigOf = function(t) { return [t.title||'', t.description||'', t.project||'', t.type||'', t.priority||'', t.sprintId||''].join('\u0001'); };
+  const bySig = new Map();
+  const toRemove = [];
+  tasks.forEach(function(t) {
+    if (!t || t.deleted) return;
+    const sig = sigOf(t);
+    if (!bySig.has(sig)) { bySig.set(sig, t.id); return; }
+    const keepId = bySig.get(sig);
+    const keep = tasks.find(x => x.id === keepId);
+    const keepRelevant = isMeaningfulStatus(keep);
+    const tRelevant = isMeaningfulStatus(t);
+    if (tRelevant && !keepRelevant) {
+      // «эта» копия с реальным статусом — становится главной
+      bySig.set(sig, t.id);
+      if (keep) toRemove.push(keep);
+    } else if (!tRelevant) {
+      toRemove.push(t);
+    } else if (Number(t.id) < Number(keepId)) {
+      bySig.set(sig, t.id);
+      if (keep) toRemove.push(keep);
+    } else {
+      toRemove.push(t);
+    }
+  });
+  if (toRemove.length === 0) { toast('Дублей не найдено'); return; }
+  toRemove.forEach(function(t) { t.deleted = true; t.updatedAt = Date.now(); });
+  myTasks = myTasks.filter(function(id) { return !toRemove.some(function(t) { return String(t.id) === String(id); }); });
+  saveData('tracker_tasks', tasks);
+  saveData('tracker_mytasks', myTasks);
+  renderSprints();
+  renderTasks();
+  toast('Помечено на удаление дублей: ' + toRemove.length);
+}
+
 function toggleSettings() {
   const card = document.getElementById('settingsCard');
   if (card) card.style.display = card.style.display === 'none' ? 'block' : 'none';
@@ -2221,7 +3261,7 @@ function checkDataSource() {
   }
 
   FB_COLL.doc('tasks').get().then(function(snap) {
-    const cloud = snap.exists && snap.data().items ? snap.data().items : [];
+    const cloud = snap.exists && snap.data().items ? itemsAsArray(snap.data().items) : [];
     const cloudSig = sig(cloud);       // Firestore
     const memSig = sig(currentArr('tasks'));      // в памяти (на экране, из onSnapshot)
     const lsArr = loadData('tracker_tasks', []);  // localStorage-кэш
@@ -2334,8 +3374,10 @@ function moveSelectedTasks() {
     } else {
       tb.style.display = 'none';
       activeDoneFilter = false;
+      activeCancelledFilter = false;
       document.getElementById('tabActive')?.classList.add('active');
       document.getElementById('tabDone')?.classList.remove('active');
+      document.getElementById('tabCancelled')?.classList.remove('active');
     }
   }
   let moved = 0;
@@ -2357,18 +3399,32 @@ function updateMassSprintSelect() {
 }
 
 function switchTab(tab) {
+  const h = document.getElementById('tasksHeader');
+  const base = (h.dataset.base || 'Задачи').replace(' / Закрытые', '').replace(' / Отменены', '');
+  h.dataset.base = base;
   if (tab === 'done') {
     activeDoneFilter = true;
+    activeCancelledFilter = false;
     document.getElementById('tabActive').classList.remove('active');
     document.getElementById('tabDone').classList.add('active');
-    const h = document.getElementById('tasksHeader');
-    h.textContent = (h.dataset.original || '') + ' / Закрытые';
+    document.getElementById('tabCancelled').classList.remove('active');
+    h.dataset.base = base + ' / Закрытые';
+    h.textContent = h.dataset.base;
+  } else if (tab === 'cancelled') {
+    activeCancelledFilter = true;
+    activeDoneFilter = false;
+    document.getElementById('tabActive').classList.remove('active');
+    document.getElementById('tabDone').classList.remove('active');
+    document.getElementById('tabCancelled').classList.add('active');
+    h.dataset.base = base + ' / Отменены';
+    h.textContent = h.dataset.base;
   } else {
     activeDoneFilter = false;
+    activeCancelledFilter = false;
     document.getElementById('tabDone').classList.remove('active');
+    document.getElementById('tabCancelled').classList.remove('active');
     document.getElementById('tabActive').classList.add('active');
-    const h = document.getElementById('tasksHeader');
-    h.textContent = h.dataset.original || 'Задачи';
+    h.textContent = base;
   }
   renderTasks();
 }
@@ -2618,6 +3674,234 @@ function copyHourResult() {
 
 // ===== ЧАСЫ ПО ФИЧАМ =====
 let hoursFeatures = loadData('tracker_hours_features', []);
+let hoursSearch = '';
+let hoursLogsExpanded = {};
+let hoursScenariosExpanded = {};
+
+// Лестница этапов продуктовой готовности сценария (весом каждого этапа)
+const HF_STAGES = [
+  { key: 'new',       label: 'Не начат',   holder: 'не взято', w: 0 },
+  { key: 'analytics', label: 'Аналитика',  holder: 'продукт',  w: 20 },
+  { key: 'be',        label: 'Бэк',        holder: 'BE',       w: 20 },
+  { key: 'fe',        label: 'Фронт',      holder: 'FE',       w: 20 },
+  { key: 'qa',        label: 'QA',         holder: 'QA',       w: 20 },
+  { key: 'done',      label: 'Готово',     holder: 'принято',  w: 20 }
+];
+const HF_STAGE_COLORS = { new: '#BCC3C7', analytics: '#93C5FD', be: '#4B3F72', fe: '#0F766E', qa: '#E07C1F', done: '#3E9B79' };
+function hfStageColor(k) { return HF_STAGE_COLORS[k] || '#BCC3C7'; }
+function hfMixTowardWhite(hex, amt) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const nr = Math.round(r + (255 - r) * amt);
+  const ng = Math.round(g + (255 - g) * amt);
+  const nb = Math.round(b + (255 - b) * amt);
+  return 'rgb(' + nr + ',' + ng + ',' + nb + ')';
+}
+function hfStagePastel(k) { return hfMixTowardWhite(hfStageColor(k), 0.45); }
+function hfStageTextColor(k) { return (k === 'new' || k === 'analytics') ? '#333' : '#fff'; }
+function hfStageByKey(k) { return HF_STAGES.find(function(s) { return s.key === k; }) || HF_STAGES[0]; }
+function hfStageIdx(k) { return HF_STAGES.indexOf(hfStageByKey(k)); }
+// Прогресс сценария: веса за прошедшие этапы; «Готово» — терминальный (засчитывается целиком)
+function hfStagePct(stageKey) {
+  const idx = hfStageIdx(stageKey);
+  let pct = 0;
+  for (let i = 0; i < idx; i++) pct += HF_STAGES[i].w;
+  if (idx === HF_STAGES.length - 1) pct += HF_STAGES[idx].w;
+  return pct;
+}
+function hfScnWeight(step) {
+  const w = Number(step.weight);
+  return (isNaN(w) || w <= 0) ? 1 : w;
+}
+function hfScenarioStats(f) {
+  const steps = (f && Array.isArray(f.steps)) ? f.steps.filter(function(s) { return s && !s.deleted; }) : [];
+  let tw = 0, twDone = 0, twPct = 0;
+  const dist = {};
+  steps.forEach(function(s) {
+    const w = hfScnWeight(s);
+    const pct = hfStagePct(s.stage);
+    tw += w;
+    if (s.stage === 'done') twDone += w;
+    twPct += w * pct;
+    const k = hfStageByKey(s.stage).key;
+    dist[k] = (dist[k] || 0) + w;
+  });
+  return {
+    steps: steps,
+    count: steps.length,
+    totalWeight: tw,
+    absPct: tw ? Math.round((twDone / tw) * 100) : 0,
+    relPct: tw ? Math.round(twPct / tw) : 0,
+    dist: dist
+  };
+}
+function hfReadyText(pct) {
+  const t = Math.max(0, Math.min(1, (Number(pct) || 0) / 100));
+  const r = Math.round(234 + (62 - 234) * t);
+  const g = Math.round(58 + (155 - 58) * t);
+  const b = Math.round(69 + (121 - 69) * t);
+  return 'rgb(' + r + ',' + g + ',' + b + ')';
+}
+function hfReadyColor(pct) {
+  const t = Math.max(0, Math.min(1, (Number(pct) || 0) / 100));
+  let r = 234 + (62 - 234) * t;
+  let g = 58 + (155 - 58) * t;
+  let b = 69 + (121 - 69) * t;
+  const pastel = 0.45;
+  r = Math.round(r + (255 - r) * pastel);
+  g = Math.round(g + (255 - g) * pastel);
+  b = Math.round(b + (255 - b) * pastel);
+  return 'rgb(' + r + ',' + g + ',' + b + ')';
+}
+function hfScenarioBars(f) {
+  const st = hfScenarioStats(f);
+  if (!st.count) return '';
+  const absFill = hfReadyColor(st.absPct);
+  const absText = hfReadyText(st.absPct);
+  const relFill = hfReadyColor(st.relPct);
+  const relText = hfReadyText(st.relPct);
+  const doneCount = st.steps.filter(function(s) { return s.stage === 'done'; }).length;
+  let dist = '';
+  if (st.totalWeight) {
+    dist = '<div class="hf-bar-row">' +
+      '<div class="hf-bar-label"><span>Распределение по этапам</span></div>' +
+      '<div class="hf-dist">' + HF_STAGES.map(function(s) {
+        const w = st.dist[s.key] || 0;
+        if (!(w > 0)) return '';
+        const p = Math.max(1, Math.round((w / st.totalWeight) * 100));
+        return '<div class="hf-dist-seg" style="width:' + p + '%;background:' + hfStagePastel(s.key) + '" title="' + s.label + ' — ' + fmtH(w) + ' ч"></div>';
+      }).join('') + '</div>' +
+      '<div class="hf-dist-legend">' + HF_STAGES.filter(function(s) { return (st.dist[s.key] || 0) > 0; }).map(function(s) {
+        return '<span><i style="background:' + hfStagePastel(s.key) + '"></i>' + s.label + ' ' + Math.round((st.dist[s.key] / st.totalWeight) * 100) + '%</span>';
+      }).join('') + '</div>' +
+    '</div>';
+  }
+  return '<div class="hf-bar-row">' +
+    '<div class="hf-bar-label"><span>Продуктовая готовность</span><span class="v" style="color:' + absText + '">' + st.absPct + '% · ' + doneCount + ' из ' + st.count + ' готово</span></div>' +
+    '<div class="hf-pct"><div style="width:' + st.absPct + '%;background:' + absFill + '"></div></div>' +
+  '</div>' +
+  '<div class="hf-bar-row">' +
+    '<div class="hf-bar-label"><span>Средний прогресс по этапам</span><span class="v" style="color:' + relText + '">' + st.relPct + '%</span></div>' +
+    '<div class="hf-pct"><div style="width:' + st.relPct + '%;background:' + relFill + '"></div></div>' +
+  '</div>' + dist;
+}
+function hfScenarioList(f) {
+  const st = hfScenarioStats(f);
+  const expanded = (typeof hoursScenariosExpanded[f.id] === 'undefined') ? true : !!hoursScenariosExpanded[f.id];
+  const rows = st.steps.length ? st.steps.map(function(s, i) {
+    const stge = hfStageByKey(s.stage);
+    const pct = hfStagePct(s.stage);
+    const w = hfScnWeight(s);
+    return '<div class="hf-scn-row' + (s.stage === 'done' ? ' done' : '') + '">' +
+      '<span class="hf-scn-pct" title="Прогресс сценария">' + pct + '%</span>' +
+      '<div class="hf-scn-body">' +
+        '<div class="hf-scn-name">' + escHtml(s.text || 'Без названия') + '</div>' +
+        (s.desc ? '<div class="hf-scn-desc">' + escHtml(s.desc) + '</div>' : '') +
+        '<div class="hf-scn-meta"><span class="hf-scn-badge" style="background:' + hfStageColor(s.stage) + ';color:' + hfStageTextColor(s.stage) + '">' + stge.label + '</span> вес ' + fmtH(w) + ' ч · держит <b>' + stge.holder + '</b></div>' +
+      '</div>' +
+      '<span class="hf-scn-x" title="Редактировать" onclick="editHoursScenario(\'' + f.id + '\',' + i + ')">✎</span>' +
+      '<span class="hf-scn-x" title="Удалить" onclick="removeHoursScenario(\'' + f.id + '\',' + i + ')">🗑</span>' +
+    '</div>';
+  }).join('') : '<div class="hf-scn-empty">Ещё нет сценариев. Добавьте первый.</div>';
+  return '<div class="hf-scenarios-head" onclick="toggleHoursScenarios(\'' + f.id + '\')">' +
+    '<span class="hf-section-label"><span class="hf-caret' + (expanded ? ' open' : '') + '">▶</span>Сценарии' + (st.count ? ' (' + st.count + ')' : '') + '</span>' +
+    '<button class="btn btn-sm btn-primary" onclick="event.stopPropagation();addHoursScenario(\'' + f.id + '\')">+ Сценарий</button>' +
+  '</div>' +
+  '<div class="hf-scenarios"' + (expanded ? '' : ' style="display:none"') + '>' +
+    '<div class="hf-scn-list">' + rows + '</div>' +
+  '</div>';
+}
+
+function toggleHoursScenarios(id) {
+  hoursScenariosExpanded[id] = !hoursScenariosExpanded[id];
+  renderHours();
+}
+function fillStageSelect(sel) {
+  document.getElementById(sel).innerHTML = HF_STAGES.map(function(s) {
+    return '<option value="' + s.key + '">' + s.label + ' (' + s.w + '%)</option>';
+  }).join('');
+}
+function addHoursScenario(id) {
+  document.getElementById('hoursScenarioTitle').textContent = 'Новый сценарий';
+  document.getElementById('hssFeatureId').value = id;
+  document.getElementById('hssIdx').value = '';
+  document.getElementById('hssText').value = '';
+  document.getElementById('hssDesc').value = '';
+  fillStageSelect('hssStage');
+  document.getElementById('hssStage').value = 'new';
+  document.getElementById('hssWeight').value = '';
+  openModal('hoursScenarioModal');
+}
+function editHoursScenario(id, idx) {
+  const f = hoursFeatures.find(function(x) { return x.id === id; });
+  if (!f || !Array.isArray(f.steps) || !f.steps[idx]) return;
+  const s = f.steps[idx];
+  document.getElementById('hoursScenarioTitle').textContent = 'Редактировать сценарий';
+  document.getElementById('hssFeatureId').value = id;
+  document.getElementById('hssIdx').value = idx;
+  document.getElementById('hssText').value = s.text || '';
+  document.getElementById('hssDesc').value = s.desc || '';
+  fillStageSelect('hssStage');
+  document.getElementById('hssStage').value = s.stage || 'new';
+  document.getElementById('hssWeight').value = s.weight || '';
+  openModal('hoursScenarioModal');
+}
+function saveHoursScenario(stay) {
+  const fid = document.getElementById('hssFeatureId').value;
+  const f = hoursFeatures.find(function(x) { return x.id === fid; });
+  if (!f) return;
+  const text = document.getElementById('hssText').value.trim();
+  if (!text) { toast('Введите название сценария'); return; }
+  const desc = document.getElementById('hssDesc').value.trim();
+  const stage = document.getElementById('hssStage').value || 'new';
+  const weight = document.getElementById('hssWeight').value;
+  if (!Array.isArray(f.steps)) f.steps = [];
+  const idx = document.getElementById('hssIdx').value;
+  if (idx !== undefined && idx !== '' && f.steps[idx]) {
+    f.steps[idx].text = text;
+    f.steps[idx].desc = desc;
+    f.steps[idx].stage = stage;
+    f.steps[idx].weight = weight;
+  } else {
+    f.steps.push({ id: 'hs_' + Date.now().toString(36) + '_' + Math.floor(Math.random() * 1000), text: text, desc: desc, stage: stage, weight: weight, createdAt: Date.now() });
+  }
+  f.updatedAt = Date.now();
+  saveHoursFeatures();
+  renderHours();
+  if (stay) {
+    document.getElementById('hoursScenarioTitle').textContent = 'Новый сценарий';
+    document.getElementById('hssIdx').value = '';
+    document.getElementById('hssText').value = '';
+    document.getElementById('hssDesc').value = '';
+    document.getElementById('hssStage').value = 'new';
+    document.getElementById('hssWeight').value = '';
+    document.getElementById('hssText').focus();
+    toast('Сценарий сохранён — добавьте следующий');
+  } else {
+    closeModal('hoursScenarioModal');
+    toast('Сценарий сохранён');
+  }
+}
+function removeHoursScenario(id, idx) {
+  if (!confirm('Удалить сценарий?')) return;
+  const f = hoursFeatures.find(function(x) { return x.id === id; });
+  if (!f || !Array.isArray(f.steps)) return;
+  f.steps.splice(idx, 1);
+  f.updatedAt = Date.now();
+  saveHoursFeatures();
+  renderHours();
+}
+
+function onHoursSearch(v) {
+  hoursSearch = v.trim().toLowerCase();
+  renderHours();
+}
+
+function toggleHoursLogs(id) {
+  hoursLogsExpanded[id] = !hoursLogsExpanded[id];
+  renderHours();
+}
 
 function hfSpent(f) {
   const base = Number(f.spent) || 0;
@@ -2633,8 +3917,10 @@ function showHoursView() {
   document.getElementById('dashboardSection').style.display = 'none';
   document.getElementById('tasksSection').style.display = 'none';
   document.getElementById('hoursSection').style.display = '';
+  document.getElementById('estimatesSection').style.display = 'none';
   document.getElementById('dashButton').classList.remove('active');
   document.getElementById('hoursButton').classList.add('active');
+  document.getElementById('estimatesButton').classList.remove('active');
   renderHours();
 }
 
@@ -2642,8 +3928,10 @@ function showDashboard() {
   document.getElementById('dashboardSection').style.display = '';
   document.getElementById('tasksSection').style.display = 'none';
   document.getElementById('hoursSection').style.display = 'none';
+  document.getElementById('estimatesSection').style.display = 'none';
   document.getElementById('dashButton').classList.add('active');
   document.getElementById('hoursButton').classList.remove('active');
+  document.getElementById('estimatesButton').classList.remove('active');
   renderDashboard();
   renderFunnel();
 }
@@ -2652,8 +3940,10 @@ function showTasksView() {
   document.getElementById('dashboardSection').style.display = 'none';
   document.getElementById('tasksSection').style.display = '';
   document.getElementById('hoursSection').style.display = 'none';
+  document.getElementById('estimatesSection').style.display = 'none';
   document.getElementById('dashButton').classList.remove('active');
   document.getElementById('hoursButton').classList.remove('active');
+  document.getElementById('estimatesButton').classList.remove('active');
 }
 
 function openHoursFeatureModal() {
@@ -2663,6 +3953,11 @@ function openHoursFeatureModal() {
   document.getElementById('hfName').value = '';
   document.getElementById('hfBudget').value = '';
   document.getElementById('hfSpentStart').value = '';
+  document.getElementById('hfPlanBE').value = '';
+  document.getElementById('hfPlanFE').value = '';
+  document.getElementById('hfPlanQA').value = '';
+  document.getElementById('hfStartDate').value = '';
+  document.getElementById('hfDeadline').value = '';
   document.getElementById('hfComment').value = '';
   openModal('hoursFeatureModal');
 }
@@ -2674,6 +3969,11 @@ function editHoursFeature(id) {
   document.getElementById('hfName').value = f.name || '';
   document.getElementById('hfBudget').value = f.budget || '';
   document.getElementById('hfSpentStart').value = f.spent || '';
+  document.getElementById('hfPlanBE').value = f.planBE || '';
+  document.getElementById('hfPlanFE').value = f.planFE || '';
+  document.getElementById('hfPlanQA').value = f.planQA || '';
+  document.getElementById('hfStartDate').value = f.startDate || '';
+  document.getElementById('hfDeadline').value = f.deadline || '';
   document.getElementById('hfComment').value = f.comment || '';
   openModal('hoursFeatureModal');
 }
@@ -2683,15 +3983,20 @@ function saveHoursFeature() {
   const id = document.getElementById('hfId').value;
   const budget = document.getElementById('hfBudget').value;
   const spent = document.getElementById('hfSpentStart').value;
+  const planBE = document.getElementById('hfPlanBE').value;
+  const planFE = document.getElementById('hfPlanFE').value;
+  const planQA = document.getElementById('hfPlanQA').value;
+  const deadline = document.getElementById('hfDeadline').value;
+  const startDate = document.getElementById('hfStartDate').value;
   const comment = document.getElementById('hfComment').value.trim();
   if (id) {
     const f = hoursFeatures.find(x => x.id === id);
     if (f) {
-      f.name = name; f.budget = budget; f.spent = spent; f.comment = comment; f.updatedAt = Date.now();
+      f.name = name; f.budget = budget; f.spent = spent; f.comment = comment; f.planBE = planBE; f.planFE = planFE; f.planQA = planQA; f.deadline = deadline; f.startDate = startDate; f.updatedAt = Date.now();
     }
   } else {
     const newId = 'hf_' + Date.now().toString(36) + '_' + Math.floor(Math.random() * 1000);
-    hoursFeatures.push({ id: newId, name: name, budget: budget, spent: spent, comment: comment, spentAt: [], createdAt: Date.now(), updatedAt: Date.now() });
+    hoursFeatures.push({ id: newId, name: name, budget: budget, spent: spent, comment: comment, planBE: planBE, planFE: planFE, planQA: planQA, deadline: deadline, startDate: startDate, spentAt: [], createdAt: Date.now(), updatedAt: Date.now() });
   }
   saveHoursFeatures();
   closeModal('hoursFeatureModal');
@@ -2711,7 +4016,9 @@ function addHoursLog(id) {
   hoursLogTarget = id;
   delete document.getElementById('hlHours').dataset.editIdx;
   document.getElementById('hoursLogTitle').textContent = 'Списать часы';
+  document.getElementById('hlPlan').value = '';
   document.getElementById('hlHours').value = '';
+  document.getElementById('hlRole').value = '';
   document.getElementById('hlComment').value = '';
   openModal('hoursLogModal');
 }
@@ -2722,7 +4029,9 @@ function editHoursLog(id, idx) {
   if (!e) return;
   hoursLogTarget = id;
   document.getElementById('hoursLogTitle').textContent = 'Редактировать запись';
+  document.getElementById('hlPlan').value = e.plan || '';
   document.getElementById('hlHours').value = e.hours;
+  document.getElementById('hlRole').value = e.role || '';
   document.getElementById('hlComment').value = e.comment || '';
   openModal('hoursLogModal');
   document.getElementById('hlHours').dataset.editIdx = idx;
@@ -2735,13 +4044,19 @@ function saveHoursLog() {
   const v = hoursEl.value;
   const hours = parseFloat(v);
   if (isNaN(hours) || hours <= 0) { toast('Введите число больше 0'); return; }
+  const planEl = document.getElementById('hlPlan');
+  const planV = planEl.value;
+  const plan = planV === '' || planV === undefined ? '' : parseFloat(planV);
+  const role = document.getElementById('hlRole').value || '';
   const comment = document.getElementById('hlComment').value.trim();
   const idx = hoursEl.dataset.editIdx;
   if (idx !== undefined && idx !== '' && f.spentAt[idx]) {
+    f.spentAt[idx].plan = plan;
     f.spentAt[idx].hours = hours;
+    f.spentAt[idx].role = role;
     f.spentAt[idx].comment = comment;
   } else {
-    f.spentAt.push({ date: new Date().toISOString().slice(0, 10), hours: hours, comment: comment });
+    f.spentAt.push({ date: new Date().toISOString().slice(0, 10), plan: plan, hours: hours, role: role, comment: comment });
   }
   delete hoursEl.dataset.editIdx;
   hoursLogTarget = null;
@@ -2761,17 +4076,93 @@ function removeHoursLog(id, idx) {
   renderHours();
 }
 
-function renderHoursSummary() {
-  const live = hoursFeatures.filter(function(f) { return f && !f.deleted; });
-  const totalBudget = live.reduce((a, f) => a + (Number(f.budget) || 0), 0);
-  const totalSpent = live.reduce((a, f) => a + hfSpent(f), 0);
-  const totalRemain = totalBudget - totalSpent;
-  const el = document.getElementById('hoursSummary');
-  if (!el) return;
-  el.innerHTML =
-    '<div class="metric-card"><div class="metric-label">Всего выделено</div><div class="metric-value">' + Math.round(totalBudget) + ' ч</div></div>' +
-    '<div class="metric-card"><div class="metric-label">Всего потрачено</div><div class="metric-value">' + Math.round(totalSpent) + ' ч</div></div>' +
-    '<div class="metric-card"><div class="metric-label">Остаток</div><div class="metric-value' + (totalRemain < 0 ? ' over' : ' ok') + '">' + Math.round(totalRemain) + ' ч</div></div>';
+function hfRoleTotalsFor(f) {
+  let be = 0, fe = 0;
+  if (f && Array.isArray(f.spentAt)) {
+    f.spentAt.forEach(function(e) {
+      if (!e) return;
+      const h = Number(e.hours) || 0;
+      const r = (e.role || '').toUpperCase();
+      if (r.indexOf('BE') !== -1) be += h;
+      if (r.indexOf('FE') !== -1) fe += h;
+    });
+  }
+  return { be: be, fe: fe };
+}
+function hfDeadlineInfo(f) {
+  if (!f || !f.deadline) return null;
+  const end = new Date(f.deadline + 'T23:59:59');
+  if (isNaN(end.getTime())) return null;
+  let start;
+  if (f.startDate) {
+    start = new Date(f.startDate + 'T00:00:00');
+    if (isNaN(start.getTime())) start = f.createdAt ? new Date(f.createdAt) : new Date();
+  } else {
+    start = f.createdAt ? new Date(f.createdAt) : new Date();
+  }
+  const now = new Date();
+  const total = end.getTime() - start.getTime();
+  const elapsed = now.getTime() - start.getTime();
+  let pct = 0, cls = '';
+  if (total > 0) {
+    pct = Math.max(0, Math.min(100, Math.round((elapsed / total) * 100)));
+    if (elapsed >= total) { pct = 100; cls = 'over'; }
+    else if (pct >= 75) cls = 'over';
+    else if (pct >= 50) cls = 'warn';
+    else cls = 'ok';
+  }
+  const remainMs = end.getTime() - now.getTime();
+  const remainDays = Math.max(0, Math.ceil(remainMs / 86400000));
+  return { start: start, end: end, pct: pct, cls: cls, remainDays: remainDays, overdue: remainMs < 0 };
+}
+function hfFmtDate(d) {
+  return d.toLocaleDateString('ru-RU');
+}
+function fmtH(n) {
+  const v = Math.round((Number(n) || 0) * 10) / 10;
+  return (v % 1 === 0) ? String(Math.round(v)) : String(v);
+}
+function hfUsage(plan, fact) {
+  const p = Number(plan) || 0;
+  const f = Number(fact) || 0;
+  if (p > 0) return { pct: Math.round((f / p) * 100), cls: (f / p >= 0.75 ? 'over' : (f / p >= 0.5 ? 'warn' : 'ok')) };
+  return { pct: null, cls: '' };
+}
+function hfClassForPct(pct) {
+  const p = Number(pct) || 0;
+  if (p >= 75) return 'over';
+  if (p >= 50) return 'warn';
+  return 'ok';
+}
+function hfRoleUsageRow(label, cls, plan, fact, testH) {
+  const p = Number(plan) || 0;
+  const f = Number(fact) || 0;
+  const t = Number(testH) || 0;
+  const planFin = Math.round(p * 12) / 10;
+  const planFinT = planFin + t;
+  const remainDev = p - f;
+  const remainFin = planFin - f;
+  const remainFinT = planFinT - f;
+  const remainDevCls = remainDev < 0 ? 'pct over' : '';
+  const remainFinCls = remainFin < 0 ? 'pct over' : '';
+  const remainFinTCls = remainFinT < 0 ? 'pct over' : '';
+  const uDev = hfUsage(p, f);
+  const uFin = hfUsage(planFin, f);
+  const uFinT = hfUsage(planFinT, f);
+  const pctDev = uDev.pct === null ? ((f > 0) ? '—' : '0%') : uDev.pct + '%';
+  const pctFin = uFin.pct === null ? ((f > 0) ? '—' : '0%') : uFin.pct + '%';
+  const pctFinT = uFinT.pct === null ? ((f > 0) ? '—' : '0%') : uFinT.pct + '%';
+  return '<tr><td class="' + cls + '">' + label + '</td>' +
+    '<td class="num">' + fmtH(f) + ' ч</td>' +
+    '<td class="num c-dev">' + fmtH(p) + ' ч</td>' +
+    '<td class="num c-dev ' + remainDevCls + '">' + fmtH(remainDev) + ' ч</td>' +
+    '<td class="num c-dev pct ' + uDev.cls + '">' + pctDev + '</td>' +
+    '<td class="num c-fin">' + fmtH(planFin) + ' ч</td>' +
+    '<td class="num c-fin ' + remainFinCls + '">' + fmtH(remainFin) + ' ч</td>' +
+    '<td class="num c-fin pct ' + uFin.cls + '">' + pctFin + '</td>' +
+    '<td class="num c-test">' + fmtH(planFinT) + ' ч</td>' +
+    '<td class="num c-test ' + remainFinTCls + '">' + fmtH(remainFinT) + ' ч</td>' +
+    '<td class="num c-test pct ' + uFinT.cls + '">' + pctFinT + '</td></tr>';
 }
 
 function renderHours() {
@@ -2779,49 +4170,397 @@ function renderHours() {
   const empty = document.getElementById('hoursEmpty');
   if (!list) return;
   const live = hoursFeatures.filter(function(f) { return f && !f.deleted; });
-  renderHoursSummary();
   if (!live.length) {
     if (empty) empty.style.display = '';
     list.innerHTML = '';
     return;
   }
   if (empty) empty.style.display = 'none';
-  list.innerHTML = live.map(function(f) {
+  const q = hoursSearch;
+  let cards = live.map(function(f) {
     const budget = Number(f.budget) || 0;
     const spent = hfSpent(f);
     const remain = budget - spent;
-    const pct = budget > 0 ? Math.min(100, (spent / budget) * 100) : 0;
+    const pct = budget > 0 ? Math.min(100, Math.round((spent / budget) * 100)) : 0;
     const over = budget > 0 && spent > budget;
-    const barCls = over ? 'over' : (pct >= 80 ? 'warn' : '');
-    const logs = (Array.isArray(f.spentAt) && f.spentAt.length)
-      ? f.spentAt.map(function(e, i) {
+    const barCls = budget > 0 ? hfClassForPct(pct) : '';
+    const roles = hfRoleTotalsFor(f);
+    const planBE = Number(f.planBE) || 0;
+    const planFE = Number(f.planFE) || 0;
+    const qaRaw = Number(f.planQA);
+    const planQA = (f.planQA === undefined || f.planQA === '' || isNaN(qaRaw)) ? (0.5 * planBE + 0.5 * planFE) : qaRaw;
+    const deadlineInfo = hfDeadlineInfo(f);
+    const nameMatch = q ? (((f.name || '').toLowerCase().indexOf(q) !== -1) || ((f.comment || '').toLowerCase().indexOf(q) !== -1)) : false;
+    let logItems = Array.isArray(f.spentAt) ? f.spentAt.map(function(e, i) { return { e: e, i: i }; }) : [];
+    if (q && !nameMatch) {
+      logItems = logItems.filter(function(it) {
+        const e = it.e;
+        const c = (e.comment || '').toLowerCase();
+        const r = (e.role || '').toLowerCase();
+        const h = String(Number(e.hours) || 0);
+        const p = (e.plan !== undefined && e.plan !== '') ? String(e.plan) : '';
+        return c.indexOf(q) !== -1 || r.indexOf(q) !== -1 || h.indexOf(q) !== -1 || (p && p.indexOf(q) !== -1);
+      });
+    }
+    if (q && logItems.length === 0 && !nameMatch) return '';
+    const logsExpanded = q ? true : !!hoursLogsExpanded[f.id];
+    const logsCount = logItems.length + ((!q && (Number(f.spent) || 0)) ? 1 : 0);
+    const logs = logItems.length
+      ? logItems.map(function(it) {
+          const e = it.e; const i = it.i;
           const cmt = e.comment
             ? '<span class="hf-log-comment">' + escHtml(e.comment) + '</span>'
             : '';
-          return '<div class="hf-log"><span class="hf-log-date">' + (e.date || '') + '</span><span class="hf-log-body">' + (Number(e.hours) || 0) + ' ч' + cmt + '</span><span class="hf-log-x" title="Редактировать запись" onclick="editHoursLog(\'' + f.id + '\',' + i + ')">✎</span><span class="hf-log-x" title="Удалить запись" onclick="removeHoursLog(\'' + f.id + '\',' + i + ')">✕</span></div>';
+          const pl = (e.plan !== undefined && e.plan !== '') ? (Number(e.plan) || 0) + ' / ' : '';
+          const roleCls = e.role === 'FE' ? 'fe' : (e.role === 'BE' ? 'be' : 'both');
+          const role = e.role
+            ? '<span class="hf-log-role ' + roleCls + '">' + escHtml(e.role) + '</span>'
+            : '';
+          return '<div class="hf-log"><span class="hf-log-date">' + (e.date || '') + '</span><span class="hf-log-body"><span>' + pl + (Number(e.hours) || 0) + ' ч' + role + '</span>' + cmt + '</span><span class="hf-log-x" title="Редактировать запись" onclick="editHoursLog(\'' + f.id + '\',' + i + ')">✎</span><span class="hf-log-x" title="Удалить запись" onclick="removeHoursLog(\'' + f.id + '\',' + i + ')">✕</span></div>';
         }).join('')
-      : '<div class="hf-log"><span class="hf-empty">Пока нет записей о затратах</span></div>';
-    const startVal = (Number(f.spent) || 0) ? '<div class="hf-log"><span class="hf-log-date">старт</span><span>' + (Number(f.spent) || 0) + ' ч</span></div>' : '';
+      : (q ? '<div class="hf-log"><span class="hf-empty">Нет записей по запросу</span></div>' : '<div class="hf-log"><span class="hf-empty">Пока нет записей о затратах</span></div>');
+    const startVal = (!q && (Number(f.spent) || 0)) ? '<div class="hf-log"><span class="hf-log-date">старт</span><span>' + (Number(f.spent) || 0) + ' ч</span></div>' : '';
     return (
       '<div class="hf-card">' +
         '<div class="hf-card-head">' +
           '<div class="hf-card-title">' + (f.name || 'Без названия') + (f.comment ? ' <span style="font-weight:400;color:#888;font-size:12px">— ' + f.comment + '</span>' : '') + '</div>' +
           '<div class="hf-card-actions">' +
-            '<button class="btn btn-sm btn-primary" onclick="addHoursLog(\'' + f.id + '\')">+ Списать часы</button>' +
             '<button class="btn btn-sm btn-secondary" onclick="editHoursFeature(\'' + f.id + '\')">✎</button>' +
             '<button class="btn btn-sm btn-danger" onclick="deleteHoursFeature(\'' + f.id + '\')">🗑</button>' +
           '</div>' +
         '</div>' +
-        '<div class="hf-metrics">' +
-          '<div class="hf-metric"><div class="hf-label">Выделено</div><div class="hf-value">' + Math.round(budget) + ' ч</div></div>' +
-          '<div class="hf-metric"><div class="hf-label">Потрачено</div><div class="hf-value">' + Math.round(spent) + ' ч</div></div>' +
-          '<div class="hf-metric"><div class="hf-label">Остаток</div><div class="hf-value' + (over ? ' over' : (remain >= 0 ? ' ok' : ' over')) + '">' + Math.round(remain) + ' ч</div></div>' +
+        '<div class="hf-chips">' +
+          '<div class="hf-chip"><div class="lbl">Выделено</div><div class="val">' + fmtH(budget) + ' ч</div></div>' +
+          '<div class="hf-chip"><div class="lbl">Потрачено</div><div class="val">' + fmtH(spent) + ' ч</div></div>' +
+          '<div class="hf-chip"><div class="lbl">Остаток</div><div class="val' + (over ? ' over' : (remain >= 0 ? ' ok' : ' over')) + '">' + fmtH(remain) + ' ч</div></div>' +
         '</div>' +
-        '<div class="hf-pct"><div class="' + barCls + '" style="width:' + pct + '%"></div></div>' +
-        '<div class="hf-logs">' + startVal + logs + '</div>' +
+        '<table class="hf-table">' +
+          '<thead>' +
+            '<tr>' +
+              '<th rowspan="2">Роль</th>' +
+              '<th rowspan="2">Факт</th>' +
+              '<th colspan="3" class="grp grp-dev">Оценка разработчиков</th>' +
+              '<th colspan="3" class="grp grp-fin">Финальная оценка (клиенту)</th>' +
+              '<th colspan="3" class="grp grp-test">Финальная оценка (клиенту) + QA</th>' +
+            '</tr>' +
+            '<tr>' +
+              '<th class="num">План</th><th class="num">Остаток</th><th class="num">Использование</th>' +
+              '<th class="num">План</th><th class="num">Остаток</th><th class="num">Использование</th>' +
+              '<th class="num">План</th><th class="num">Остаток</th><th class="num">Использование</th>' +
+            '</tr>' +
+          '</thead>' +
+          '<tbody>' +
+            hfRoleUsageRow('BE', 'role-be', planBE, roles.be, planQA * 0.5) +
+            hfRoleUsageRow('FE', 'role-fe', planFE, roles.fe, planQA * 0.5) +
+          '</tbody>' +
+          '<tfoot>' +
+            hfRoleUsageRow('Итого', '', Number(planBE) + Number(planFE), roles.be + roles.fe, planQA) +
+          '</tfoot>' +
+        '</table>' +
+        '<div class="hf-bars">' +
+          '<div class="hf-bar-row">' +
+            '<div class="hf-bar-label"><span>Часы</span><span class="v ' + (barCls || '') + '">' + fmtH(spent) + ' / ' + fmtH(budget) + ' ч · ' + pct + '%</span></div>' +
+            '<div class="hf-pct"><div class="' + barCls + '" style="width:' + pct + '%"></div></div>' +
+          '</div>' +
+          (deadlineInfo
+            ? '<div class="hf-bar-row">' +
+                '<div class="hf-bar-label"><span>Дедлайн ' + hfFmtDate(deadlineInfo.end) + (deadlineInfo.start ? ' · от ' + hfFmtDate(deadlineInfo.start) : '') + '</span><span class="v' + (deadlineInfo.cls ? ' ' + deadlineInfo.cls : '') + '">' + (deadlineInfo.overdue ? 'просрочено' : 'осталось ' + deadlineInfo.remainDays + ' д · ' + deadlineInfo.pct + '%') + '</span></div>' +
+                '<div class="hf-pct"><div class="' + (deadlineInfo.cls || '') + '" style="width:' + deadlineInfo.pct + '%"></div></div>' +
+              '</div>'
+            : '') +
+          hfScenarioBars(f) +
+        '</div>' +
+        hfScenarioList(f) +
+        '<div class="hf-logs-head" onclick="toggleHoursLogs(\'' + f.id + '\')">' +
+          '<span class="hf-section-label"><span class="hf-caret' + (logsExpanded ? ' open' : '') + '">▶</span>Записи о затратах' + (logsCount ? ' (' + logsCount + ')' : '') + '</span>' +
+          '<button class="btn btn-sm btn-primary" onclick="event.stopPropagation();addHoursLog(\'' + f.id + '\')">+ Списать часы</button>' +
+        '</div>' +
+        '<div class="hf-logs"' + (logsExpanded ? '' : ' style="display:none"') + '>' + startVal + logs + '</div>' +
       '</div>'
     );
-  }).join('');
+  }).filter(function(c) { return c !== ''; });
+  list.innerHTML = cards.length ? cards.join('') : (q ? '<div class="hf-none">Ничего не найдено по запросу</div>' : '');
+}
+
+// ===== ПРОЕКТНАЯ ОЦЕНКА =====
+let estimates = loadData('tracker_estimates', []);
+let estimatesSearch = '';
+
+function estFmt(n) { return Math.round(n); }
+
+// Расчёт оценки из структурированных входных данных
+function estCalc(o) {
+  const front = parseFloat(o.frontend) || 0;
+  const back = parseFloat(o.backend) || 0;
+  const qaFactor = parseFloat(o.qaFactor) || 0.2;
+  const pmFactor = parseFloat(o.pmFactor) || 0.2;
+  const rawDev = front + back;
+  const risk = rawDev * 0.2;
+  const devHours = Math.round(rawDev + risk);
+  const qaHours = Math.round(devHours * qaFactor);
+  const pmHours = Math.round((devHours + qaHours) * pmFactor);
+  const totalHours = devHours + qaHours + pmHours;
+  const mode = o.rateMode || 'none';
+  const hasRates = mode !== 'none';
+  const rSingle = parseFloat(o.rateSingle) || 0;
+  const rDev = mode === 'separate' ? (parseFloat(o.rateDev) || 0) : rSingle;
+  const rQA = mode === 'separate' ? (parseFloat(o.rateQA) || 0) : rSingle;
+  const rPM = mode === 'separate' ? (parseFloat(o.ratePM) || 0) : rSingle;
+  let totalCost = 0;
+  if (hasRates) {
+    totalCost = mode === 'separate'
+      ? Math.round(devHours * rDev + qaHours * rQA + pmHours * rPM)
+      : Math.round(totalHours * rSingle);
+  }
+  return { front: front, back: back, qaFactor: qaFactor, pmFactor: pmFactor, rawDev: rawDev, risk: risk, devHours: devHours, qaHours: qaHours, pmHours: pmHours, totalHours: totalHours, mode: mode, hasRates: hasRates, rSingle: rSingle, rDev: rDev, rQA: rQA, rPM: rPM, totalCost: totalCost };
+}
+
+// Текст сметы в формате, который отправляем бизнесу
+function estText(o) {
+  const c = estCalc(o);
+  let t = '📋 ВВОДНЫЕ ДАННЫЕ\n\n';
+  t += 'Frontend - ' + estFmt(c.front) + ' ч\n';
+  t += 'Backend - ' + estFmt(c.back) + ' ч\n';
+  t += 'QA коэффициент - ' + c.qaFactor + '\n';
+  t += 'PM коэффициент - ' + c.pmFactor + '\n';
+  if (c.hasRates) {
+    if (c.mode === 'separate') {
+      t += 'Ставка разработки - ' + estFmt(c.rDev) + ' ₽/ч\n';
+      t += 'Ставка тестирования - ' + estFmt(c.rQA) + ' ₽/ч\n';
+      t += 'Ставка управления - ' + estFmt(c.rPM) + ' ₽/ч\n';
+    } else {
+      t += 'Ставка - ' + estFmt(c.rSingle) + ' ₽/ч\n';
+    }
+  } else {
+    t += 'Ставка - без стоимости\n';
+  }
+  t += '____________________________________\n';
+  t += '🧮 РАСЧЁТ ЧАСОВ\n\n';
+  t += 'Разработка (чистые) - ' + estFmt(c.rawDev) + ' ч\n';
+  t += '+ Резерв 20% - ' + estFmt(c.risk) + ' ч\n';
+  t += 'Тестирование - ' + estFmt(c.qaHours) + ' ч\n';
+  t += 'Управление - ' + estFmt(c.pmHours) + ' ч\n';
+  t += '\nИТОГО ЧАСОВ: ' + estFmt(c.totalHours) + ' ч\n';
+  t += '____________________________________\n';
+  t += '📄 НАЗНАЧЕНИЕ ЧАСОВ\n\n';
+  if (c.hasRates && c.mode === 'separate') {
+    t += 'Разработка: ' + estFmt(c.devHours) + ' ч × ' + estFmt(c.rDev) + ' ₽ = ' + estFmt(c.devHours * c.rDev) + ' ₽\n';
+    t += 'Тестирование: ' + estFmt(c.qaHours) + ' ч × ' + estFmt(c.rQA) + ' ₽ = ' + estFmt(c.qaHours * c.rQA) + ' ₽\n';
+    t += 'Управление: ' + estFmt(c.pmHours) + ' ч × ' + estFmt(c.rPM) + ' ₽ = ' + estFmt(c.pmHours * c.rPM) + ' ₽\n';
+  } else {
+    t += 'Разработка: ' + estFmt(c.devHours) + ' ч\n';
+    t += 'Тестирование: ' + estFmt(c.qaHours) + ' ч\n';
+    t += 'Управление: ' + estFmt(c.pmHours) + ' ч\n';
+  }
+  t += '\nИтого: ' + estFmt(c.totalHours) + ' ч\n';
+  if (c.hasRates) t += 'Стоимость: ' + estFmt(c.totalCost) + ' ₽\n';
+  return { text: t, c: c };
+}
+
+function estFromForm() {
+  return {
+    id: document.getElementById('estId').value,
+    title: document.getElementById('estTitle').value.trim(),
+    docUrl: document.getElementById('estDocUrl').value.trim(),
+    date: document.getElementById('estDate').value,
+    text: document.getElementById('estText').value.trim(),
+    frontend: document.getElementById('estFrontend').value,
+    backend: document.getElementById('estBackend').value,
+    qaFactor: document.getElementById('estQA').value,
+    pmFactor: document.getElementById('estPM').value,
+    rateMode: document.getElementById('estRateMode').value,
+    rateSingle: document.getElementById('estRateSingle').value,
+    rateDev: document.getElementById('estRateDev').value,
+    rateQA: document.getElementById('estRateQA').value,
+    ratePM: document.getElementById('estRatePM').value,
+    note: document.getElementById('estNote').value.trim()
+  };
+}
+
+function estParseChips(text) {
+  const grab = function(re) { const m = String(text || '').match(re); return m ? parseInt(m[1].replace(/[^\d]/g, ''), 10) || null : null; };
+  return {
+    hours: grab(/ИТОГО ЧАСОВ:\s*([\d\s]+)\s*ч/),
+    cost: grab(/Стоимость:\s*([\d\s]+)\s*₽/),
+    dev: grab(/Разработка:\s*([\d\s]+)\s*ч/)
+  };
+}
+
+// Единый результат для рендера/копирования: если сохранён текст — используем его как есть,
+// иначе считаем по полям.
+function estResult(e) {
+  if (e && e.text) {
+    const p = estParseChips(e.text);
+    return { text: e.text, hours: p.hours, cost: p.cost, dev: p.dev, hasCost: p.cost !== null };
+  }
+  const r = estText(e);
+  const c = r.c;
+  return { text: r.text, hours: c.totalHours, cost: c.hasRates ? c.totalCost : null, dev: c.devHours, hasCost: c.hasRates };
+}
+
+function toggleEstimateRateMode() {
+  const mode = document.getElementById('estRateMode').value;
+  document.getElementById('estRateSingleWrap').style.display = mode === 'single' ? '' : 'none';
+  document.getElementById('estRateSeparateWrap').style.display = mode === 'separate' ? '' : 'none';
+  updateEstimatePreview();
+}
+
+function updateEstimatePreview() {
+  const el = document.getElementById('estPreview');
+  if (!el) return;
+  const t = document.getElementById('estText').value.trim();
+  el.textContent = t ? t : estText(estFromForm()).text;
+}
+
+function showEstimatesView() {
+  document.getElementById('dashboardSection').style.display = 'none';
+  document.getElementById('tasksSection').style.display = 'none';
+  document.getElementById('hoursSection').style.display = 'none';
+  document.getElementById('estimatesSection').style.display = '';
+  document.getElementById('dashButton').classList.remove('active');
+  document.getElementById('hoursButton').classList.remove('active');
+  document.getElementById('estimatesButton').classList.add('active');
+  renderEstimates();
+}
+
+function onEstimatesSearch(v) {
+  estimatesSearch = v.trim().toLowerCase();
+  renderEstimates();
+}
+
+function saveEstimates() {
+  saveData('tracker_estimates', estimates);
+}
+
+function openEstimateModal() {
+  document.getElementById('estimateTitle').textContent = 'Новая оценка';
+  document.getElementById('estId').value = '';
+  document.getElementById('estTitle').value = '';
+  document.getElementById('estDocUrl').value = '';
+  document.getElementById('estDate').value = '';
+  document.getElementById('estText').value = '';
+  document.getElementById('estFrontend').value = '';
+  document.getElementById('estBackend').value = '';
+  document.getElementById('estQA').value = '0.2';
+  document.getElementById('estPM').value = '0.2';
+  document.getElementById('estRateMode').value = 'none';
+  document.getElementById('estRateSingle').value = '';
+  document.getElementById('estRateDev').value = '';
+  document.getElementById('estRateQA').value = '';
+  document.getElementById('estRatePM').value = '';
+  document.getElementById('estNote').value = '';
+  toggleEstimateRateMode();
+  updateEstimatePreview();
+  openModal('estimateModal');
+}
+
+function editEstimate(id) {
+  const e = estimates.find(function(x) { return x.id === id; });
+  if (!e) return;
+  document.getElementById('estimateTitle').textContent = 'Редактирование оценки';
+  document.getElementById('estId').value = e.id;
+  document.getElementById('estTitle').value = e.title || '';
+  document.getElementById('estDocUrl').value = e.docUrl || '';
+  document.getElementById('estDate').value = e.date || '';
+  document.getElementById('estText').value = e.text || '';
+  document.getElementById('estFrontend').value = e.frontend || '';
+  document.getElementById('estBackend').value = e.backend || '';
+  document.getElementById('estQA').value = e.qaFactor || '0.2';
+  document.getElementById('estPM').value = e.pmFactor || '0.2';
+  document.getElementById('estRateMode').value = e.rateMode || 'none';
+  document.getElementById('estRateSingle').value = e.rateSingle || '';
+  document.getElementById('estRateDev').value = e.rateDev || '';
+  document.getElementById('estRateQA').value = e.rateQA || '';
+  document.getElementById('estRatePM').value = e.ratePM || '';
+  document.getElementById('estNote').value = e.note || '';
+  toggleEstimateRateMode();
+  updateEstimatePreview();
+  openModal('estimateModal');
+}
+
+function saveEstimate() {
+  const o = estFromForm();
+  if (!o.title) { toast('Введите название оценки'); return; }
+  const finalText = o.text || estText(o).text;
+  if (o.id) {
+    const e = estimates.find(function(x) { return x.id === o.id; });
+    if (e) {
+      e.title = o.title; e.docUrl = o.docUrl; e.date = o.date; e.text = finalText; e.frontend = o.frontend; e.backend = o.backend;
+      e.qaFactor = o.qaFactor; e.pmFactor = o.pmFactor; e.rateMode = o.rateMode;
+      e.rateSingle = o.rateSingle; e.rateDev = o.rateDev; e.rateQA = o.rateQA; e.ratePM = o.ratePM;
+      e.note = o.note; e.updatedAt = Date.now();
+    }
+  } else {
+    const newId = 'est_' + Date.now().toString(36) + '_' + Math.floor(Math.random() * 1000);
+    estimates.push({ id: newId, title: o.title, docUrl: o.docUrl, date: o.date, text: finalText, frontend: o.frontend, backend: o.backend, qaFactor: o.qaFactor, pmFactor: o.pmFactor, rateMode: o.rateMode, rateSingle: o.rateSingle, rateDev: o.rateDev, rateQA: o.rateQA, ratePM: o.ratePM, note: o.note, createdAt: Date.now(), updatedAt: Date.now() });
+  }
+  saveEstimates();
+  closeModal('estimateModal');
+  renderEstimates();
+  toast('Оценка сохранена');
+}
+
+function deleteEstimate(id) {
+  if (!confirm('Удалить оценку?')) return;
+  const e = estimates.find(function(x) { return x.id === id; });
+  if (e) { e.deleted = true; e.updatedAt = Date.now(); }
+  saveEstimates();
+  renderEstimates();
+  toast('Оценка удалена');
+}
+
+function copyEstimate(id) {
+  const e = estimates.find(function(x) { return x.id === id; });
+  if (!e) return;
+  navigator.clipboard.writeText(estResult(e).text).then(function() { toast('Смета скопирована'); }).catch(function() { toast('Ошибка копирования'); });
+}
+
+function estDocLink(e) {
+  if (!e.docUrl) return '';
+  return '<a class="est-link" href="' + escHtml(e.docUrl) + '" target="_blank" rel="noopener">🔗 ТЗ (Google Doc)</a>';
+}
+
+function renderEstimates() {
+  const list = document.getElementById('estimatesList');
+  const empty = document.getElementById('estimatesEmpty');
+  if (!list) return;
+  const live = estimates.filter(function(f) { return f && !f.deleted; });
+  if (!live.length) {
+    if (empty) empty.style.display = '';
+    list.innerHTML = '';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  const q = estimatesSearch;
+  let cards = live.map(function(e) {
+    const r = estResult(e);
+    const nameMatch = q ? ((e.title || '').toLowerCase().indexOf(q) !== -1 || (e.docUrl || '').toLowerCase().indexOf(q) !== -1 || (e.note || '').toLowerCase().indexOf(q) !== -1) : false;
+    if (q && !nameMatch) return '';
+    const metaDate = e.date ? '<span class="est-date">' + escHtml(e.date) + '</span>' : '';
+    const noteVal = e.note ? '<span style="color:#888">' + escHtml(e.note) + '</span>' : '';
+    const chips =
+      '<div class="hf-chips">' +
+        '<div class="hf-chip"><div class="lbl">Итого часов</div><div class="val">' + (r.hours !== null ? r.hours : '—') + ' ч</div></div>' +
+        (r.hasCost ? '<div class="hf-chip"><div class="lbl">Стоимость</div><div class="val">' + r.cost + ' ₽</div></div>' : '') +
+        '<div class="hf-chip"><div class="lbl">Разработка</div><div class="val">' + (r.dev !== null ? r.dev : '—') + ' ч</div></div>' +
+      '</div>';
+    return (
+      '<div class="hf-card">' +
+        '<div class="hf-card-head">' +
+          '<div class="hf-card-title">' + (e.title || 'Без названия') + '</div>' +
+          '<div class="hf-card-actions">' +
+            '<button class="btn btn-sm btn-primary" onclick="copyEstimate(\'' + e.id + '\')">📋 Копировать смету</button>' +
+            '<button class="btn btn-sm btn-secondary" onclick="editEstimate(\'' + e.id + '\')">✎</button>' +
+            '<button class="btn btn-sm btn-danger" onclick="deleteEstimate(\'' + e.id + '\')">🗑</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="est-meta">' + metaDate + estDocLink(e) + noteVal + '</div>' +
+        chips +
+        '<div class="est-body">' + escHtml(r.text) + '</div>' +
+      '</div>'
+    );
+  }).filter(function(c) { return c !== ''; });
+  list.innerHTML = cards.length ? cards.join('') : (q ? '<div class="hf-none">Ничего не найдено по запросу</div>' : '');
 }
 
 function formatAvgMs(ms) {
@@ -2883,13 +4622,17 @@ function formatPeriodLabel(range) {
   return 'за весь период';
 }
 
+function isRoutine(t) {
+  return t && t.type === 'Рутина';
+}
+
 function dashboardTasks(cls, range) {
-  let list = liveItems(tasks).filter(t => t.taskClass && t.taskClass.indexOf(cls) !== -1 && t.releaseDate);
+  let list = liveItems(tasks).filter(t => t.type !== 'Рутина' && t.taskClass && t.taskClass.indexOf(cls) !== -1 && t.releaseDate);
   if (dashSize) list = list.filter(t => t.size === dashSize);
   if (range.from || range.to) {
     list = list.filter(t => {
-      const r = new Date(t.releaseDate + 'T00:00:00');
-      if (isNaN(r.getTime())) return false;
+      const r = responseCloseTime(t);
+      if (!r) return false;
       if (range.from && r < range.from) return false;
       if (range.to && r > range.to) return false;
       return true;
@@ -2914,26 +4657,30 @@ function daysRangeMs(start, end) {
   return ms - weekendDays * DAY;
 }
 
-function avgMsFor(tasks, startGetter) {
-  let sum = 0, count = 0;
+function msStatsFor(tasks, startGetter) {
+  const vals = [];
   tasks.forEach(t => {
     const start = startGetter(t);
     if (!start) return;
-    const release = new Date(t.releaseDate + 'T00:00:00');
+    const release = responseCloseTime(t);
     const s = new Date(start);
-    if (isNaN(release.getTime()) || isNaN(s.getTime())) return;
-    sum += daysRangeMs(s, release);
-    count++;
+    if (!release || isNaN(s.getTime())) return;
+    vals.push(daysRangeMs(s, release));
   });
-  return count ? sum / count : null;
+  if (!vals.length) return { avg: null, median: null };
+  const sum = vals.reduce((a, b) => a + b, 0);
+  const sorted = vals.slice().sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  const median = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+  return { avg: sum / vals.length, median };
 }
 
 function calcMTTR_P1(range) {
-  return avgMsFor(dashboardTasks('P1', range), t => t.createdAt);
+  return msStatsFor(dashboardTasks('P1', range), t => t.createdAt);
 }
 
 function calcLeadTimeP2(range) {
-  return avgMsFor(dashboardTasks('P2', range), t => t.startWorkAt || t.createdAt);
+  return msStatsFor(dashboardTasks('P2', range), t => t.startWorkAt || t.createdAt);
 }
 
 function taskClosedAt(t) {
@@ -2965,15 +4712,26 @@ function calcThroughput(range) {
   let closed = 0;
   let inPeriod = 0;
   let noDate = 0;
+  let minD = null;
+  let maxD = null;
   liveItems(tasks).forEach(t => {
-    if (!t || t.status !== 'Готово') return;
+    if (!t || isRoutine(t) || t.status !== 'Готово') return;
     if (dashSize && t.size !== dashSize) return;
     closed++;
     const d = taskClosedAt(t);
     if (!d) { noDate++; return; }
+    if (!minD || d < minD) minD = d;
+    if (!maxD || d > maxD) maxD = d;
     if ((!range.from || d >= range.from) && (!range.to || d <= range.to)) inPeriod++;
   });
-  const daysTotal = (range.from && range.to) ? Math.max(1, Math.round((range.to - range.from) / 86400000)) : 1;
+  let daysTotal;
+  if (range.from && range.to) {
+    daysTotal = Math.max(1, Math.round((range.to - range.from) / 86400000));
+  } else if (minD && maxD) {
+    daysTotal = Math.max(1, Math.round((maxD - minD) / 86400000) + 1);
+  } else {
+    daysTotal = 1;
+  }
   const perDay = inPeriod / daysTotal;
   const perWeek = perDay * 7;
   return { closed, inPeriod, noDate, perDay, perWeek };
@@ -2998,13 +4756,21 @@ function renderDashboard() {
     </div>
     <div class="metric-card">
       <div class="metric-label">⏱ MTTR-P1</div>
-      <div class="metric-value">${formatAvgMs(mttr)}</div>
-      <div class="metric-sub">Среднее время задач класса P-1 от постановки до релиза${sizeLabel} ${periodLabel} (выпущено: ${p1.length})</div>
+      <div class="metric-value">${formatAvgMs(mttr.avg)}</div>
+      <div class="metric-stats">
+        <div class="metric-stat"><span class="metric-stat-label">Среднее</span>${formatAvgMs(mttr.avg)}</div>
+        <div class="metric-stat median"><span class="metric-stat-label">Медиана</span>${formatAvgMs(mttr.median)}</div>
+      </div>
+      <div class="metric-sub">Время задач класса P-1 от постановки до релиза${sizeLabel} ${periodLabel} (выпущено: ${p1.length})</div>
     </div>
     <div class="metric-card">
       <div class="metric-label">🚀 LEAD TIME-P2</div>
-      <div class="metric-value">${formatAvgMs(lead)}</div>
-      <div class="metric-sub">Среднее время задач класса P-2 от взятия в работу до релиза${sizeLabel} ${periodLabel} (выпущено: ${p2.length})</div>
+      <div class="metric-value">${formatAvgMs(lead.avg)}</div>
+      <div class="metric-stats">
+        <div class="metric-stat"><span class="metric-stat-label">Среднее</span>${formatAvgMs(lead.avg)}</div>
+        <div class="metric-stat median"><span class="metric-stat-label">Медиана</span>${formatAvgMs(lead.median)}</div>
+      </div>
+      <div class="metric-sub">Время задач класса P-2 от взятия в работу до релиза${sizeLabel} ${periodLabel} (выпущено: ${p2.length})</div>
     </div>
     <div class="metric-card">
       <div class="metric-label">📦 Throughput по размеру</div>
@@ -3018,7 +4784,7 @@ function renderSizeBreakdown(range) {
   SIZES.forEach(s => counts[s] = 0);
   let noSize = 0;
   liveItems(tasks).forEach(t => {
-    if (!t || t.status !== 'Готово') return;
+    if (!t || isRoutine(t) || t.status !== 'Готово') return;
     if (dashSize && t.size !== dashSize) return;
     const d = taskClosedAt(t);
     if (!d) return;
@@ -3031,8 +4797,19 @@ function renderSizeBreakdown(range) {
 
 async function init() {
   if (!currentUser) return;
+  setInterval(function() {
+    const cells = document.querySelectorAll('.response-cell');
+    for (let i = 0; i < cells.length; i++) {
+      const id = cells[i].id.replace('resp-', '');
+      const task = tasks.find(x => x.id === id);
+      if (task && task.status !== 'Готово' && task.status !== 'Отменена') {
+        cells[i].textContent = formatResponse(calcResponseMs(task));
+      }
+    }
+  }, 30000);
   await loadFromFirebase();
-  if (pendingIdSave) { saveData('tracker_tasks', tasks); pendingIdSave = false; }
+  // после загрузки из облака снова нормализуем id (нужно, чтобы NaN-задачи из облака получили id)
+  if (normalizeTaskIds() || pendingIdSave) { saveData('tracker_tasks', tasks); pendingIdSave = false; }
   migrateReleaseAt();
   populateSelect('filterStatus', STATUSES, '');
   populateSelect('filterPriority', PRIORITIES, '');
