@@ -488,6 +488,9 @@
     .search-wrap input { padding: 9px 14px 9px 34px; border: 1px solid #CDD6D8; border-radius: 8px; font-size: 13px; font-family: inherit; background: #fff; min-width: 300px; transition: border-color .15s, box-shadow .15s; }
     .search-wrap input::placeholder { color: #99a; opacity: 1; }
     .search-wrap input:focus { border-color: #A9D3F2; outline: none; box-shadow: 0 0 0 2px rgba(169,211,242,.25); }
+    .hours-toolbar { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+    .hours-toolbar .hours-toolbar-label { font-size: 12px; font-weight: 600; color: #666; }
+    .hours-toolbar select { font-size: 13px; padding: 5px 10px; border: 1px solid #CDD6D8; border-radius: 6px; background: #fff; font-family: inherit; }
     .hf-none { color: #AAA; font-style: italic; font-size: 13px; padding: 12px 4px; }
     .hf-log { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: #555; padding: 7px 0; }
     .hf-logs .hf-log:not(:first-child) { margin-top: 8px; }
@@ -624,7 +627,14 @@
               <button class="btn btn-sm btn-primary" onclick="openHoursFeatureModal()">+ Новая фича</button>
             </div>
           </div>
-          <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+          <div class="hours-toolbar">
+            <label class="hours-toolbar-label" for="hoursScenarioSort">Сценарии в фиче:</label>
+            <select id="hoursScenarioSort" onchange="onHoursScenarioSortChange(this.value)">
+              <option value="stage">По статусу: незавершённые сверху</option>
+              <option value="stage-rev">По статусу: готовые сверху</option>
+              <option value="weight">По весу: большие сверху</option>
+              <option value="added">Как добавлены</option>
+            </select>
             <div class="search-wrap"><span class="search-ico">🔍</span><input id="hoursSearch" type="text" placeholder="Поиск по названию фичи и списаниям…" oninput="onHoursSearch(this.value)" /></div>
           </div>
           <div id="hoursFeaturesList" style="display:flex;flex-direction:column;gap:12px"></div>
@@ -1169,8 +1179,9 @@
 
 <script>
 const firebaseConfig = {
-  // Миграция на проект siberia-777. Ветка siberia-777-migration, НЕ мержить в main,
-  // пока в консоли siberia-777 не включён Email/Password и не открыты правила Firestore.
+  // Проект siberia-777: миграция выполнена, main задеплоен именно отсюда.
+  // Данные трекера (коллекция siberia_tracker) живут в этом проекте — менять ключи нельзя,
+  // иначе сайт переключится на другой проект и задач не будет видно.
   apiKey: "AIzaSyB7BMHcSec352z7C7gFmVibVwtMcEtb-XQ",
   authDomain: "siberia-777.firebaseapp.com",
   projectId: "siberia-777",
@@ -3500,11 +3511,17 @@ function switchTab(tab) {
   syncSectionHash();
 }
 
+// Состояние калькулятора часов живёт только в памяти вкладки: при обновлении страницы (F5)
+// поля пустые — последнее вычисление не сохраняется. Внутри одной сессии значения
+// переживают перерисовку калькулятора (смена режима ставки), но не перезагрузку.
+let hourCalcState = {};
+// Старый ключ localStorage больше не используется — чистим, чтобы значения не «залипали».
+try { localStorage.removeItem('tracker_hourcalc'); } catch (e) { /* localStorage недоступен */ }
 function loadHourCalcState() {
-  try { return JSON.parse(localStorage.getItem('tracker_hourcalc')) || {}; } catch { return {}; }
+  return Object.assign({}, hourCalcState);
 }
 function saveHourCalcState(s) {
-  localStorage.setItem('tracker_hourcalc', JSON.stringify(s));
+  hourCalcState = Object.assign({}, s);
 }
 function toggleHourCalc() {
   const body = document.getElementById('hourCalcBody');
@@ -3601,8 +3618,9 @@ function saveHourCalcField() {
   saveHourCalcState(s);
 }
 function clearHourCalc() {
-  localStorage.removeItem('tracker_hourcalc');
-  document.getElementById('hcResult').style.display = 'none';
+  hourCalcState = {};
+  const res = document.getElementById('hcResult');
+  if (res) res.style.display = 'none';
   renderHourCalc();
 }
 function calculateHours() {
@@ -3748,6 +3766,9 @@ let hoursFeatures = loadData('tracker_hours_features', []);
 let hoursSearch = '';
 let hoursLogsExpanded = {};
 let hoursScenariosExpanded = {};
+// Порядок отображения сценариев внутри фичи ('stage' | 'stage-rev' | 'weight' | 'added')
+let hoursScenarioSort = loadData('tracker_hours_scenario_sort', 'stage');
+const HOURS_SCENARIO_SORTS = ['stage', 'stage-rev', 'weight', 'added'];
 
 // Лестница этапов продуктовой готовности сценария (весом каждого этапа)
 const HF_STAGES = [
@@ -3857,10 +3878,46 @@ function hfScenarioBars(f) {
     '<div class="hf-pct"><div style="width:' + st.relPct + '%;background:' + relFill + '"></div></div>' +
   '</div>' + dist;
 }
+// Порядок сценариев в фиче с сохранением «настоящего» индекса в f.steps
+// (индексы нужны для editHoursScenario/removeHoursScenario).
+function hfScenarioOrder(f) {
+  const raw = (f && Array.isArray(f.steps)) ? f.steps : [];
+  const items = [];
+  raw.forEach(function(s, i) { if (s && !s.deleted) items.push({ s: s, idx: i }); });
+  const stageIdx = function(it) { return hfStageIdx(it.s.stage); };
+  const weight = function(it) { return hfScnWeight(it.s); };
+  const mode = HOURS_SCENARIO_SORTS.indexOf(hoursScenarioSort) === -1 ? 'stage' : hoursScenarioSort;
+  if (mode === 'added') {
+    items.sort(function(a, b) { return a.idx - b.idx; });
+  } else if (mode === 'weight') {
+    items.sort(function(a, b) { return (weight(b) - weight(a)) || (stageIdx(a) - stageIdx(b)) || (a.idx - b.idx); });
+  } else if (mode === 'stage-rev') {
+    // готовые сверху, дальше вниз по лестнице этапов
+    items.sort(function(a, b) { return (stageIdx(b) - stageIdx(a)) || (a.idx - b.idx); });
+  } else {
+    // 'stage' (по умолчанию): незавершённые сверху, готовые — в конце
+    items.sort(function(a, b) { return (stageIdx(a) - stageIdx(b)) || (a.idx - b.idx); });
+  }
+  return items;
+}
+function hfScenarioSortSelectValue(v) {
+  return HOURS_SCENARIO_SORTS.indexOf(v) === -1 ? 'stage' : v;
+}
+function syncHoursScenarioSortSelect() {
+  const sel = document.getElementById('hoursScenarioSort');
+  if (sel && sel.value !== hoursScenarioSort) sel.value = hoursScenarioSort;
+}
+function onHoursScenarioSortChange(v) {
+  hoursScenarioSort = hfScenarioSortSelectValue(v);
+  cacheData('tracker_hours_scenario_sort', hoursScenarioSort);
+  renderHours();
+}
 function hfScenarioList(f) {
   const st = hfScenarioStats(f);
   const expanded = (typeof hoursScenariosExpanded[f.id] === 'undefined') ? true : !!hoursScenariosExpanded[f.id];
-  const rows = st.steps.length ? st.steps.map(function(s, i) {
+  const ordered = hfScenarioOrder(f);
+  const rows = ordered.length ? ordered.map(function(it) {
+    const s = it.s, i = it.idx;
     const stge = hfStageByKey(s.stage);
     const pct = hfStagePct(s.stage);
     const w = hfScnWeight(s);
@@ -4330,6 +4387,7 @@ function renderHours() {
   const list = document.getElementById('hoursFeaturesList');
   const empty = document.getElementById('hoursEmpty');
   if (!list) return;
+  syncHoursScenarioSortSelect();
   const live = hoursFeatures.filter(function(f) { return f && !f.deleted; });
   if (!live.length) {
     if (empty) empty.style.display = '';
