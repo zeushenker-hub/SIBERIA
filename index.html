@@ -111,6 +111,8 @@
     .dt-group input { width: auto !important; min-width: 0; }
     .link-btn { margin-top: 6px; background: none; border: none; color: #3B82F6; font-size: 12px; cursor: pointer; padding: 0; font-family: inherit; }
     .link-btn:hover { text-decoration: underline; }
+    .ai-tracker-link { color: #3B82F6; text-decoration: none; word-break: break-all; }
+    .ai-tracker-link:hover { text-decoration: underline; }
     .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
     .sprint-list { display: flex; flex-direction: column; gap: 8px; }
     .sprint-item {
@@ -486,6 +488,9 @@
     .search-wrap input { padding: 9px 14px 9px 34px; border: 1px solid #CDD6D8; border-radius: 8px; font-size: 13px; font-family: inherit; background: #fff; min-width: 300px; transition: border-color .15s, box-shadow .15s; }
     .search-wrap input::placeholder { color: #99a; opacity: 1; }
     .search-wrap input:focus { border-color: #A9D3F2; outline: none; box-shadow: 0 0 0 2px rgba(169,211,242,.25); }
+    .hours-toolbar { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+    .hours-toolbar .hours-toolbar-label { font-size: 12px; font-weight: 600; color: #666; }
+    .hours-toolbar select { font-size: 13px; padding: 5px 10px; border: 1px solid #CDD6D8; border-radius: 6px; background: #fff; font-family: inherit; }
     .hf-none { color: #AAA; font-style: italic; font-size: 13px; padding: 12px 4px; }
     .hf-log { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: #555; padding: 7px 0; }
     .hf-logs .hf-log:not(:first-child) { margin-top: 8px; }
@@ -546,9 +551,9 @@
       <div id="sidebarContent">
         <div class="card">
           <div class="card-header"><h2>Навигация</h2></div>
-          <button class="nav-btn" id="dashButton" onclick="showDashboard()">📊 Дашборд</button>
-          <button class="nav-btn" id="hoursButton" onclick="showHoursView()">⏱ Часы по фичам</button>
-          <button class="nav-btn" id="estimatesButton" onclick="showEstimatesView()">📋 Проектная оценка</button>
+          <button class="nav-btn" id="dashButton" data-nav="dashboard" onclick="showDashboard()">📊 Дашборд</button>
+          <button class="nav-btn" id="hoursButton" data-nav="hours" onclick="showHoursView()">⏱ Часы по фичам</button>
+          <button class="nav-btn" id="estimatesButton" data-nav="estimates" onclick="showEstimatesView()">📋 Проектная оценка</button>
           <div class="sprint-list" id="sprintList"></div>
         </div>
         <div class="card" style="margin-top:16px">
@@ -622,7 +627,14 @@
               <button class="btn btn-sm btn-primary" onclick="openHoursFeatureModal()">+ Новая фича</button>
             </div>
           </div>
-          <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+          <div class="hours-toolbar">
+            <label class="hours-toolbar-label" for="hoursScenarioSort">Сценарии в фиче:</label>
+            <select id="hoursScenarioSort" onchange="onHoursScenarioSortChange(this.value)">
+              <option value="stage">По статусу: незавершённые сверху</option>
+              <option value="stage-rev">По статусу: готовые сверху</option>
+              <option value="weight">По весу: большие сверху</option>
+              <option value="added">Как добавлены</option>
+            </select>
             <div class="search-wrap"><span class="search-ico">🔍</span><input id="hoursSearch" type="text" placeholder="Поиск по названию фичи и списаниям…" oninput="onHoursSearch(this.value)" /></div>
           </div>
           <div id="hoursFeaturesList" style="display:flex;flex-direction:column;gap:12px"></div>
@@ -644,12 +656,12 @@
         <div class="card" id="tasksSection">
           <div class="card-header">
             <h2 id="tasksHeader">Срочные задачи</h2>
-          <button class="btn btn-sm btn-secondary" id="viewToggle" onclick="toggleView()">Все задачи</button>
+          <button class="btn btn-sm btn-secondary" id="viewToggle" data-nav-view="1" onclick="toggleView()">Все задачи</button>
         </div>
         <div class="tab-bar" id="tabBar" style="display:none">
-          <button class="active" id="tabActive" onclick="switchTab('active')">Активные</button>
-          <button id="tabDone" onclick="switchTab('done')">Закрытые</button>
-          <button id="tabCancelled" onclick="switchTab('cancelled')">🗑 Отменены</button>
+          <button class="active" id="tabActive" data-nav-tab="active" onclick="switchTab('active')">Активные</button>
+          <button id="tabDone" data-nav-tab="done" onclick="switchTab('done')">Закрытые</button>
+          <button id="tabCancelled" data-nav-tab="cancelled" onclick="switchTab('cancelled')">🗑 Отменены</button>
         </div>
         <div class="filters">
           <span class="filter-label">Статус</span>
@@ -662,6 +674,8 @@
           <select id="filterSize" onchange="renderTasks()"><option value="">Все</option></select>
           <span class="filter-label">Класс</span>
           <select id="filterClass" onchange="renderTasks()"><option value="">Все</option></select>
+          <span class="filter-label">Проект</span>
+          <select id="filterProject" onchange="renderTasks()"><option value="">Все</option></select>
           <span class="filter-label">Поиск</span>
           <input id="filterSearch" placeholder="ID или название..." oninput="renderTasks()" />
           <button class="btn btn-sm btn-secondary" onclick="resetFilters()">Сброс</button>
@@ -739,6 +753,10 @@
     <div class="form-group">
       <label>Комментарий</label>
       <textarea id="taskComment" placeholder="Заметка для себя (дейлики и т.д.)" style="min-height:40px"></textarea>
+    </div>
+    <div class="form-group">
+      <label>AI Tracker <span class="label-hint">(ссылка на задачу в другом трекере, заполняет агент)</span></label>
+      <input id="taskAiTracker" placeholder="https://..." />
     </div>
     <div class="form-row">
       <div class="form-group">
@@ -1120,6 +1138,10 @@
         <label>Создана</label>
         <div class="value" id="detailCreated"></div>
       </div>
+      <div class="detail-field">
+        <label>AI Tracker</label>
+        <div class="value" id="detailAiTracker"></div>
+      </div>
     </div>
     <div class="detail-desc">
       <label>Описание</label>
@@ -1163,8 +1185,8 @@ const firebaseConfig = {
   authDomain: "siberia-777.firebaseapp.com",
   projectId: "siberia-777",
   storageBucket: "siberia-777.firebasestorage.app",
-  messagingSenderId: "", // TODO: взять из Project settings -> Your apps (web) проекта siberia-777
-  appId: ""              // TODO: взять из Project settings -> Your apps (web) проекта siberia-777
+  messagingSenderId: "1033789643474",
+  appId: "1:1033789643474:web:769593b6c2442cb30b2b0b"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
@@ -1316,19 +1338,24 @@ function isMeaningfulStatus(el) {
   return !!(el && typeof el === 'object' && el.status && el.status !== 'Новая');
 }
 // Решение «кто побеждает» для двух записей с одним ключом (id):
-// 1) tombstone (удаление) доминирует над живой записью;
-// 2) запись с реальным статусом не затирается дефолтной «Новой»;
-// 3) иначе — побеждает более свежая по updatedAt (last-write-wins), при равенстве — текущая.
+// 1) явно более свежая запись по updatedAt побеждает и удаляет, и «воскрешает»
+//    (live-запись новее tombstone снимает удаление — иначе задачу нельзя вернуть);
+// 2) при равных метках tombstone (удаление) доминирует над живой записью;
+// 3) запись с реальным статусом не затирается дефолтной «Новой»;
+// 4) иначе — побеждает более свежая по updatedAt, при равенстве — текущая.
 function shouldReplace(cur, cand) {
   if (!cur) return true;
   if (!cand) return false;
-  if (isTombstone(cand)) return true;
-  if (isTombstone(cur)) return false;
+  const sc = itemStamp(cand), ss = itemStamp(cur);
+  if (isTombstone(cand) || isTombstone(cur)) {
+    if (sc !== ss) return sc > ss;          // свежее событие важнее (delete/undelete)
+    if (isTombstone(cand)) return true;     // при равенстве удаление доминирует
+    if (isTombstone(cur)) return false;
+  }
   const curMeaningful = isMeaningfulStatus(cur);
   const candMeaningful = isMeaningfulStatus(cand);
   if (candMeaningful && !curMeaningful) return true;
   if (curMeaningful && !candMeaningful) return false;
-  const sc = itemStamp(cand), ss = itemStamp(cur);
   return sc > ss;
 }
 function mergeArrays(localArr, cloudArr) {
@@ -1697,7 +1724,10 @@ function saveProjects() { cacheData('tracker_projects', PROJECTS); }
 function addProject(name) {
   name = (name || '').trim();
   if (!name) return '';
-  if (PROJECTS.indexOf(name) === -1) { PROJECTS.push(name); saveProjects(); }
+  if (PROJECTS.indexOf(name) === -1) {
+    PROJECTS.push(name);
+    saveProjects();
+  }
   return name;
 }
 
@@ -1842,6 +1872,24 @@ function populateProjectSelect(selId, selected) {
   const sel = document.getElementById(selId);
   sel.innerHTML = '<option value="">Без проекта</option>' +
     PROJECTS.map(p => `<option value="${escHtml(p)}"${p===selected?' selected':''}>${escHtml(p)}</option>`).join('');
+}
+
+function projectFilterOptions() {
+  const set = new Set(PROJECTS.filter(Boolean));
+  liveItems(tasks).forEach(t => { if (t.project) set.add(t.project); });
+  return Array.from(set).sort((a, b) => a.localeCompare(b, 'ru'));
+}
+
+function refreshProjectFilter() {
+  const sel = document.getElementById('filterProject');
+  if (!sel) return;
+  const opts = projectFilterOptions();
+  const cur = sel.value;
+  const shown = Array.from(sel.options).slice(1).map(o => o.value);
+  if (shown.length !== opts.length || shown.some((v, i) => v !== opts[i])) {
+    sel.innerHTML = '<option value="">Все</option>' +
+      opts.map(p => `<option value="${escHtml(p)}"${p===cur?' selected':''}>${escHtml(p)}</option>`).join('');
+  }
 }
 function addProjectFromModal() {
   const name = prompt('Название нового проекта:');
@@ -2109,6 +2157,7 @@ function filterBySprint(sprintId) {
     document.getElementById('tasksHeader').dataset.base = 'Все задачи'; document.getElementById('tasksHeader').textContent = 'Все задачи';
   }
   renderTasks();
+  syncSectionHash();
 }
 
 function filterMyTasks() {
@@ -2126,6 +2175,7 @@ function filterMyTasks() {
     document.getElementById('tasksHeader').dataset.base = 'Все задачи'; document.getElementById('tasksHeader').textContent = 'Все задачи';
   }
   renderTasks();
+  syncSectionHash();
 }
 
 function showUrgentView() {
@@ -2142,8 +2192,10 @@ function showUrgentView() {
   document.getElementById('filterType').value = '';
   document.getElementById('filterSize').value = '';
   document.getElementById('filterClass').value = '';
+  document.getElementById('filterProject').value = '';
   document.getElementById('filterSearch').value = '';
   renderTasks();
+  syncSectionHash();
 }
 
 function addToMyTasks(taskId) {
@@ -2160,6 +2212,7 @@ function openTaskModal(task) {
   document.getElementById('taskTitle').value = task ? task.title : '';
   document.getElementById('taskDescription').value = task ? (task.description||'') : '';
   document.getElementById('taskComment').value = task ? (task.comment||'') : '';
+  document.getElementById('taskAiTracker').value = task ? (task.aiTracker||'') : '';
   populateSelect('taskStatus', STATUSES, task ? task.status : 'Новая');
   populateSelect('taskPriority', PRIORITIES, task ? task.priority : 'Средний');
   populateSelect('taskType', TYPES, task ? task.type : 'Фича');
@@ -2184,6 +2237,7 @@ function saveTask() {
   const data = {
     title,
     comment: document.getElementById('taskComment').value.trim(),
+    aiTracker: document.getElementById('taskAiTracker').value.trim(),
     description: document.getElementById('taskDescription').value.trim(),
     status: document.getElementById('taskStatus').value,
     priority: document.getElementById('taskPriority').value,
@@ -2268,6 +2322,7 @@ function openDetail(taskId) {
   document.getElementById('detailCreated').textContent = new Date(t.createdAt).toLocaleString('ru-RU');
   document.getElementById('detailDescription').textContent = t.description || 'Нет описания';
   document.getElementById('detailComment').textContent = t.comment || 'Нет комментария';
+  document.getElementById('detailAiTracker').innerHTML = renderAiTracker(t.aiTracker);
   document.getElementById('detailPanel').classList.add('open');
 
   const actions = document.getElementById('detailActions');
@@ -2277,8 +2332,9 @@ function openDetail(taskId) {
   } else {
     actions.innerHTML = `<button class="btn btn-primary btn-sm" onclick="editFromDetail()">Редактировать</button><button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); addToMyTasks('${taskId}'); closeDetail();">☆ В Мои таски</button><button class="btn btn-danger btn-sm" onclick="deleteFromDetail()">Удалить</button>`;
   }
+  syncSectionHash();
 }
-function closeDetail() { document.getElementById('detailPanel').classList.remove('open'); detailTaskId = null; }
+function closeDetail() { document.getElementById('detailPanel').classList.remove('open'); detailTaskId = null; syncSectionHash(); }
 function editFromDetail() { const id = detailTaskId; closeDetail(); const t = tasks.find(x => x.id === id); if (t) openTaskModal(t); }
 function deleteFromDetail() { deleteTask(detailTaskId); }
 
@@ -2288,6 +2344,7 @@ function resetFilters() {
   document.getElementById('filterType').value = '';
   document.getElementById('filterSize').value = '';
   document.getElementById('filterClass').value = '';
+  document.getElementById('filterProject').value = '';
   document.getElementById('filterSearch').value = '';
   if (!activeSprintFilter && !activeMyTasksFilter) {
     document.getElementById('tasksHeader').dataset.base = 'Все задачи';
@@ -2362,12 +2419,14 @@ function renderTasks() {
       document.getElementById('tabCancelled')?.classList.remove('active');
     }
   }
+  refreshProjectFilter();
   const allTasks = liveItems(tasks);
   const fStatus = document.getElementById('filterStatus').value;
   const fPriority = document.getElementById('filterPriority').value;
   const fType = document.getElementById('filterType').value;
   const fSize = document.getElementById('filterSize').value;
   const fClass = document.getElementById('filterClass').value;
+  const fProject = document.getElementById('filterProject').value;
   const fSearch = document.getElementById('filterSearch').value.toLowerCase().trim();
 
   const today = new Date(); const y = today.getFullYear(); const m = String(today.getMonth()+1).padStart(2,'0'); const d = String(today.getDate()).padStart(2,'0');
@@ -2389,6 +2448,7 @@ function renderTasks() {
     if (fType && t.type !== fType) return false;
     if (fSize && t.size !== fSize) return false;
     if (fClass && t.taskClass !== fClass) return false;
+    if (fProject && (t.project || '') !== fProject) return false;
     if (fSearch && !t.id.toLowerCase().includes(fSearch) && !t.title.toLowerCase().includes(fSearch)) return false;
     if (urgentView && !activeSprintFilter && !activeMyTasksFilter && !fSearch) {
       if (t.status === 'Готово' || t.status === 'Отменена') return false;
@@ -2414,7 +2474,7 @@ function renderTasks() {
       const analytics = t.status === 'Аналитика';
       const backlog = t.status === 'Бэклог';
       const working = ['В работе', 'QA', 'Ревью'].includes(t.status);
-      return `<tr class="${[rel?'release':'',clar?'clarify':'',analytics?'analytics':'',backlog?'backlog':'',working?'working':'',urg?'urgent':''].filter(Boolean).join(' ')}" data-task-id="${t.id}"
+      return `<tr class="${[rel?'release':'',clar?'clarify':'',analytics?'analytics':'',backlog?'backlog':'',working?'working':'',urg?'urgent':''].filter(Boolean).join(' ')}" data-task-id="${t.id}" data-nav="task=${t.id}"
       onclick="openDetail('${t.id}')">
       <td><span class="row-drag" data-task-id="${t.id}" draggable="true" onclick="event.stopPropagation()" ondragstart="handleDragStart(event)" ondragend="handleDragEnd(event)" title="Перетащить">⠿</span><input type="checkbox" class="task-checkbox" data-task-id="${t.id}" onclick="event.stopPropagation()" /></td>
       <td><span class="task-id">${t.id}</span></td>
@@ -2458,6 +2518,7 @@ function renderTasks() {
       if (fType && t.type !== fType) return false;
       if (fSize && t.size !== fSize) return false;
       if (fClass && t.taskClass !== fClass) return false;
+      if (fProject && (t.project || '') !== fProject) return false;
       if (fSearch && !t.id.toLowerCase().includes(fSearch) && !t.title.toLowerCase().includes(fSearch)) return false;
       return true;
     });
@@ -2486,17 +2547,29 @@ function toggleView() {
   document.getElementById('filterType').value = '';
   document.getElementById('filterSize').value = '';
   document.getElementById('filterClass').value = '';
+  document.getElementById('filterProject').value = '';
   document.getElementById('filterSearch').value = '';
   activeSprintFilter = '';
   activeMyTasksFilter = false;
   document.querySelectorAll('.sprint-item, .backlog-header, .my-tasks-header, .urgent-header').forEach(el => el.classList.remove('selected'));
   renderTasks();
+  syncSectionHash();
 }
 
 function escHtml(s) {
   const d = document.createElement('div');
   d.textContent = s;
   return d.innerHTML;
+}
+
+// Поле «AI Tracker» заполняет агент: это может быть как чистая ссылка,
+// так и текст вида «JIRA-123 https://...». Ссылки делаем кликабельными.
+function renderAiTracker(value) {
+  const text = String(value == null ? '' : value).trim();
+  if (!text) return '—';
+  return escHtml(text).replace(/(https?:\/\/[^\s<>"']+)/g, function(url) {
+    return '<a class="ai-tracker-link" href="' + url + '" target="_blank" rel="noopener noreferrer">' + url + '</a>';
+  });
 }
 
 function inlineChangeStatus(sel, id) {
@@ -2992,12 +3065,14 @@ function renderSprints() {
   const urgentCount = liveTsk.filter(t => t.status !== 'Готово' && t.status !== 'Отменена' && t.deadline && (t.deadline === todayStr || t.deadline === tomorrowStr)).length;
 
   const urgentHtml = `<div class="urgent-header${urgentView ? ' selected' : ''}"
+    data-nav="urgent"
     onclick="showUrgentView()">
     🔥 Срочные <span class="backlog-count">${urgentCount}</span>
   </div>`;
 
   const backlogHtml = `<div class="backlog-header${activeSprintFilter === '_backlog' ? ' selected' : ''}"
     data-backlog="true"
+    data-nav="backlog"
     onclick="filterBySprint('_backlog')"
     ondragover="handleDragOver(event)"
     ondrop="handleDropOnBacklog(event)">
@@ -3005,6 +3080,7 @@ function renderSprints() {
   </div>`;
 
   const myTasksHtml = `<div class="my-tasks-header${activeMyTasksFilter ? ' selected' : ''}"
+    data-nav="mytasks"
     onclick="filterMyTasks()"
     ondragover="handleDragOver(event)"
     ondrop="handleDropOnMyTasks(event)">
@@ -3027,7 +3103,7 @@ function renderSprints() {
         data-sprint-id="${s.id}"
         ondragover="handleDragOver(event)"
         ondrop="handleDropOnSprint(event, '${s.id}')">
-        <div class="sprint-info" onclick="filterBySprint('${s.id}')">
+        <div class="sprint-info" data-nav="sprint=${s.id}" onclick="filterBySprint('${s.id}')">
           <div class="sprint-name">${escHtml(s.name)} ${s.status === 'active' ? '<span class="active-sprint-indicator">●</span>' : ''}</div>
           <div class="sprint-dates">${formatDate(s.startDate)} — ${formatDate(s.endDate)}</div>
           <div class="sprint-task-count">${taskCount} задач</div>
@@ -3053,6 +3129,7 @@ function renderSprints() {
       return `<div class="sprint-item completed${selected}"
         draggable="false"
         data-sprint-id="${s.id}"
+        data-nav="sprint=${s.id}"
         onclick="filterBySprint('${s.id}')">
         <div class="sprint-info">
           <div class="sprint-name">${escHtml(s.name)}</div>
@@ -3150,6 +3227,7 @@ function applyFunnelFilter(status) {
   document.getElementById('filterPriority').value = '';
   document.getElementById('filterType').value = '';
   document.getElementById('filterSize').value = '';
+  document.getElementById('filterProject').value = '';
   document.getElementById('filterSearch').value = '';
   renderTasks();
 }
@@ -3429,13 +3507,20 @@ function switchTab(tab) {
     h.textContent = base;
   }
   renderTasks();
+  syncSectionHash();
 }
 
+// Состояние калькулятора часов живёт только в памяти вкладки: при обновлении страницы (F5)
+// поля пустые — последнее вычисление не сохраняется. Внутри одной сессии значения
+// переживают перерисовку калькулятора (смена режима ставки), но не перезагрузку.
+let hourCalcState = {};
+// Старый ключ localStorage больше не используется — чистим, чтобы значения не «залипали».
+try { localStorage.removeItem('tracker_hourcalc'); } catch (e) { /* localStorage недоступен */ }
 function loadHourCalcState() {
-  try { return JSON.parse(localStorage.getItem('tracker_hourcalc')) || {}; } catch { return {}; }
+  return Object.assign({}, hourCalcState);
 }
 function saveHourCalcState(s) {
-  localStorage.setItem('tracker_hourcalc', JSON.stringify(s));
+  hourCalcState = Object.assign({}, s);
 }
 function toggleHourCalc() {
   const body = document.getElementById('hourCalcBody');
@@ -3532,8 +3617,9 @@ function saveHourCalcField() {
   saveHourCalcState(s);
 }
 function clearHourCalc() {
-  localStorage.removeItem('tracker_hourcalc');
-  document.getElementById('hcResult').style.display = 'none';
+  hourCalcState = {};
+  const res = document.getElementById('hcResult');
+  if (res) res.style.display = 'none';
   renderHourCalc();
 }
 function calculateHours() {
@@ -3679,6 +3765,9 @@ let hoursFeatures = loadData('tracker_hours_features', []);
 let hoursSearch = '';
 let hoursLogsExpanded = {};
 let hoursScenariosExpanded = {};
+// Порядок отображения сценариев внутри фичи ('stage' | 'stage-rev' | 'weight' | 'added')
+let hoursScenarioSort = loadData('tracker_hours_scenario_sort', 'stage');
+const HOURS_SCENARIO_SORTS = ['stage', 'stage-rev', 'weight', 'added'];
 
 // Лестница этапов продуктовой готовности сценария (весом каждого этапа)
 const HF_STAGES = [
@@ -3788,10 +3877,46 @@ function hfScenarioBars(f) {
     '<div class="hf-pct"><div style="width:' + st.relPct + '%;background:' + relFill + '"></div></div>' +
   '</div>' + dist;
 }
+// Порядок сценариев в фиче с сохранением «настоящего» индекса в f.steps
+// (индексы нужны для editHoursScenario/removeHoursScenario).
+function hfScenarioOrder(f) {
+  const raw = (f && Array.isArray(f.steps)) ? f.steps : [];
+  const items = [];
+  raw.forEach(function(s, i) { if (s && !s.deleted) items.push({ s: s, idx: i }); });
+  const stageIdx = function(it) { return hfStageIdx(it.s.stage); };
+  const weight = function(it) { return hfScnWeight(it.s); };
+  const mode = HOURS_SCENARIO_SORTS.indexOf(hoursScenarioSort) === -1 ? 'stage' : hoursScenarioSort;
+  if (mode === 'added') {
+    items.sort(function(a, b) { return a.idx - b.idx; });
+  } else if (mode === 'weight') {
+    items.sort(function(a, b) { return (weight(b) - weight(a)) || (stageIdx(a) - stageIdx(b)) || (a.idx - b.idx); });
+  } else if (mode === 'stage-rev') {
+    // готовые сверху, дальше вниз по лестнице этапов
+    items.sort(function(a, b) { return (stageIdx(b) - stageIdx(a)) || (a.idx - b.idx); });
+  } else {
+    // 'stage' (по умолчанию): незавершённые сверху, готовые — в конце
+    items.sort(function(a, b) { return (stageIdx(a) - stageIdx(b)) || (a.idx - b.idx); });
+  }
+  return items;
+}
+function hfScenarioSortSelectValue(v) {
+  return HOURS_SCENARIO_SORTS.indexOf(v) === -1 ? 'stage' : v;
+}
+function syncHoursScenarioSortSelect() {
+  const sel = document.getElementById('hoursScenarioSort');
+  if (sel && sel.value !== hoursScenarioSort) sel.value = hoursScenarioSort;
+}
+function onHoursScenarioSortChange(v) {
+  hoursScenarioSort = hfScenarioSortSelectValue(v);
+  cacheData('tracker_hours_scenario_sort', hoursScenarioSort);
+  renderHours();
+}
 function hfScenarioList(f) {
   const st = hfScenarioStats(f);
   const expanded = (typeof hoursScenariosExpanded[f.id] === 'undefined') ? true : !!hoursScenariosExpanded[f.id];
-  const rows = st.steps.length ? st.steps.map(function(s, i) {
+  const ordered = hfScenarioOrder(f);
+  const rows = ordered.length ? ordered.map(function(it) {
+    const s = it.s, i = it.idx;
     const stge = hfStageByKey(s.stage);
     const pct = hfStagePct(s.stage);
     const w = hfScnWeight(s);
@@ -3916,6 +4041,7 @@ function saveHoursFeatures() {
 }
 
 function showHoursView() {
+  activeTopView = 'hours';
   document.getElementById('dashboardSection').style.display = 'none';
   document.getElementById('tasksSection').style.display = 'none';
   document.getElementById('hoursSection').style.display = '';
@@ -3924,9 +4050,11 @@ function showHoursView() {
   document.getElementById('hoursButton').classList.add('active');
   document.getElementById('estimatesButton').classList.remove('active');
   renderHours();
+  syncSectionHash();
 }
 
 function showDashboard() {
+  activeTopView = 'dashboard';
   document.getElementById('dashboardSection').style.display = '';
   document.getElementById('tasksSection').style.display = 'none';
   document.getElementById('hoursSection').style.display = 'none';
@@ -3936,9 +4064,11 @@ function showDashboard() {
   document.getElementById('estimatesButton').classList.remove('active');
   renderDashboard();
   renderFunnel();
+  syncSectionHash();
 }
 
 function showTasksView() {
+  activeTopView = 'tasks';
   document.getElementById('dashboardSection').style.display = 'none';
   document.getElementById('tasksSection').style.display = '';
   document.getElementById('hoursSection').style.display = 'none';
@@ -3946,7 +4076,92 @@ function showTasksView() {
   document.getElementById('dashButton').classList.remove('active');
   document.getElementById('hoursButton').classList.remove('active');
   document.getElementById('estimatesButton').classList.remove('active');
+  syncSectionHash();
 }
+
+// ===== Разделы в URL-хэше: Cmd/Ctrl+клик (или Cmd+ПКМ, или средняя кнопка) открывает раздел в новой вкладке =====
+let activeTopView = 'tasks';
+
+function currentNavTokenWithTab(tab) {
+  let base;
+  if (activeMyTasksFilter) base = 'mytasks';
+  else if (activeSprintFilter) base = 'sprint=' + activeSprintFilter;
+  else base = urgentView ? 'urgent' : 'tasks';
+  if (tab && tab !== 'active' && (base === 'mytasks' || base.indexOf('sprint=') === 0)) {
+    base += '&tab=' + tab;
+  }
+  return base;
+}
+
+function currentNavToken() {
+  return currentNavTokenWithTab(activeDoneFilter ? 'done' : (activeCancelledFilter ? 'cancelled' : 'active'));
+}
+
+function syncSectionHash() {
+  let nav;
+  if (detailTaskId) nav = 'task=' + detailTaskId;
+  else if (activeTopView === 'dashboard' || activeTopView === 'hours' || activeTopView === 'estimates') nav = activeTopView;
+  else nav = currentNavToken();
+  try { history.replaceState(null, '', location.pathname + location.search + '#' + nav); } catch (e) {}
+}
+
+function navValueFor(el) {
+  if (el.hasAttribute('data-nav-tab')) return currentNavTokenWithTab(el.getAttribute('data-nav-tab'));
+  if (el.hasAttribute('data-nav-view')) return urgentView ? 'tasks' : 'urgent';
+  return el.getAttribute('data-nav');
+}
+
+function openSectionInNewTab(nav) {
+  if (!nav) return;
+  const w = window.open(location.pathname + location.search + '#' + nav, '_blank');
+  if (w) { try { w.focus(); } catch (e) {} }
+}
+
+function applySectionFromHash() {
+  const raw = decodeURIComponent((location.hash || '').replace(/^#/, ''));
+  if (!raw) return false;
+  const parts = raw.split('&');
+  const main = parts[0];
+  const opt = {};
+  for (let i = 1; i < parts.length; i++) {
+    const eq = parts[i].indexOf('=');
+    if (eq > 0) opt[parts[i].slice(0, eq)] = parts[i].slice(eq + 1);
+  }
+  if (main === 'dashboard') { showDashboard(); return true; }
+  if (main === 'hours') { showHoursView(); return true; }
+  if (main === 'estimates') { showEstimatesView(); return true; }
+  if (main === 'urgent') { showUrgentView(); return true; }
+  if (main === 'tasks') { showTasksView(); if (urgentView) toggleView(); return true; }
+  if (main === 'mytasks') { filterMyTasks(); if (opt.tab) switchTab(opt.tab); return true; }
+  if (main === 'backlog') { filterBySprint('_backlog'); if (opt.tab) switchTab(opt.tab); return true; }
+  if (main.indexOf('sprint=') === 0) { filterBySprint(main.slice(7)); if (opt.tab) switchTab(opt.tab); return true; }
+  if (main.indexOf('task=') === 0) { showTasksView(); openDetail(main.slice(5)); return true; }
+  return false;
+}
+
+(function setupSectionLinkHandlers() {
+  function handleNewTab(e) {
+    const el = e.target && e.target.closest ? e.target.closest('[data-nav], [data-nav-tab], [data-nav-view]') : null;
+    if (!el) return false;
+    e.preventDefault();
+    e.stopPropagation();
+    openSectionInNewTab(navValueFor(el));
+    return true;
+  }
+  document.addEventListener('click', function(e) {
+    if (!(e.metaKey || e.ctrlKey)) return;
+    handleNewTab(e);
+  }, true);
+  document.addEventListener('auxclick', function(e) {
+    if (e.button !== 1) return;
+    handleNewTab(e);
+  }, true);
+  document.addEventListener('contextmenu', function(e) {
+    if (!e.metaKey) return;
+    handleNewTab(e);
+  }, true);
+  window.addEventListener('hashchange', function() { applySectionFromHash(); });
+})();
 
 function openHoursFeatureModal() {
   const f = { id: '', name: '', budget: '', spent: '', comment: '' };
@@ -4171,6 +4386,7 @@ function renderHours() {
   const list = document.getElementById('hoursFeaturesList');
   const empty = document.getElementById('hoursEmpty');
   if (!list) return;
+  syncHoursScenarioSortSelect();
   const live = hoursFeatures.filter(function(f) { return f && !f.deleted; });
   if (!live.length) {
     if (empty) empty.style.display = '';
@@ -4415,6 +4631,7 @@ function updateEstimatePreview() {
 }
 
 function showEstimatesView() {
+  activeTopView = 'estimates';
   document.getElementById('dashboardSection').style.display = 'none';
   document.getElementById('tasksSection').style.display = 'none';
   document.getElementById('hoursSection').style.display = 'none';
@@ -4423,6 +4640,7 @@ function showEstimatesView() {
   document.getElementById('hoursButton').classList.remove('active');
   document.getElementById('estimatesButton').classList.add('active');
   renderEstimates();
+  syncSectionHash();
 }
 
 function onEstimatesSearch(v) {
@@ -4825,6 +5043,7 @@ async function init() {
   renderNotes();
   renderHourCalc();
   renderHours();
+  if (!applySectionFromHash()) syncSectionHash();
   toast('Данные загружены из облака');
 }
 init();
